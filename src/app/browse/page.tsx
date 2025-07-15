@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useSession } from "next-auth/react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
@@ -24,7 +24,7 @@ interface Song {
   }[]
 }
 
-export default function BrowsePage() {
+function BrowseContent() {
   const { data: session } = useSession()
   const searchParams = useSearchParams()
   const [songs, setSongs] = useState<Song[]>([])
@@ -181,5 +181,18 @@ export default function BrowsePage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function BrowsePage() {
+  return (
+    <Suspense fallback={
+      <div className="container">
+        <h1>Browse Songs</h1>
+        <p>Loading...</p>
+      </div>
+    }>
+      <BrowseContent />
+    </Suspense>
   )
 }
