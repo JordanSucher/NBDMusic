@@ -3,14 +3,15 @@ import { db } from "@/lib/db"
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { username: string } }
+  context: { params: Promise<{ username: string }> }
 ) {
   try {
-    const username = decodeURIComponent(params.username)
+    const { username } = await context.params
+    const decodedUsername = decodeURIComponent(username)
 
     // Find the user
     const user = await db.user.findUnique({
-      where: { username },
+      where: { username: decodedUsername },
       select: {
         id: true,
         username: true,
