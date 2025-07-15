@@ -12,7 +12,7 @@ export async function DELETE(
     const { id: songId } = await context.params
     
     // Check authentication
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions as Record<string, unknown>) as { user?: { id?: string } } | null
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "You must be logged in" },

@@ -6,19 +6,19 @@ import { authOptions } from "@/lib/auth"
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id: songId } = await context.params
+    
     // Check authentication
-    const session = await getServerSession(authOptions)
+    const session = await getServerSession(authOptions as Record<string, unknown>) as { user?: { id?: string } } | null
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "You must be logged in" },
         { status: 401 }
       )
     }
-
-    const songId = params.id
 
     // Find the song and verify ownership
     const song = await db.song.findUnique({

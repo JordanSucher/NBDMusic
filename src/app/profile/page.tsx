@@ -63,7 +63,7 @@ export default function ProfilePage() {
     )
   }
 
-  if (!session) {
+  if (!session?.user) {
     return (
       <div className="container">
         <h1>My Profile</h1>
@@ -168,7 +168,7 @@ export default function ProfilePage() {
             <li>Songs uploaded: {songs.length}</li>
             <li>Total storage used: {formatFileSize(getTotalFileSize())}</li>
             <li>Tags you&apos;ve used: {getAllTags().length > 0 ? getAllTags().join(', ') : 'None yet'}</li>
-            <li>Member since: {new Date(session.user.id).toLocaleDateString()}</li>
+            <li>Member since: {(session.user as { createdAt?: string }).createdAt ? new Date((session.user as { createdAt?: string }).createdAt!).toLocaleDateString() : 'Recently'}</li>
           </ul>
         </div>
       </div>

@@ -40,7 +40,7 @@ export default function HomePage() {
       </nav>
 
       <main>
-        {session ? (
+        {session?.user ? (
           <div>
             <h2>Welcome back, {session.user.name || session.user.email}!</h2>
             <p>What would you like to do today?</p>

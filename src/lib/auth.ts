@@ -1,11 +1,8 @@
-import { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-import { PrismaAdapter } from "@auth/prisma-adapter"
 import { db } from "./db"
 import bcrypt from "bcryptjs"
 
-export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(db),
+export const authOptions = {
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -41,26 +38,35 @@ export const authOptions: NextAuthOptions = {
           id: user.id,
           email: user.email,
           name: user.username,
+          createdAt: user.createdAt,
         }
       }
     })
   ],
   session: {
-    strategy: "jwt"
+    strategy: "jwt" as const
   },
   pages: {
     signIn: "/login"
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user }: { token: Record<string, unknown>; user?: Record<string, unknown> }) {
       if (user) {
         token.id = user.id
+        token.email = user.email
+        token.name = user.name
+        token.createdAt = user.createdAt
       }
       return token
     },
-    async session({ session, token }) {
-      if (token && session.user) {
-        session.user.id = token.id as string
+    async session({ session, token }: { session: Record<string, unknown>; token: Record<string, unknown> }) {
+      if (token) {
+        (session as { user: Record<string, unknown> }).user = {
+          id: token.id,
+          email: token.email,
+          name: token.name,
+          createdAt: token.createdAt,
+        }
       }
       return session
     }
