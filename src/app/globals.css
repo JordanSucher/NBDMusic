@@ -1,26 +1,264 @@
-@import "tailwindcss";
-
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Reset all default styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Override Next.js defaults */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: auto;
+  background: #f5f5f5;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Courier New', monospace !important;
+  background-color: #f5f5f5 !important;
+  color: #333 !important;
+  line-height: 1.4;
+  font-size: 14px;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  background: #f5f5f5;
+}
+
+/* Headers */
+h1 {
+  font-size: 24px !important;
+  margin-bottom: 20px !important;
+  color: #000 !important;
+  font-weight: bold !important;
+  font-family: 'Courier New', monospace !important;
+}
+
+h2 {
+  font-size: 18px !important;
+  margin-bottom: 15px !important;
+  color: #000 !important;
+  font-weight: bold !important;
+  font-family: 'Courier New', monospace !important;
+}
+
+h3 {
+  font-size: 16px !important;
+  margin-bottom: 10px !important;
+  color: #000 !important;
+  font-weight: bold !important;
+  font-family: 'Courier New', monospace !important;
+}
+
+/* Paragraphs and text */
+p {
+  margin-bottom: 10px !important;
+  font-family: 'Courier New', monospace !important;
+  font-size: 14px !important;
+  line-height: 1.4 !important;
+}
+
+/* Lists */
+ul, ol {
+  margin-bottom: 15px !important;
+  margin-left: 20px !important;
+  font-family: 'Courier New', monospace !important;
+}
+
+li {
+  margin-bottom: 5px !important;
+  font-family: 'Courier New', monospace !important;
+}
+
+/* Links */
+a {
+  color: #0000ff !important;
+  text-decoration: underline !important;
+  font-family: 'Courier New', monospace !important;
+}
+
+a:visited {
+  color: #800080 !important;
+}
+
+a:hover {
+  background-color: #ffff00 !important;
+}
+
+/* Forms */
+form {
+  margin-bottom: 20px;
+}
+
+label {
+  font-family: 'Courier New', monospace !important;
+  font-size: 14px !important;
+  color: #000 !important;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="file"],
+textarea {
+  width: 100% !important;
+  padding: 4px !important;
+  border: 2px inset #ccc !important;
+  font-family: 'Courier New', monospace !important;
+  font-size: 14px !important;
+  margin-bottom: 10px !important;
+  background: white !important;
+  color: #000 !important;
+}
+
+small {
+  font-family: 'Courier New', monospace !important;
+  font-size: 12px !important;
+  color: #666 !important;
+  display: block !important;
+  margin-bottom: 10px !important;
+}
+
+button {
+  padding: 4px 8px !important;
+  border: 2px outset #ccc !important;
+  background-color: #ddd !important;
+  font-family: 'Courier New', monospace !important;
+  font-size: 14px !important;
+  cursor: pointer !important;
+  color: #000 !important;
+}
+
+button:hover {
+  background-color: #bbb !important;
+}
+
+button:active {
+  border: 2px inset #ccc !important;
+}
+
+button:disabled {
+  background-color: #eee !important;
+  color: #999 !important;
+  cursor: not-allowed !important;
+}
+
+/* Special styling for danger buttons */
+button[style*="background-color: #ff4444"] {
+  border: 2px outset #ff4444 !important;
+}
+
+button[style*="background-color: #ff4444"]:hover:not(:disabled) {
+  background-color: #dd2222 !important;
+}
+
+button[style*="background-color: #ff4444"]:active {
+  border: 2px inset #ff4444 !important;
+}
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  font-family: 'Courier New', monospace !important;
+}
+
+th, td {
+  border: 1px solid #000 !important;
+  padding: 4px !important;
+  text-align: left !important;
+  font-family: 'Courier New', monospace !important;
+}
+
+th {
+  background-color: #ccc !important;
+  font-weight: bold !important;
+}
+
+/* Navigation */
+nav {
+  margin-bottom: 20px !important;
+  padding-bottom: 10px !important;
+  border-bottom: 2px solid #000 !important;
+}
+
+nav a {
+  margin-right: 20px !important;
+  font-family: 'Courier New', monospace !important;
+}
+
+nav button {
+  margin-right: 20px !important;
+}
+
+/* Song cards */
+.song-card {
+  border: 2px solid #000 !important;
+  padding: 10px !important;
+  margin-bottom: 10px !important;
+  background-color: #fff !important;
+}
+
+.song-title {
+  font-weight: bold !important;
+  margin-bottom: 5px !important;
+  font-family: 'Courier New', monospace !important;
+}
+
+.song-meta {
+  font-size: 12px !important;
+  color: #666 !important;
+  margin-bottom: 5px !important;
+  font-family: 'Courier New', monospace !important;
+}
+
+.song-tags {
+  margin-top: 5px !important;
+}
+
+.tag {
+  background-color: #ffff00 !important;
+  padding: 2px 4px !important;
+  margin-right: 5px !important;
+  border: 1px solid #000 !important;
+  font-size: 11px !important;
+  font-family: 'Courier New', monospace !important;
+}
+
+/* Audio player */
+audio {
+  width: 100% !important;
+  margin-top: 10px !important;
+}
+
+/* Utility classes */
+.text-center {
+  text-align: center !important;
+}
+
+.mb-10 {
+  margin-bottom: 10px !important;
+}
+
+.mb-20 {
+  margin-bottom: 20px !important;
+}
+
+/* Error messages */
+.error {
+  color: #ff0000 !important;
+  font-weight: bold !important;
+  margin-bottom: 10px !important;
+  font-family: 'Courier New', monospace !important;
+}
+
+.success {
+  color: #008000 !important;
+  font-weight: bold !important;
+  margin-bottom: 10px !important;
+  font-family: 'Courier New', monospace !important;
 }
