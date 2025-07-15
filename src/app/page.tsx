@@ -56,15 +56,14 @@ export default function HomePage() {
         ) : (
           <div>
             <h2>Share Your Music</h2>
-            <p>Early Bird is a simple platform for local musicians to share demos and works in progress.</p>
+            <p>Early Bird is a simple platform for musicians to share works in progress.</p>
             
             <div className="mb-20">
               <h3>Features:</h3>
               <ul>
-                <li>Upload your demos and songs in progress</li>
-                <li>Tag your music for easy discovery</li>
-                <li>Browse other local musicians&apos; work</li>
-                <li>Simple, no-nonsense interface</li>
+                <li>Upload your demos</li>
+                <li>Tag your music</li>
+                <li>Browse other musicians&apos; work</li>
               </ul>
             </div>
             
