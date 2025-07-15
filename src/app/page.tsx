@@ -19,7 +19,6 @@ export default function HomePage() {
     <div className="container">
       <header>
         <h1>Early Bird</h1>
-        <p>Local music demo sharing for musicians</p>
       </header>
 
       <nav>
