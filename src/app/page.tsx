@@ -75,7 +75,7 @@ export default function HomePage() {
       </main>
 
       <footer style={{ marginTop: '40px', borderTop: '1px solid #ccc', paddingTop: '20px' }}>
-        <p>Early Bird - Keep it simple, keep it real.</p>
+        <p>Early Bird gets the ear worm.</p>
       </footer>
     </div>
   )
