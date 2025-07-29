@@ -48,8 +48,8 @@ export default function HomePage() {
   if (status === "loading") {
     return (
       <div className="container">
-        <h1>Early Bird</h1>
-        <p>Loading...</p>
+        <h1>nbd</h1>
+        <p>loading...</p>
       </div>
     )
   }
