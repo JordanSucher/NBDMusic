@@ -31,8 +31,8 @@ function BrowseContent() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedTag, setSelectedTag] = useState("")
-  const [allTags, setAllTags] = useState<string[]>([])
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [allTags, setAllTags] = useState<{name: string, count: number}[]>([])
 
   useEffect(() => {
     fetchSongs()
@@ -41,7 +41,7 @@ function BrowseContent() {
     // Check for tag filter in URL
     const tagFromUrl = searchParams.get('tag')
     if (tagFromUrl) {
-      setSelectedTag(tagFromUrl)
+      setSelectedTags([tagFromUrl])
     }
   }, [searchParams])
 
@@ -54,8 +54,8 @@ function BrowseContent() {
       } else {
         setError("Failed to load songs")
       }
-    } catch {
-      setError("Something went wrong")
+    } catch (err) {
+      setError("Something went wrong: " + err)
     } finally {
       setLoading(false)
     }
@@ -63,7 +63,7 @@ function BrowseContent() {
 
   const fetchTags = async () => {
     try {
-      const response = await fetch('/api/tags')
+      const response = await fetch('/api/tags/counts')
       if (response.ok) {
         const data = await response.json()
         setAllTags(data.tags)
@@ -73,14 +73,31 @@ function BrowseContent() {
     }
   }
 
+  const toggleTag = (tagName: string) => {
+    setSelectedTags(prev => {
+      if (prev.includes(tagName)) {
+        return prev.filter(tag => tag !== tagName)
+      } else {
+        return [...prev, tagName]
+      }
+    })
+  }
+
+  const clearAllFilters = () => {
+    setSearchTerm("")
+    setSelectedTags([])
+  }
+
   const filteredSongs = songs.filter(song => {
     const matchesSearch = song.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          song.user.username.toLowerCase().includes(searchTerm.toLowerCase())
     
-    const matchesTag = !selectedTag || 
-                      song.tags.some(songTag => songTag.tag.name === selectedTag)
+    const matchesTags = selectedTags.length === 0 || 
+                       selectedTags.every(selectedTag => 
+                         song.tags.some(songTag => songTag.tag.name === selectedTag)
+                       )
     
-    return matchesSearch && matchesTag
+    return matchesSearch && matchesTags
   })
 
   if (loading) {
@@ -117,38 +134,41 @@ function BrowseContent() {
         </div>
 
         <div className="mb-10">
-          <label htmlFor="tag-filter">Filter by tag:</label><br />
-          <select 
-            id="tag-filter"
-            value={selectedTag}
-            onChange={(e) => setSelectedTag(e.target.value)}
-            style={{
-              padding: '4px',
-              border: '2px inset #ccc',
-              fontFamily: 'Courier New, monospace',
-              fontSize: '14px',
-              marginBottom: '10px',
-              background: 'white'
-            }}
-          >
-            <option value="">All tags</option>
-            {allTags.map((tag: string) => (
-              <option key={tag} value={tag}>{tag}</option>
+          <label>Filter by tags (click to toggle):</label><br />
+          <div style={{ marginTop: '5px' }}>
+            {allTags.map((tag) => (
+              <button
+                key={tag.name}
+                onClick={() => toggleTag(tag.name)}
+                style={{
+                  margin: '2px',
+                  padding: '4px 8px',
+                  fontSize: '12px',
+                  backgroundColor: selectedTags.includes(tag.name) ? '#ffff00' : '#f0f0f0',
+                  border: selectedTags.includes(tag.name) ? '2px solid #000' : '1px solid #ccc',
+                  fontFamily: 'Courier New, monospace',
+                  cursor: 'pointer',
+                  fontWeight: selectedTags.includes(tag.name) ? 'bold' : 'normal'
+                }}
+              >
+                {tag.name} ({tag.count})
+              </button>
             ))}
-          </select>
+          </div>
+          <small>Selected tags: {selectedTags.length > 0 ? selectedTags.join(', ') : 'None'}</small>
         </div>
 
-        {(searchTerm || selectedTag) && (
+        {(searchTerm || selectedTags.length > 0) && (
           <p>
             Showing {filteredSongs.length} of {songs.length} songs
             {searchTerm && ` matching "${searchTerm}"`}
-            {selectedTag && ` tagged "${selectedTag}"`}
+            {selectedTags.length > 0 && ` with tags: ${selectedTags.join(', ')}`}
             {" "}
             <button 
-              onClick={() => { setSearchTerm(""); setSelectedTag("") }}
+              onClick={clearAllFilters}
               style={{ fontSize: '12px', padding: '2px 4px' }}
             >
-              Clear filters
+              Clear all filters
             </button>
           </p>
         )}

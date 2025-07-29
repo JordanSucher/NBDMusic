@@ -38,7 +38,7 @@ export default function LoginPage() {
 
   return (
     <div className="container">
-      <h1>Early Bird - Login</h1>
+      <h1>login</h1>
       
       <form onSubmit={handleSubmit}>
         {error && <div className="error">{error}</div>}

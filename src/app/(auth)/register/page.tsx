@@ -58,7 +58,7 @@ export default function RegisterPage() {
 
   return (
     <div className="container">
-      <h1>Early Bird - Register</h1>
+      <h1>create account</h1>
       
       <form onSubmit={handleSubmit}>
         {error && <div className="error">{error}</div>}

@@ -1,9 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+
+interface TagWithCount {
+  name: string
+  count: number
+}
 
 export default function UploadPage() {
   const { data: session, status } = useSession()
@@ -14,6 +19,25 @@ export default function UploadPage() {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const [allTags, setAllTags] = useState<TagWithCount[]>([])
+  const [tagSuggestions, setTagSuggestions] = useState<TagWithCount[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+
+  useEffect(() => {
+    fetchTagsWithCounts()
+  }, [])
+
+  const fetchTagsWithCounts = async () => {
+    try {
+      const response = await fetch('/api/tags/counts')
+      if (response.ok) {
+        const data = await response.json()
+        setAllTags(data.tags)
+      }
+    } catch (err) {
+      console.error("Failed to load tags:", err)
+    }
+  }
 
   // Redirect if not logged in
   if (status === "loading") {
@@ -64,7 +88,50 @@ export default function UploadPage() {
       
       setFile(selectedFile)
       setError("")
+      
+      // Auto-populate title from filename
+      const nameWithoutExtension = selectedFile.name.replace(/\.[^/.]+$/, "")
+      const cleanTitle = nameWithoutExtension
+        .replace(/[-_]/g, ' ') // Replace dashes and underscores with spaces
+        .replace(/\b\w/g, l => l.toUpperCase()) // Capitalize first letter of each word
+      
+      setTitle(cleanTitle)
     }
+  }
+
+  const handleTagsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setTags(value)
+    
+    // Get the current tag being typed (after the last comma)
+    const currentTag = value.split(',').pop()?.trim().toLowerCase() || ''
+    
+    if (currentTag.length > 0) {
+      const filtered = allTags.filter(tag => 
+        tag.name.toLowerCase().includes(currentTag) &&
+        !value.toLowerCase().includes(tag.name.toLowerCase())
+      ).slice(0, 5) // Limit to 5 suggestions
+      
+      setTagSuggestions(filtered)
+      setShowSuggestions(true)
+    } else {
+      setShowSuggestions(false)
+    }
+  }
+
+  const addSuggestedTag = (tagName: string) => {
+    const lastTagIndex = tags.lastIndexOf(',')
+    
+    if (lastTagIndex === -1) {
+      // No commas yet, replace entire input
+      setTags(tagName)
+    } else {
+      // Replace the text after the last comma
+      const beforeLastComma = tags.substring(0, lastTagIndex + 1)
+      setTags(beforeLastComma + ' ' + tagName)
+    }
+    
+    setShowSuggestions(false)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -135,18 +202,6 @@ export default function UploadPage() {
         {success && <div className="success">{success}</div>}
         
         <div className="mb-10">
-          <label htmlFor="title">Song Title:</label><br />
-          <input
-            type="text"
-            id="title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Enter your song title"
-            required
-          />
-        </div>
-
-        <div className="mb-10">
           <label htmlFor="file">Audio File:</label><br />
           <input
             type="file"
@@ -159,15 +214,63 @@ export default function UploadPage() {
         </div>
 
         <div className="mb-10">
+          <label htmlFor="title">Song Title:</label><br />
+          <input
+            type="text"
+            id="title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Enter your song title"
+            required
+          />
+          <small>Auto-filled from filename, but you can edit it</small>
+        </div>
+
+        <div className="mb-10" style={{ position: 'relative' }}>
           <label htmlFor="tags">Tags (optional):</label><br />
           <input
             type="text"
             id="tags"
             value={tags}
-            onChange={(e) => setTags(e.target.value)}
+            onChange={handleTagsChange}
+            onFocus={() => tags.length > 0 && setShowSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
             placeholder="demo, rock, work-in-progress, acoustic (comma separated)"
           />
-          <small>Separate multiple tags with commas</small>
+          <small>Start typing to see suggestions from other songs</small>
+          
+          {showSuggestions && tagSuggestions.length > 0 && (
+            <div style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              right: 0,
+              backgroundColor: 'white',
+              border: '2px solid #ccc',
+              borderTop: 'none',
+              maxHeight: '150px',
+              overflowY: 'auto',
+              zIndex: 1000
+            }}>
+              {tagSuggestions.map(tag => (
+                <div
+                  key={tag.name}
+                  onClick={() => addSuggestedTag(tag.name)}
+                  style={{
+                    padding: '8px',
+                    cursor: 'pointer',
+                    borderBottom: '1px solid #eee',
+                    fontFamily: 'Courier New, monospace',
+                    fontSize: '12px'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                >
+                  <strong>{tag.name}</strong> ({tag.count} song{tag.count !== 1 ? 's' : ''})
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {file && (
@@ -184,10 +287,10 @@ export default function UploadPage() {
       <div className="mb-20">
         <h3>Tips:</h3>
         <ul>
+          <li>Upload your file first - the title will be auto-filled from the filename</li>
           <li>Use descriptive titles for your songs</li>
           <li>Tag your music to help others discover it</li>
-          <li>Common tags: demo, rock, pop, acoustic, electronic, work-in-progress</li>
-          <li>Keep file sizes reasonable for faster streaming</li>
+          <li>Popular tags: {allTags.slice(0, 5).map(tag => `${tag.name} (${tag.count})`).join(', ')}</li>
         </ul>
       </div>
     </div>

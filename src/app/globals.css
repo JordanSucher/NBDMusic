@@ -227,6 +227,13 @@ nav button {
   border: 1px solid #000 !important;
   font-size: 11px !important;
   font-family: 'Courier New', monospace !important;
+  display: inline-block !important;
+  cursor: pointer !important;
+}
+
+.tag-link .tag:hover {
+  background-color: #ffdd00 !important;
+  text-decoration: underline !important;
 }
 
 /* Audio player */

@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Early Bird",
+  title: "nbd",
   description: "Weird shit summer.",
 };
 
