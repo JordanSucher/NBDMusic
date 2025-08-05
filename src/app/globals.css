@@ -75,16 +75,17 @@ li {
 
 /* Links */
 a {
-  color: #0000ff !important;
+  color: #0000ff;
   text-decoration: underline !important;
   font-family: 'Courier New', monospace !important;
 }
 
-a:visited {
+/* a:visited {
   color: #800080 !important;
-}
+} */
 
 a:hover {
+  color: black !important;
   background-color: #ffff00 !important;
 }
 

@@ -224,7 +224,7 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
             marginBottom: '10px'
           }}>
             <strong>Tracks:</strong>
-            <button
+            {/* <button
               type="button"
               onClick={() => setShowAllTracks(!showAllTracks)}
               style={{ 
@@ -233,7 +233,7 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
               }}
             >
               {showAllTracks ? 'Show less' : 'Show all tracks'}
-            </button>
+            </button> */}
           </div>
 
           {/* Current track player */}
@@ -306,7 +306,7 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
           <Link 
             href={`/edit/${release.id}`}
             style={{
-              backgroundColor: '#4444ff',
+              backgroundColor: 'blue',
               color: 'white',
               fontSize: '12px',
               padding: '4px 8px',

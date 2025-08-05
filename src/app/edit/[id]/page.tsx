@@ -492,6 +492,20 @@ export default function EditReleasePage() {
         {error && <div className="error">{error}</div>}
         {success && <div className="success">{success}</div>}
         
+        {/* Release title */}
+         <div className="mb-10">
+          <label htmlFor="releaseTitle">Release Title:</label><br />
+          <input
+            type="text"
+            id="releaseTitle"
+            value={releaseTitle}
+            onChange={(e) => setReleaseTitle(e.target.value)}
+            placeholder="Enter release title"
+            required
+          />
+        </div>
+
+
         {/* Artwork Management */}
         <div className="mb-10">
           <label>Artwork:</label><br />
@@ -531,7 +545,7 @@ export default function EditReleasePage() {
                     color: 'white'
                   }}
                 >
-                  Remove Current
+                  Remove
                 </button>
               </div>
             </div>
@@ -559,7 +573,7 @@ export default function EditReleasePage() {
           {/* New artwork upload */}
           <div>
             <label htmlFor="artwork">
-              {currentArtworkUrl && !removeCurrentArtwork ? 'Replace with new artwork:' : 'Upload artwork:'}
+              {currentArtworkUrl && !removeCurrentArtwork ? 'Replace artwork:' : 'Upload artwork:'}
             </label><br />
             <input
               type="file"
@@ -618,7 +632,7 @@ export default function EditReleasePage() {
 
         {/* Add New Tracks */}
         <div className="mb-10">
-          <label htmlFor="newTracks">Add New Tracks (optional):</label><br />
+          <label htmlFor="newTracks">Add Tracks:</label><br />
           <input
             type="file"
             id="newTracks"
@@ -713,18 +727,6 @@ export default function EditReleasePage() {
         )}
 
         {/* Release Info */}
-        <div className="mb-10">
-          <label htmlFor="releaseTitle">Release Title:</label><br />
-          <input
-            type="text"
-            id="releaseTitle"
-            value={releaseTitle}
-            onChange={(e) => setReleaseTitle(e.target.value)}
-            placeholder="Enter release title"
-            required
-          />
-        </div>
-
         <div className="mb-10">
           <label htmlFor="releaseType">Release Type:</label><br />
           <select
