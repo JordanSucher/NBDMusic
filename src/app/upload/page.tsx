@@ -62,20 +62,47 @@ export default function UploadPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
     if (selectedFile) {
-      // Check file type - be more permissive and check extension too
+      // More permissive file type checking for mobile devices
       const allowedTypes = [
         'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 
-        'audio/m4a', 'audio/mp4', 'audio/x-m4a', 'audio/aac'
+        'audio/m4a', 'audio/mp4', 'audio/x-m4a', 'audio/aac',
+        'audio/mp4a-latm', 'audio/x-caf', 'audio/quicktime',
+        '', // Some mobile browsers report empty MIME type
       ]
       
       const fileExtension = selectedFile.name.split('.').pop()?.toLowerCase()
-      const allowedExtensions = ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'mp4']
+      const allowedExtensions = ['mp3', 'wav', 'ogg', 'm4a', 'aac']
+      const audioExtensions = ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac', 'wma']
+      const videoExtensions = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'wmv', 'flv']
       
-      const isValidType = allowedTypes.includes(selectedFile.type) || 
-                         (fileExtension && allowedExtensions.includes(fileExtension))
+      // Reject obvious video files by extension
+      if (fileExtension && videoExtensions.includes(fileExtension)) {
+        setError("Video files are not supported. Please upload an audio file.")
+        return
+      }
+      
+      // Reject video MIME types (except video/mp4 which could be audio on iPhone)
+      const videoMimeTypes = ['video/avi', 'video/mkv', 'video/webm', 'video/quicktime', 'video/x-msvideo']
+      if (videoMimeTypes.includes(selectedFile.type)) {
+        setError("Video files are not supported. Please upload an audio file.")
+        return
+      }
+      
+      // Special case: video/mp4 is only allowed if extension suggests audio
+      if (selectedFile.type === 'video/mp4' && fileExtension && !['m4a'].includes(fileExtension)) {
+        setError("Video files are not supported. Please upload an audio file.")
+        return
+      }
+      
+      // Accept if: valid audio MIME type OR valid audio extension OR starts with audio/
+      const hasValidMimeType = allowedTypes.includes(selectedFile.type) || selectedFile.type.startsWith('audio/')
+      const hasValidExtension = fileExtension && allowedExtensions.includes(fileExtension)
+      const isEmptyTypeWithAudioExt = selectedFile.type === '' && fileExtension && audioExtensions.includes(fileExtension)
+      
+      const isValidType = hasValidMimeType || hasValidExtension || isEmptyTypeWithAudioExt
       
       if (!isValidType) {
-        setError("Please upload an audio file (MP3, WAV, OGG, M4A, or AAC)")
+        setError(`File type not supported. Detected: "${selectedFile.type}" with extension ".${fileExtension}". Please upload an audio file.`)
         return
       }
       
