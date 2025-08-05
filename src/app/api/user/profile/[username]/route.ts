@@ -26,13 +26,18 @@ export async function GET(
       )
     }
 
-    // Get user's songs with tags
-    const songs = await db.song.findMany({
+    // Get user's releases with tracks and tags
+    const releases = await db.release.findMany({
       where: { userId: user.id },
       include: {
         user: {
           select: {
             username: true
+          }
+        },
+        tracks: {
+          orderBy: {
+            trackNumber: 'asc'
           }
         },
         tags: {
@@ -47,28 +52,49 @@ export async function GET(
     })
 
     // Calculate stats
-    const totalFileSize = songs.reduce((total: number, song: { fileSize: number }) => total + song.fileSize, 0)
+    const totalFileSize = releases.reduce((total, release) => {
+      return total + release.tracks.reduce((releaseTotal, track) => releaseTotal + track.fileSize, 0)
+    }, 0)
+    
+    const trackCount = releases.reduce((total, release) => total + release.tracks.length, 0)
     
     // Get all unique tags
     const allTagsSet = new Set<string>()
-    songs.forEach((song: { tags: { tag: { name: string } }[] }) => {
-      song.tags.forEach((songTag: { tag: { name: string } }) => {
-        allTagsSet.add(songTag.tag.name)
+    releases.forEach(release => {
+      release.tags.forEach(releaseTag => {
+        allTagsSet.add(releaseTag.tag.name)
       })
     })
     const allTags = Array.from(allTagsSet).sort()
 
+    // Count release types
+    const releaseTypeCounts = {
+      single: 0,
+      ep: 0,
+      album: 0,
+      demo: 0
+    }
+    
+    releases.forEach(release => {
+      const type = release.releaseType as keyof typeof releaseTypeCounts
+      if (type in releaseTypeCounts) {
+        releaseTypeCounts[type]++
+      }
+    })
+
     const profile = {
       username: user.username,
-      songCount: songs.length,
+      releaseCount: releases.length,
+      trackCount,
       totalFileSize,
       joinedAt: user.createdAt.toISOString(),
-      allTags
+      allTags,
+      releaseTypeCounts
     }
 
     return NextResponse.json({
       profile,
-      songs
+      releases
     })
   } catch (error) {
     console.error("Error fetching user profile:", error)

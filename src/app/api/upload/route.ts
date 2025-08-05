@@ -6,166 +6,139 @@ import { authOptions } from "@/lib/auth"
 
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication
+    // Check authentication  
     const session = await getServerSession(authOptions as Record<string, unknown>) as { user?: { id?: string } } | null
     if (!session?.user?.id) {
       return NextResponse.json(
-        { error: "You must be logged in to upload songs" },
+        { error: "You must be logged in to upload music" },
         { status: 401 }
       )
     }
 
-    // Parse form data
     const formData = await request.formData()
-    const file = formData.get('file') as File
-    const title = formData.get('title') as string
+    
+    // Extract release data
+    const releaseTitle = formData.get('releaseTitle') as string
+    const releaseDescription = formData.get('releaseDescription') as string
+    const releaseType = formData.get('releaseType') as string
     const tags = formData.get('tags') as string
+    const trackCount = parseInt(formData.get('trackCount') as string)
+    const artworkFile = formData.get('artwork') as File | null
 
-    // Validate inputs
-    if (!file) {
+    if (!releaseTitle?.trim()) {
       return NextResponse.json(
-        { error: "No file provided" },
+        { error: "Release title is required" },
         { status: 400 }
       )
     }
 
-    if (!title?.trim()) {
+    if (trackCount === 0) {
       return NextResponse.json(
-        { error: "Song title is required" },
+        { error: "At least one track is required" },
         { status: 400 }
       )
     }
 
-    // Validate file type - be permissive for mobile audio but reject videos
-    const allowedTypes = [
-      'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 
-      'audio/m4a', 'audio/mp4', 'audio/x-m4a', 'audio/aac',
-      'audio/mp4a-latm', 'audio/x-caf', 'audio/quicktime',
-      '', // Some mobile browsers report empty MIME type
-    ]
-    
-    // Check file extension
-    const fileExt = file.name.split('.').pop()?.toLowerCase()
-    const allowedExtensions = ['mp3', 'wav', 'ogg', 'm4a', 'aac']
-    const audioExtensions = ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac', 'wma']
-    const videoExtensions = ['mp4', 'mov', 'avi', 'mkv', 'webm', 'wmv', 'flv']
-    
-    // Reject obvious video files
-    if (fileExt && videoExtensions.includes(fileExt)) {
-      return NextResponse.json(
-        { error: "Video files are not supported. Please upload an audio file." },
-        { status: 400 }
-      )
-    }
-    
-    // Reject video MIME types (except video/mp4 which could be audio on iPhone)
-    const videoMimeTypes = ['video/avi', 'video/mkv', 'video/webm', 'video/quicktime', 'video/x-msvideo']
-    if (videoMimeTypes.includes(file.type)) {
-      return NextResponse.json(
-        { error: "Video files are not supported. Please upload an audio file." },
-        { status: 400 }
-      )
-    }
-    
-    // Special case: video/mp4 is only allowed if extension suggests audio
-    if (file.type === 'video/mp4' && fileExt && !['m4a', 'mp4'].includes(fileExt)) {
-      return NextResponse.json(
-        { error: "Video files are not supported. Please upload an audio file." },
-        { status: 400 }
-      )
-    }
-    
-    // Accept if: valid audio MIME type OR valid audio extension OR starts with audio/
-    const hasValidMimeType = allowedTypes.includes(file.type) || file.type.startsWith('audio/')
-    const hasValidExtension = fileExt && allowedExtensions.includes(fileExt)
-    const isEmptyTypeWithAudioExt = file.type === '' && fileExt && audioExtensions.includes(fileExt)
-    
-    const isValidType = hasValidMimeType || hasValidExtension || isEmptyTypeWithAudioExt
-    
-    if (!isValidType) {
-      console.log(`File validation failed. Type: "${file.type}", Extension: "${fileExt}", Name: "${file.name}"`)
-      return NextResponse.json(
-        { error: `File type not supported. Detected: "${file.type}" with extension ".${fileExt}". Please upload an audio file (MP3, WAV, M4A, etc.).` },
-        { status: 400 }
-      )
+    // Upload artwork to blob storage if provided
+    let artworkUrl: string | null = null
+    if (artworkFile && artworkFile.size > 0) {
+      try {
+        const artworkBlob = await put(`artwork/${Date.now()}-${artworkFile.name}`, artworkFile, {
+          access: 'public',
+        })
+        artworkUrl = artworkBlob.url
+      } catch (error) {
+        console.error("Failed to upload artwork:", error)
+        return NextResponse.json(
+          { error: "Failed to upload artwork" },
+          { status: 500 }
+        )
+      }
     }
 
-    // Validate file size (50MB limit)
-    const maxSize = 50 * 1024 * 1024
-    if (file.size > maxSize) {
-      return NextResponse.json(
-        { error: "File size exceeds 50MB limit" },
-        { status: 400 }
-      )
+    // Upload all track files to blob storage
+    const trackUploads = []
+    for (let i = 0; i < trackCount; i++) {
+      const trackFile = formData.get(`track_${i}_file`) as File
+      const trackTitle = formData.get(`track_${i}_title`) as string
+      const trackNumber = parseInt(formData.get(`track_${i}_number`) as string)
+
+      if (!trackFile || !trackTitle) {
+        return NextResponse.json(
+          { error: `Track ${i + 1} is missing file or title` },
+          { status: 400 }
+        )
+      }
+
+      try {
+        const blob = await put(`tracks/${Date.now()}-${trackFile.name}`, trackFile, {
+          access: 'public',
+        })
+
+        trackUploads.push({
+          title: trackTitle.trim(),
+          trackNumber,
+          fileName: trackFile.name,
+          fileUrl: blob.url,
+          fileSize: trackFile.size,
+          mimeType: trackFile.type
+        })
+      } catch (error) {
+        console.error(`Failed to upload track ${i + 1}:`, error)
+        return NextResponse.json(
+          { error: `Failed to upload track: ${trackTitle}` },
+          { status: 500 }
+        )
+      }
     }
 
-    // Generate unique filename
-    const timestamp = Date.now()
-    const sanitizedTitle = title.trim().replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()
-    const fileExtension = file.name.split('.').pop()
-    const fileName = `${session.user.id}-${timestamp}-${sanitizedTitle}.${fileExtension}`
-
-    // Upload to Vercel Blob
-    const blob = await put(fileName, file, {
-      access: 'public',
-      contentType: file.type,
-    })
-
-    // Save to database
-    const song = await db.song.create({
+    // Create release in database
+    const release = await db.release.create({
       data: {
-        title: title.trim(),
-        fileName: file.name,
-        fileUrl: blob.url,
-        fileSize: file.size,
-        mimeType: file.type,
+        title: releaseTitle.trim(),
+        description: releaseDescription.trim() || null,
+        releaseType,
+        artworkUrl,
         userId: session.user.id,
-      },
+        tracks: {
+          create: trackUploads
+        }
+      }
     })
 
     // Handle tags if provided
-    if (tags?.trim()) {
-      const tagNames = tags
-        .split(',')
-        .map(tag => tag.trim().toLowerCase())
-        .filter(tag => tag.length > 0)
-        .slice(0, 10) // Limit to 10 tags
-
+    if (tags.trim()) {
+      const tagNames = tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
+      
       for (const tagName of tagNames) {
-        // Find or create tag
-        let tag = await db.tag.findUnique({
-          where: { name: tagName }
+        // Find or create the tag
+        const tag = await db.tag.upsert({
+          where: { name: tagName },
+          create: { name: tagName },
+          update: {}
         })
 
-        if (!tag) {
-          tag = await db.tag.create({
-            data: { name: tagName }
-          })
-        }
-
-        // Link song to tag
-        await db.songTag.create({
+        // Create the release-tag relationship
+        await db.releaseTag.create({
           data: {
-            songId: song.id,
-            tagId: tag.id,
-          },
+            releaseId: release.id,
+            tagId: tag.id
+          }
         })
       }
     }
 
-    return NextResponse.json(
-      { 
-        message: "Song uploaded successfully",
-        songId: song.id,
-        url: blob.url 
-      },
-      { status: 201 }
-    )
+    return NextResponse.json({
+      message: "Release uploaded successfully!",
+      releaseId: release.id,
+      trackCount: trackUploads.length,
+      hasArtwork: !!artworkUrl
+    })
 
   } catch (error) {
     console.error("Upload error:", error)
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Failed to upload release" },
       { status: 500 }
     )
   }

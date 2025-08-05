@@ -3,14 +3,25 @@
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
-import SongCard from "@/components/SongCard"
+import ReleaseCard from "@/components/ReleaseCard"
 
-interface Song {
+interface Track {
   id: string
   title: string
+  trackNumber: number
   fileName: string
   fileUrl: string
   fileSize: number
+  duration: number | null
+  mimeType: string
+}
+
+interface Release {
+  id: string
+  title: string
+  description: string | null
+  releaseType: string
+  artworkUrl: string | null
   uploadedAt: string
   user: {
     username: string
@@ -20,50 +31,56 @@ interface Song {
       name: string
     }
   }[]
+  tracks: Track[]
 }
 
 interface UserProfile {
   username: string
-  songCount: number
+  releaseCount: number
+  trackCount: number
   totalFileSize: number
   joinedAt: string
   allTags: string[]
+  releaseTypeCounts: {
+    single: number
+    ep: number
+    album: number
+    demo: number
+  }
 }
 
 export default function PublicUserProfilePage() {
   const params = useParams()
   const username = params.username as string
-  const [songs, setSongs] = useState<Song[]>([])
+  const [releases, setReleases] = useState<Release[]>([])
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
   useEffect(() => {
     const fetchUserProfile = async () => {
-    try {
-      const response = await fetch(`/api/user/profile/${encodeURIComponent(username)}`)
-      if (response.ok) {
-        const data = await response.json()
-        setSongs(data.songs)
-        setUserProfile(data.profile)
-      } else if (response.status === 404) {
-        setError("User not found")
-      } else {
-        setError("Failed to load user profile")
+      try {
+        const response = await fetch(`/api/user/profile/${encodeURIComponent(username)}`)
+        if (response.ok) {
+          const data = await response.json()
+          setReleases(data.releases)
+          setUserProfile(data.profile)
+        } else if (response.status === 404) {
+          setError("User not found")
+        } else {
+          setError("Failed to load user profile")
+        }
+      } catch {
+        setError("Something went wrong")
+      } finally {
+        setLoading(false)
       }
-    } catch {
-      setError("Something went wrong")
-    } finally {
-      setLoading(false)
     }
-  }
-  
+    
     if (username) {
       fetchUserProfile()
     }
   }, [username])
-
-  
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes'
@@ -121,7 +138,14 @@ export default function PublicUserProfilePage() {
         <h2>About {userProfile.username}</h2>
         <div className="mb-10">
           <ul>
-            <li>Songs shared: {userProfile.songCount}</li>
+            <li>Releases shared: {userProfile.releaseCount}</li>
+            <li>Total tracks: {userProfile.trackCount}</li>
+            <li>
+              Catalog: {userProfile.releaseTypeCounts.single} single{userProfile.releaseTypeCounts.single !== 1 ? 's' : ''}, {" "}
+              {userProfile.releaseTypeCounts.ep} EP{userProfile.releaseTypeCounts.ep !== 1 ? 's' : ''}, {" "}
+              {userProfile.releaseTypeCounts.album} album{userProfile.releaseTypeCounts.album !== 1 ? 's' : ''}, {" "}
+              {userProfile.releaseTypeCounts.demo} demo{userProfile.releaseTypeCounts.demo !== 1 ? 's' : ''}
+            </li>
             <li>Total content: {formatFileSize(userProfile.totalFileSize)}</li>
             <li>Genres/tags: {userProfile.allTags.length > 0 ? userProfile.allTags.join(', ') : 'None yet'}</li>
             <li>Member since: {new Date(userProfile.joinedAt).toLocaleDateString()}</li>
@@ -129,29 +153,29 @@ export default function PublicUserProfilePage() {
         </div>
       </div>
 
-      {/* Songs List */}
+      {/* Releases List */}
       <div>
-        <h2>{userProfile.username}&apos;s Songs ({songs.length})</h2>
+        <h2>{userProfile.username}&apos;s Releases ({releases.length})</h2>
         
-        {songs.length === 0 ? (
+        {releases.length === 0 ? (
           <div>
-            <p>{userProfile.username} hasn&apos;t shared any songs yet.</p>
+            <p>{userProfile.username} hasn&apos;t shared any releases yet.</p>
           </div>
         ) : (
           <div>
-            {songs.map(song => (
-              <SongCard key={song.id} song={song} />
+            {releases.map(release => (
+              <ReleaseCard key={release.id} release={release} />
             ))}
           </div>
         )}
       </div>
 
       {/* Discovery */}
-      {songs.length > 0 && (
+      {releases.length > 0 && (
         <div className="mb-20">
           <h3>Discover More</h3>
           <ul>
-            <li><Link href="/browse">Browse all songs</Link></li>
+            <li><Link href="/browse">Browse all releases</Link></li>
             {userProfile.allTags.length > 0 && (
               <li>
                 Similar artists with tags: {" "}

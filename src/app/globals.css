@@ -159,6 +159,122 @@ button[style*="background-color: #ff4444"]:active {
   border: 2px inset #ff4444 !important;
 }
 
+/* Track reorder buttons */
+.track-reorder-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-right: 8px;
+}
+
+.track-move-btn {
+  width: 24px !important;
+  height: 18px !important;
+  padding: 0 !important;
+  font-size: 12px !important;
+  font-weight: bold !important;
+  line-height: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 2px outset #ddd !important;
+  background-color: #e8e8e8 !important;
+  color: #333 !important;
+  font-family: 'Courier New', monospace !important;
+  cursor: pointer !important;
+  user-select: none !important;
+}
+
+.track-move-btn:hover:not(:disabled) {
+  background-color: #d0d0d0 !important;
+  border-color: #bbb !important;
+}
+
+.track-move-btn:active:not(:disabled) {
+  border: 2px inset #ddd !important;
+  background-color: #c8c8c8 !important;
+}
+
+.track-move-btn:disabled {
+  background-color: #f0f0f0 !important;
+  color: #aaa !important;
+  border: 2px outset #e8e8e8 !important;
+  cursor: not-allowed !important;
+}
+
+.track-move-btn.move-up {
+  border-radius: 3px 3px 0 0;
+}
+
+.track-move-btn.move-down {
+  border-radius: 0 0 3px 3px;
+}
+
+/* Track row styling for edit page */
+.track-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 6px;
+  border: 1px solid #ddd;
+  background-color: #fafafa;
+}
+
+.track-row.marked-for-deletion {
+  opacity: 0.6;
+  background-color: #fff0f0;
+  border-color: #ffcccc;
+}
+
+.track-row .track-number {
+  font-weight: bold;
+  font-size: 14px;
+  min-width: 80px;
+  font-family: 'Courier New', monospace !important;
+  margin-top: 4px;
+}
+
+.track-row .track-title-input {
+  flex: 1;
+  margin-bottom: 0 !important;
+  min-width: 250px !important;
+}
+
+.track-row .track-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.track-row .track-info {
+  font-size: 11px;
+  color: #666;
+  margin-top: 2px;
+  font-family: 'Courier New', monospace !important;
+}
+
+.track-row .track-status {
+  font-size: 11px;
+  font-weight: bold;
+  margin-left: 8px;
+}
+
+.track-row .track-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.track-status.new {
+  color: #008800;
+}
+
+.track-status.delete {
+  color: #ff0000;
+}
+
 /* Tables */
 table {
   width: 100%;

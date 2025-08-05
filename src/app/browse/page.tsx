@@ -4,15 +4,25 @@ import { useState, useEffect, Suspense } from "react"
 import { useSession } from "next-auth/react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
-// import AudioPlayer from "@/components/AudioPlayer"
-import SongCard from "@/components/SongCard"
+import ReleaseCard from "@/components/ReleaseCard"
 
-interface Song {
+interface Track {
   id: string
   title: string
+  trackNumber: number
   fileName: string
   fileUrl: string
   fileSize: number
+  duration: number | null
+  mimeType: string
+}
+
+interface Release {
+  id: string
+  title: string
+  description: string | null
+  releaseType: string
+  artworkUrl: string | null
   uploadedAt: string
   user: {
     username: string
@@ -22,12 +32,13 @@ interface Song {
       name: string
     }
   }[]
+  tracks: Track[]
 }
 
 function BrowseContent() {
   const { data: session } = useSession()
   const searchParams = useSearchParams()
-  const [songs, setSongs] = useState<Song[]>([])
+  const [releases, setReleases] = useState<Release[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
@@ -35,7 +46,7 @@ function BrowseContent() {
   const [allTags, setAllTags] = useState<{name: string, count: number}[]>([])
 
   useEffect(() => {
-    fetchSongs()
+    fetchReleases()
     fetchTags()
     
     // Check for tag filter in URL
@@ -45,17 +56,17 @@ function BrowseContent() {
     }
   }, [searchParams])
 
-  const fetchSongs = async () => {
+  const fetchReleases = async () => {
     try {
-      const response = await fetch('/api/songs')
+      const response = await fetch('/api/releases')
       if (response.ok) {
         const data = await response.json()
-        setSongs(data.songs)
+        setReleases(data.releases)
       } else {
-        setError("Failed to load songs")
+        setError("Failed to load releases")
       }
     } catch (err) {
-      setError("Something went wrong: " + err)
+      setError("Something went wrong:" + err)
     } finally {
       setLoading(false)
     }
@@ -88,13 +99,14 @@ function BrowseContent() {
     setSelectedTags([])
   }
 
-  const filteredSongs = songs.filter(song => {
-    const matchesSearch = song.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         song.user.username.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredReleases = releases.filter(release => {
+    const matchesSearch = release.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         release.user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         release.tracks.some(track => track.title.toLowerCase().includes(searchTerm.toLowerCase()))
     
     const matchesTags = selectedTags.length === 0 || 
                        selectedTags.every(selectedTag => 
-                         song.tags.some(songTag => songTag.tag.name === selectedTag)
+                         release.tags.some(releaseTag => releaseTag.tag.name === selectedTag)
                        )
     
     return matchesSearch && matchesTags
@@ -103,19 +115,19 @@ function BrowseContent() {
   if (loading) {
     return (
       <div className="container">
-        <h1>Browse Songs</h1>
-        <p>Loading songs...</p>
+        <h1>Browse Music</h1>
+        <p>Loading releases...</p>
       </div>
     )
   }
 
   return (
     <div className="container">
-      <h1>Browse Songs</h1>
+      <h1>Browse Music</h1>
       
       <nav>
         <Link href="/">← Back to home</Link>
-        {session && <Link href="/upload">Upload song</Link>}
+        {session && <Link href="/upload">Upload music</Link>}
       </nav>
 
       {/* Search and Filter */}
@@ -123,7 +135,7 @@ function BrowseContent() {
         <h3>Search & Filter</h3>
         
         <div className="mb-10">
-          <label htmlFor="search">Search songs or artists:</label><br />
+          <label htmlFor="search">Search releases, tracks, or artists:</label><br />
           <input
             type="text"
             id="search"
@@ -160,7 +172,7 @@ function BrowseContent() {
 
         {(searchTerm || selectedTags.length > 0) && (
           <p>
-            Showing {filteredSongs.length} of {songs.length} songs
+            Showing {filteredReleases.length} of {releases.length} releases
             {searchTerm && ` matching "${searchTerm}"`}
             {selectedTags.length > 0 && ` with tags: ${selectedTags.join(', ')}`}
             {" "}
@@ -174,29 +186,29 @@ function BrowseContent() {
         )}
       </div>
 
-      {/* Song List */}
+      {/* Release List */}
       {error && <div className="error">{error}</div>}
       
-      {filteredSongs.length === 0 ? (
+      {filteredReleases.length === 0 ? (
         <div>
-          {songs.length === 0 ? (
+          {releases.length === 0 ? (
             <div>
-              <p>No songs uploaded yet.</p>
+              <p>No music uploaded yet.</p>
               {session ? (
-                <p><Link href="/upload">Be the first to upload a song!</Link></p>
+                <p><Link href="/upload">Be the first to upload a release!</Link></p>
               ) : (
                 <p><Link href="/register">Create an account</Link> to start sharing your music.</p>
               )}
             </div>
           ) : (
-            <p>No songs match your search criteria.</p>
+            <p>No releases match your search criteria.</p>
           )}
         </div>
       ) : (
         <div>
-          <h3>Songs ({filteredSongs.length})</h3>
-          {filteredSongs.map(song => (
-            <SongCard key={song.id} song={song} />
+          <h3>Releases ({filteredReleases.length})</h3>
+          {filteredReleases.map(release => (
+            <ReleaseCard key={release.id} release={release} />
           ))}
         </div>
       )}
@@ -208,7 +220,7 @@ export default function BrowsePage() {
   return (
     <Suspense fallback={
       <div className="container">
-        <h1>Browse Songs</h1>
+        <h1>Browse Music</h1>
         <p>Loading...</p>
       </div>
     }>

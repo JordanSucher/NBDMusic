@@ -3,14 +3,25 @@
 import { useState, useEffect } from "react"
 import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
-import SongCard from "@/components/SongCard"
+import ReleaseCard from "@/components/ReleaseCard"
 
-interface Song {
+interface Track {
   id: string
   title: string
+  trackNumber: number
   fileName: string
   fileUrl: string
   fileSize: number
+  duration: number | null
+  mimeType: string
+}
+
+interface Release {
+  id: string
+  title: string
+  description: string | null
+  releaseType: string
+  artworkUrl: string | null
   uploadedAt: string
   user: {
     username: string
@@ -20,26 +31,27 @@ interface Song {
       name: string
     }
   }[]
+  tracks: Track[]
 }
 
 export default function HomePage() {
   const { data: session, status } = useSession()
-  const [recentSongs, setRecentSongs] = useState<Song[]>([])
+  const [recentReleases, setRecentReleases] = useState<Release[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchRecentSongs()
+    fetchRecentReleases()
   }, [])
 
-  const fetchRecentSongs = async () => {
+  const fetchRecentReleases = async () => {
     try {
-      const response = await fetch('/api/songs?limit=5')
+      const response = await fetch('/api/releases?limit=5')
       if (response.ok) {
         const data = await response.json()
-        setRecentSongs(data.songs || [])
+        setRecentReleases(data.releases || [])
       }
     } catch (error) {
-      console.error("Failed to fetch recent songs:", error)
+      console.error("Failed to fetch recent releases:", error)
     } finally {
       setLoading(false)
     }
@@ -49,7 +61,7 @@ export default function HomePage() {
     return (
       <div className="container">
         <h1>nbd</h1>
-        <p>loading...</p>
+        <p>Loading...</p>
       </div>
     )
   }
@@ -64,8 +76,8 @@ export default function HomePage() {
       <nav>
         {session?.user ? (
           <>
-            <Link href="/upload">Upload Song</Link>
-            <Link href="/browse">Browse Songs</Link>
+            <Link href="/upload">Upload Music</Link>
+            <Link href="/browse">Browse Music</Link>
             <Link href="/profile">My Profile</Link>
             <button onClick={() => signOut()}>Logout</button>
           </>
@@ -73,7 +85,7 @@ export default function HomePage() {
           <>
             <Link href="/login">Login</Link>
             <Link href="/register">Register</Link>
-            <Link href="/browse">Browse Songs</Link>
+            <Link href="/browse">Browse Music</Link>
           </>
         )}
       </nav>
@@ -87,35 +99,35 @@ export default function HomePage() {
             <div className="mb-20">
               <h3>Quick Actions:</h3>
               <ul>
-                <li><Link href="/upload">Upload</Link></li>
-                <li><Link href="/browse">Discover</Link></li>
-                <li><Link href="/profile">Manage</Link></li>
+                <li><Link href="/upload">Upload a new release</Link></li>
+                <li><Link href="/browse">Discover new music</Link></li>
+                <li><Link href="/profile">Manage your releases</Link></li>
               </ul>
             </div>
           </div>
         ) : (<></>)}
 
-        {/* Recently Uploaded Songs */}
+        {/* Recently Uploaded Releases */}
         <div className="mb-20">
           <h2>Recent Uploads</h2>
           
           {loading ? (
-            <p>Loading recent songs...</p>
-          ) : recentSongs.length > 0 ? (
+            <p>Loading recent releases...</p>
+          ) : recentReleases.length > 0 ? (
             <div>
-              <p>Check out what folks have been sharing:</p>
-              {recentSongs.map(song => (
-                <SongCard key={song.id} song={song} />
+              <p>Check out what local musicians have been sharing:</p>
+              {recentReleases.map(release => (
+                <ReleaseCard key={release.id} release={release} />
               ))}
               <p>
-                <Link href="/browse">View all songs →</Link>
+                <Link href="/browse">View all releases →</Link>
               </p>
             </div>
           ) : (
             <div>
-              <p>No songs uploaded yet.</p>
+              <p>No music uploaded yet.</p>
               {session?.user ? (
-                <p><Link href="/upload">Be the first to upload a song!</Link></p>
+                <p><Link href="/upload">Be the first to upload a release!</Link></p>
               ) : (
                 <p><Link href="/register">Create an account</Link> and be the first to share your music!</p>
               )}

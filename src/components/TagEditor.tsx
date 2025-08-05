@@ -3,12 +3,12 @@
 import { useState } from "react"
 
 interface TagEditorProps {
-  songId: string
+  releaseId: string
   currentTags: string[]
   onTagsUpdated: (newTags: string[]) => void
 }
 
-export default function TagEditor({ songId, currentTags, onTagsUpdated }: TagEditorProps) {
+export default function TagEditor({ releaseId, currentTags, onTagsUpdated }: TagEditorProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [newTagInput, setNewTagInput] = useState("")
   const [saving, setSaving] = useState(false)
@@ -29,7 +29,7 @@ export default function TagEditor({ songId, currentTags, onTagsUpdated }: TagEdi
     setError("")
 
     try {
-      const response = await fetch(`/api/songs/${songId}/tags`, {
+      const response = await fetch(`/api/releases/${releaseId}/tags`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -45,7 +45,7 @@ export default function TagEditor({ songId, currentTags, onTagsUpdated }: TagEdi
         const data = await response.json()
         setError(data.error || "Failed to add tag")
       }
-    } catch {
+    } catch (err) {
       setError("Something went wrong")
     } finally {
       setSaving(false)
@@ -57,7 +57,7 @@ export default function TagEditor({ songId, currentTags, onTagsUpdated }: TagEdi
     setError("")
 
     try {
-      const response = await fetch(`/api/songs/${songId}/tags`, {
+      const response = await fetch(`/api/releases/${releaseId}/tags`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -72,7 +72,7 @@ export default function TagEditor({ songId, currentTags, onTagsUpdated }: TagEdi
         const data = await response.json()
         setError(data.error || "Failed to remove tag")
       }
-    } catch {
+    } catch (err) {
       setError("Something went wrong")
     } finally {
       setSaving(false)

@@ -46,42 +46,57 @@ model User {
   
   accounts Account[]
   sessions Session[]
-  songs    Song[]
+  releases Release[]
 }
 
-model Song {
+model Release {
   id          String   @id @default(cuid())
   title       String
-  fileName    String
-  fileUrl     String
-  fileSize    Int
-  duration    Int?     // in seconds
-  mimeType    String
+  description String?
+  releaseType String   @default("single") // "single", "ep", "album", "demo"
+  artworkUrl  String?  // New field for release artwork
   uploadedAt  DateTime @default(now())
   
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  tags        SongTag[]
+  tracks      Track[]
+  tags        ReleaseTag[]
   
   @@index([userId])
   @@index([uploadedAt])
 }
 
-model Tag {
-  id    String @id @default(cuid())
-  name  String @unique
-  songs SongTag[]
+model Track {
+  id          String   @id @default(cuid())
+  title       String
+  trackNumber Int      @default(1)
+  fileName    String
+  fileUrl     String
+  fileSize    Int
+  duration    Int?     // in seconds
+  mimeType    String
+  
+  releaseId   String
+  release     Release  @relation(fields: [releaseId], references: [id], onDelete: Cascade)
+  
+  @@index([releaseId])
 }
 
-model SongTag {
-  songId String
-  tagId  String
+model Tag {
+  id       String @id @default(cuid())
+  name     String @unique
+  releases ReleaseTag[]
+}
+
+model ReleaseTag {
+  releaseId String
+  tagId     String
   
-  song Song @relation(fields: [songId], references: [id], onDelete: Cascade)
-  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  release Release @relation(fields: [releaseId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
   
-  @@id([songId, tagId])
+  @@id([releaseId, tagId])
 }
 
 model VerificationToken {

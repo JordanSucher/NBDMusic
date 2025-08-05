@@ -7,13 +7,13 @@ export async function GET() {
       include: {
         _count: {
           select: {
-            songs: true
+            releases: true
           }
         }
       },
       orderBy: [
         {
-          songs: {
+          releases: {
             _count: 'desc'
           }
         },
@@ -25,7 +25,7 @@ export async function GET() {
 
     const tagsWithCounts = tags.map(tag => ({
       name: tag.name,
-      count: tag._count.songs
+      count: tag._count.releases
     }))
 
     return NextResponse.json({

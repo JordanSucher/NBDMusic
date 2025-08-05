@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     const limitParam = searchParams.get('limit')
     const limit = limitParam ? parseInt(limitParam, 10) : undefined
 
-    const songs = await db.song.findMany({
+    const releases = await db.release.findMany({
       include: {
         user: {
           select: {
@@ -18,6 +18,11 @@ export async function GET(request: NextRequest) {
           include: {
             tag: true
           }
+        },
+        tracks: {
+          orderBy: {
+            trackNumber: 'asc'
+          }
         }
       },
       orderBy: {
@@ -27,12 +32,12 @@ export async function GET(request: NextRequest) {
     })
 
     return NextResponse.json({
-      songs
+      releases
     })
   } catch (error) {
-    console.error("Error fetching songs:", error)
+    console.error("Error fetching releases:", error)
     return NextResponse.json(
-      { error: "Failed to fetch songs" },
+      { error: "Failed to fetch releases" },
       { status: 500 }
     )
   }

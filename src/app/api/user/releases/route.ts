@@ -14,8 +14,8 @@ export async function GET() {
       )
     }
 
-    // Get user's songs
-    const songs = await db.song.findMany({
+    // Get user's releases
+    const releases = await db.release.findMany({
       where: {
         userId: session.user.id
       },
@@ -29,6 +29,11 @@ export async function GET() {
           include: {
             tag: true
           }
+        },
+        tracks: {
+          orderBy: {
+            trackNumber: 'asc'
+          }
         }
       },
       orderBy: {
@@ -37,12 +42,12 @@ export async function GET() {
     })
 
     return NextResponse.json({
-      songs
+      releases
     })
   } catch (error) {
-    console.error("Error fetching user songs:", error)
+    console.error("Error fetching user releases:", error)
     return NextResponse.json(
-      { error: "Failed to fetch songs" },
+      { error: "Failed to fetch releases" },
       { status: 500 }
     )
   }

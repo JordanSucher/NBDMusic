@@ -3,14 +3,14 @@
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
-import SongCard from "@/components/SongCard"
+import ReleaseCard from "@/components/ReleaseCard"
 
-interface Song {
+interface Release {
   id: string
   title: string
-  fileName: string
-  fileUrl: string
-  fileSize: number
+  description: string | null
+  releaseType: string
+  artworkUrl: string | null
   uploadedAt: string
   user: {
     username: string
@@ -20,31 +20,41 @@ interface Song {
       name: string
     }
   }[]
+  tracks: {
+    id: string
+    title: string
+    trackNumber: number
+    fileName: string
+    fileUrl: string
+    fileSize: number
+    duration: number | null
+    mimeType: string
+  }[]
 }
 
 export default function ProfilePage() {
   const { data: session, status } = useSession()
-  const [songs, setSongs] = useState<Song[]>([])
+  const [releases, setReleases] = useState<Release[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
     if (session) {
-      fetchUserSongs()
+      fetchUserReleases()
     } else if (status !== "loading") {
       setLoading(false)
     }
   }, [session, status])
 
-  const fetchUserSongs = async () => {
+  const fetchUserReleases = async () => {
     try {
-      const response = await fetch('/api/user/songs')
+      const response = await fetch('/api/user/releases')
       if (response.ok) {
         const data = await response.json()
-        setSongs(data.songs)
+        setReleases(data.releases)
       } else {
-        setError("Failed to load your songs")
+        setError("Failed to load your releases")
       }
     } catch {
       setError("Something went wrong")
@@ -73,38 +83,27 @@ export default function ProfilePage() {
     )
   }
 
-  const handleTagsUpdated = (songId: string, newTags: string[]) => {
-    setSongs(songs.map(song => {
-      if (song.id === songId) {
-        return {
-          ...song,
-          tags: newTags.map(tagName => ({
-            tag: { name: tagName }
-          }))
-        }
-      }
-      return song
-    }))
-  }
+  // Note: Tag editing would need to be added to ReleaseCard component
+  // or implemented as a separate component/modal
 
-  const handleDeleteSong = async (songId: string) => {
-    if (!confirm("Are you sure you want to delete this song? This cannot be undone.")) {
+  const handleDeleteRelease = async (releaseId: string) => {
+    if (!confirm("Are you sure you want to delete this release? This will delete all tracks and cannot be undone.")) {
       return
     }
 
-    setDeletingId(songId)
+    setDeletingId(releaseId)
     
     try {
-      const response = await fetch(`/api/songs/${songId}`, {
+      const response = await fetch(`/api/releases/${releaseId}`, {
         method: 'DELETE',
       })
 
       if (response.ok) {
-        // Remove song from local state
-        setSongs(songs.filter(song => song.id !== songId))
+        // Remove release from local state
+        setReleases(releases.filter(release => release.id !== releaseId))
       } else {
         const data = await response.json()
-        setError(data.error || "Failed to delete song")
+        setError(data.error || "Failed to delete release")
       }
     } catch {
       setError("Something went wrong while deleting")
@@ -114,7 +113,13 @@ export default function ProfilePage() {
   }
 
   const getTotalFileSize = () => {
-    return songs.reduce((total, song) => total + song.fileSize, 0)
+    return releases.reduce((total, release) => {
+      return total + release.tracks.reduce((releaseTotal, track) => releaseTotal + track.fileSize, 0)
+    }, 0)
+  }
+
+  const getTotalTracks = () => {
+    return releases.reduce((total, release) => total + release.tracks.length, 0)
   }
 
   const formatFileSize = (bytes: number) => {
@@ -127,22 +132,35 @@ export default function ProfilePage() {
 
   const getAllTags = () => {
     const tagSet = new Set<string>()
-    songs.forEach(song => {
-      song.tags.forEach(songTag => {
-        tagSet.add(songTag.tag.name)
+    releases.forEach(release => {
+      release.tags.forEach(releaseTag => {
+        tagSet.add(releaseTag.tag.name)
       })
     })
     return Array.from(tagSet).sort()
+  }
+
+  const getReleaseTypeCounts = () => {
+    const counts = { single: 0, ep: 0, album: 0, demo: 0 }
+    releases.forEach(release => {
+      const type = release.releaseType as keyof typeof counts
+      if (type in counts) {
+        counts[type]++
+      }
+    })
+    return counts
   }
 
   if (loading) {
     return (
       <div className="container">
         <h1>My Profile</h1>
-        <p>Loading your songs...</p>
+        <p>Loading your releases...</p>
       </div>
     )
   }
+
+  const releaseTypeCounts = getReleaseTypeCounts()
 
   return (
     <div className="container">
@@ -150,8 +168,8 @@ export default function ProfilePage() {
       
       <nav>
         <Link href="/">← Back to home</Link>
-        <Link href="/upload">Upload new song</Link>
-        <Link href="/browse">Browse all songs</Link>
+        <Link href="/upload">Upload new release</Link>
+        <Link href="/browse">Browse all releases</Link>
       </nav>
 
       {/* User Stats */}
@@ -165,7 +183,9 @@ export default function ProfilePage() {
         <div className="mb-10">
           <strong>Your Stats:</strong>
           <ul>
-            <li>Songs uploaded: {songs.length}</li>
+            <li>Releases: {releases.length}</li>
+            <li>Total tracks: {getTotalTracks()}</li>
+            <li>Singles: {releaseTypeCounts.single} | EPs: {releaseTypeCounts.ep} | Albums: {releaseTypeCounts.album} | Demos: {releaseTypeCounts.demo}</li>
             <li>Total storage used: {formatFileSize(getTotalFileSize())}</li>
             <li>Tags you&apos;ve used: {getAllTags().length > 0 ? getAllTags().join(', ') : 'None yet'}</li>
             <li>Member since: {(session.user as { createdAt?: string }).createdAt ? new Date((session.user as { createdAt?: string }).createdAt!).toLocaleDateString() : 'Recently'}</li>
@@ -176,23 +196,21 @@ export default function ProfilePage() {
       {/* Error Display */}
       {error && <div className="error">{error}</div>}
 
-      {/* Songs List */}
+      {/* Releases List */}
       <div>
-        <h2>Your Songs ({songs.length})</h2>
+        <h2>Your Releases ({releases.length})</h2>
         
-        {songs.length === 0 ? (
+        {releases.length === 0 ? (
           <div>
-            <p>You haven&apos;t uploaded any songs yet.</p>
-            <p><Link href="/upload">Upload your first song!</Link></p>
+            <p>You haven&apos;t uploaded any releases yet.</p>
+            <p><Link href="/upload">Upload your first release!</Link></p>
           </div>
         ) : (
           <div>
-            {songs.map(song => (
-              <div key={song.id} style={{ position: 'relative' }}>
-                <SongCard 
-                  song={song} 
-                  showTagEditor={true}
-                  onTagsUpdated={handleTagsUpdated}
+            {releases.map(release => (
+              <div key={release.id} style={{ position: 'relative' }}>
+                <ReleaseCard 
+                  release={release}
                 />
                 
                 {/* Delete Button */}
@@ -203,8 +221,8 @@ export default function ProfilePage() {
                   paddingRight: '10px'
                 }}>
                   <button
-                    onClick={() => handleDeleteSong(song.id)}
-                    disabled={deletingId === song.id}
+                    onClick={() => handleDeleteRelease(release.id)}
+                    disabled={deletingId === release.id}
                     style={{
                       backgroundColor: '#ff4444',
                       color: 'white',
@@ -212,7 +230,7 @@ export default function ProfilePage() {
                       padding: '2px 6px'
                     }}
                   >
-                    {deletingId === song.id ? "Deleting..." : "Delete"}
+                    {deletingId === release.id ? "Deleting..." : "Delete Release"}
                   </button>
                 </div>
               </div>
@@ -222,12 +240,12 @@ export default function ProfilePage() {
       </div>
 
       {/* Quick Actions */}
-      {songs.length > 0 && (
+      {releases.length > 0 && (
         <div className="mb-20">
           <h3>Quick Actions</h3>
           <ul>
-            <li><Link href="/upload">Upload another song</Link></li>
-            <li><Link href="/browse">See how your songs look to others</Link></li>
+            <li><Link href="/upload">Upload another release</Link></li>
+            <li><Link href="/browse">See how your releases look to others</Link></li>
             <li>Share your profile: <Link href={`/user/${encodeURIComponent(session.user.name || session.user.email || '')}`}>
               /user/{session.user.name || session.user.email}
             </Link></li>
