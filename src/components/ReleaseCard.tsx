@@ -184,7 +184,7 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
               <strong>{release.user.username}</strong>
             </Link> | 
             Uploaded: {formatDate(release.uploadedAt)} | 
-            {release.tracks.length} track{release.tracks.length !== 1 ? 's' : ''} | 
+            {' ' + release.tracks.length} track{release.tracks.length !== 1 ? 's' : ''} | 
             Total size: {formatFileSize(getTotalSize())}
           </div>
 
