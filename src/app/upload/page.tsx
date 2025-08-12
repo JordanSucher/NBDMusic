@@ -471,12 +471,12 @@ export default function UploadPage() {
           <input
             type="file"
             id="files"
-            accept="audio/*"
+            accept=".mp3,.wav,.m4a,.aac,.ogg,audio/mpeg,audio/wav,audio/mp4,audio/x-m4a,audio/aac,audio/ogg"
             multiple
             onChange={handleFilesChange}
             required
           />
-          <small>Select one or more audio files. Supported formats: MP3, WAV, OGG, M4A (max 50MB each)</small>
+          <small>Select one or more audio files. Supported: MP3, WAV, M4A, AAC, OGG (max 50MB each)</small>
         </div>
 
         {/* Track List */}
