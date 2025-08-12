@@ -82,6 +82,15 @@ export async function GET(
       }
     })
 
+    // Get follow counts
+    const followerCount = await db.follow.count({
+      where: { followingId: user.id }
+    })
+
+    const followingCount = await db.follow.count({
+      where: { followerId: user.id }
+    })
+
     const profile = {
       username: user.username,
       releaseCount: releases.length,
@@ -89,7 +98,9 @@ export async function GET(
       totalFileSize,
       joinedAt: user.createdAt.toISOString(),
       allTags,
-      releaseTypeCounts
+      releaseTypeCounts,
+      followerCount,
+      followingCount
     }
 
     return NextResponse.json({

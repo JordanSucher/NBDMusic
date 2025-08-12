@@ -45,7 +45,6 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
   const { data: session } = useSession()
   const [tagCounts, setTagCounts] = useState<TagWithCount[]>([])
   const [currentTrack, setCurrentTrack] = useState(0)
-  const [showAllTracks, setShowAllTracks] = useState(false)
 
   useEffect(() => {
     fetchTagCounts()
@@ -106,6 +105,25 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
     
     if (confirm("Are you sure you want to delete this release? This will delete all tracks and cannot be undone.")) {
       onDelete(release.id)
+    }
+  }
+
+  const handleTrackEnd = () => {
+    // Auto-advance to next track if there is one
+    if (currentTrack < sortedTracks.length - 1) {
+      setCurrentTrack(currentTrack + 1)
+    }
+  }
+
+  const handleNextTrack = () => {
+    if (currentTrack < sortedTracks.length - 1) {
+      setCurrentTrack(currentTrack + 1)
+    }
+  }
+
+  const handlePrevTrack = () => {
+    if (currentTrack > 0) {
+      setCurrentTrack(currentTrack - 1)
     }
   }
 
@@ -212,47 +230,43 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
             src={sortedTracks[0].fileUrl} 
             title={sortedTracks[0].title}
             artist={release.user.username}
+            currentTrackIndex={0}
+            totalTracks={1}
+            releaseId={release.id}
           />
         </div>
       ) : (
         // Multiple tracks - show track list with player
         <div style={{ marginTop: '10px' }}>
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'space-between',
-            marginBottom: '10px'
-          }}>
+          <div style={{ marginBottom: '10px' }}>
             <strong>Tracks:</strong>
-            {/* <button
-              type="button"
-              onClick={() => setShowAllTracks(!showAllTracks)}
-              style={{ 
-                fontSize: '11px', 
-                padding: '2px 4px'
-              }}
-            >
-              {showAllTracks ? 'Show less' : 'Show all tracks'}
-            </button> */}
           </div>
 
-          {/* Current track player */}
+          {/* Current track player with auto-play support */}
           <AudioPlayer 
             src={sortedTracks[currentTrack].fileUrl} 
             title={`${sortedTracks[currentTrack].trackNumber}. ${sortedTracks[currentTrack].title}`}
             artist={release.user.username}
+            onTrackEnd={handleTrackEnd}
+            onNextTrack={handleNextTrack}
+            onPrevTrack={handlePrevTrack}
+            hasNextTrack={currentTrack < sortedTracks.length - 1}
+            hasPrevTrack={currentTrack > 0}
+            currentTrackIndex={currentTrack}
+            totalTracks={sortedTracks.length}
+            autoPlay={true}
+            releaseId={release.id}
           />
 
           {/* Track selection */}
           <div style={{ marginTop: '10px' }}>
-            {(showAllTracks ? sortedTracks : sortedTracks.slice(0, 3)).map((track, index) => {
-              const actualIndex = showAllTracks ? index : index
-              const isCurrentTrack = actualIndex === currentTrack
+            {sortedTracks.map((track, index) => {
+              const isCurrentTrack = index === currentTrack
               
               return (
                 <div 
                   key={track.id}
-                  onClick={() => setCurrentTrack(actualIndex)}
+                  onClick={() => setCurrentTrack(index)}
                   style={{
                     padding: '4px 8px',
                     margin: '2px 0',
@@ -280,17 +294,6 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
                 </div>
               )
             })}
-            
-            {!showAllTracks && sortedTracks.length > 3 && (
-              <div style={{ 
-                fontSize: '11px', 
-                color: '#666', 
-                textAlign: 'center',
-                marginTop: '5px'
-              }}>
-                ... and {sortedTracks.length - 3} more tracks
-              </div>
-            )}
           </div>
         </div>
       )}
@@ -306,7 +309,7 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
           <Link 
             href={`/edit/${release.id}`}
             style={{
-              backgroundColor: 'blue',
+              backgroundColor: '#4444ff',
               color: 'white',
               fontSize: '12px',
               padding: '4px 8px',

@@ -47,6 +47,24 @@ model User {
   accounts Account[]
   sessions Session[]
   releases Release[]
+  
+  // Follow relationships
+  following Follow[] @relation("Follower")
+  followers Follow[] @relation("Following")
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String   // User who is following
+  followingId String   // User being followed
+  createdAt   DateTime @default(now())
+  
+  follower    User @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following   User @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+  
+  @@unique([followerId, followingId]) // Prevent duplicate follows
+  @@index([followerId])
+  @@index([followingId])
 }
 
 model Release {

@@ -263,6 +263,36 @@ export default function UploadPage() {
     })
   }
 
+  const moveTrackUp = (index: number) => {
+    if (index === 0) return
+    
+    setTracks(prev => {
+      const newTracks = [...prev]
+      // Swap with previous track
+      const temp = newTracks[index]
+      newTracks[index] = newTracks[index - 1]
+      newTracks[index - 1] = temp
+      
+      // Update track numbers
+      return newTracks.map((track, i) => ({ ...track, trackNumber: i + 1 }))
+    })
+  }
+
+  const moveTrackDown = (index: number) => {
+    setTracks(prev => {
+      if (index === prev.length - 1) return prev
+      
+      const newTracks = [...prev]
+      // Swap with next track
+      const temp = newTracks[index]
+      newTracks[index] = newTracks[index + 1]
+      newTracks[index + 1] = temp
+      
+      // Update track numbers
+      return newTracks.map((track, i) => ({ ...track, trackNumber: i + 1 }))
+    })
+  }
+
   const handleTagsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
     setTags(value)
@@ -379,11 +409,6 @@ export default function UploadPage() {
   return (
     <div className="container">
       <h1>Upload Music</h1>
-      
-      <nav>
-        <Link href="/">← Back to home</Link>
-        <Link href="/browse">Browse music</Link>
-      </nav>
 
       <form onSubmit={handleSubmit}>
         {error && <div className="error">{error}</div>}
@@ -391,7 +416,7 @@ export default function UploadPage() {
         
         {/* Artwork Upload */}
         <div className="mb-10">
-          <label htmlFor="artwork">Release Artwork (optional):</label><br />
+          <label htmlFor="artwork">Artwork (optional):</label><br />
           <input
             type="file"
             id="artwork"
@@ -409,7 +434,7 @@ export default function UploadPage() {
               display: 'inline-block'
             }}>
               <div style={{ marginBottom: '5px', fontSize: '12px' }}>
-                <strong>Preview:</strong>
+                <strong>Artwork preview:</strong>
                 <button
                   type="button"
                   onClick={removeArtwork}
@@ -428,8 +453,8 @@ export default function UploadPage() {
                 src={artworkPreview} 
                 alt="Artwork preview" 
                 style={{ 
-                  maxWidth: '200px', 
-                  maxHeight: '200px',
+                  maxWidth: '120px', 
+                  maxHeight: '120px',
                   border: '1px solid #ccc'
                 }}
               />
@@ -459,20 +484,44 @@ export default function UploadPage() {
           <div className="mb-20" style={{ border: '2px solid #000', padding: '10px', backgroundColor: '#fff' }}>
             <h3>Tracks ({tracks.length})</h3>
             {tracks.map((track, index) => (
-              <div key={index} style={{ 
-                borderBottom: index < tracks.length - 1 ? '1px solid #ccc' : 'none',
-                paddingBottom: '10px',
-                marginBottom: '10px'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '5px' }}>
-                  <strong>Track {track.trackNumber}:</strong>
+              <div key={index} className="track-row">
+                <div className="track-reorder-buttons">
+                  <button
+                    type="button"
+                    className="track-move-btn move-up"
+                    onClick={() => moveTrackUp(index)}
+                    disabled={index === 0}
+                    title="Move up"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    className="track-move-btn move-down"
+                    onClick={() => moveTrackDown(index)}
+                    disabled={index === tracks.length - 1}
+                    title="Move down"
+                  >
+                    ↓
+                  </button>
+                </div>
+                
+                <div className="track-number">Track {track.trackNumber}:</div>
+                
+                <div className="track-details">
                   <input
                     type="text"
                     value={track.title}
                     onChange={(e) => updateTrackTitle(index, e.target.value)}
-                    style={{ flex: 1, fontSize: '12px' }}
+                    className="track-title-input"
                     placeholder="Track title"
                   />
+                  <div className="track-info">
+                    {track.file.name} ({formatFileSize(track.file.size)})
+                  </div>
+                </div>
+                
+                <div className="track-actions">
                   <button
                     type="button"
                     onClick={() => removeTrack(index)}
@@ -485,9 +534,6 @@ export default function UploadPage() {
                   >
                     Remove
                   </button>
-                </div>
-                <div style={{ fontSize: '11px', color: '#666' }}>
-                  {track.file.name} ({formatFileSize(track.file.size)})
                 </div>
               </div>
             ))}
@@ -608,17 +654,6 @@ export default function UploadPage() {
         </button>
       </form>
 
-      <div className="mb-20">
-        <h3>Tips:</h3>
-        <ul>
-          <li><strong>Artwork:</strong> Square images (1000x1000+) work best for album covers</li>
-          <li><strong>Single track:</strong> Upload one file for a single song</li>
-          <li><strong>Multiple tracks:</strong> Select multiple files for EPs or albums</li>
-          <li><strong>Track order:</strong> Files are ordered by selection order</li>
-          <li><strong>File names:</strong> Track titles are auto-filled from filenames</li>
-          <li><strong>Popular tags:</strong> {allTags.slice(0, 5).map(tag => `${tag.name} (${tag.count})`).join(', ')}</li>
-        </ul>
-      </div>
     </div>
   )
 }

@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect, Suspense } from "react"
+import { useState, useEffect, Suspense, useCallback } from "react"
 import { useSession } from "next-auth/react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import ReleaseCard from "@/components/ReleaseCard"
 
@@ -38,30 +38,23 @@ interface Release {
 function BrowseContent() {
   const { data: session } = useSession()
   const searchParams = useSearchParams()
+  const router = useRouter()
   const [releases, setReleases] = useState<Release[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [showFollowingOnly, setShowFollowingOnly] = useState(false)
   const [allTags, setAllTags] = useState<{name: string, count: number}[]>([])
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
 
-  useEffect(() => {
-    fetchReleases()
-    fetchTags()
-    
-    // Check for tag filter in URL
-    const tagFromUrl = searchParams.get('tag')
-    if (tagFromUrl) {
-      setSelectedTags([tagFromUrl])
-    }
-  }, [searchParams])
-
-  const fetchReleases = async () => {
+  const fetchReleases = useCallback(async () => {
     try {
-      const response = await fetch('/api/releases')
+      const url = showFollowingOnly ? '/api/releases?following=true' : '/api/releases'
+      const response = await fetch(url)
       if (response.ok) {
         const data = await response.json()
-        setReleases(data.releases)
+        setReleases(data.releases || [])
       } else {
         setError("Failed to load releases")
       }
@@ -70,7 +63,63 @@ function BrowseContent() {
     } finally {
       setLoading(false)
     }
+  }, [showFollowingOnly])
+
+  const updateURL = useCallback((following: boolean, tags: string[] = selectedTags, search: string = searchTerm) => {
+    const params = new URLSearchParams()
+    
+    if (following) {
+      params.set('following', 'true')
+    }
+    
+    if (tags.length > 0) {
+      // Keep existing tag logic if needed
+      tags.forEach(tag => {
+        params.append('tag', tag)
+      })
+    }
+    
+    if (search) {
+      params.set('search', search)
+    }
+    
+    const newURL = params.toString() ? `/browse?${params.toString()}` : '/browse'
+    router.replace(newURL)
+  }, [selectedTags, searchTerm, router])
+
+  const handleFollowingToggle = (checked: boolean) => {
+    setShowFollowingOnly(checked)
+    updateURL(checked)
   }
+
+  useEffect(() => {
+    // Only read URL params on initial load, not on subsequent URL changes we make
+    if (isInitialLoad) {
+      // Check for tag filter in URL
+      const tagFromUrl = searchParams.get('tag')
+      if (tagFromUrl) {
+        setSelectedTags([tagFromUrl])
+      }
+
+      // Check for following filter in URL
+      const followingFromUrl = searchParams.get('following')
+      if (followingFromUrl === 'true') {
+        setShowFollowingOnly(true)
+      }
+      
+      setIsInitialLoad(false)
+    }
+    
+    fetchReleases()
+    fetchTags()
+  }, [searchParams, fetchReleases, isInitialLoad])
+
+  // Refetch releases when following filter changes
+  useEffect(() => {
+    if (!loading) {
+      fetchReleases()
+    }
+  }, [showFollowingOnly, fetchReleases, loading])
 
   const fetchTags = async () => {
     try {
@@ -97,6 +146,8 @@ function BrowseContent() {
   const clearAllFilters = () => {
     setSearchTerm("")
     setSelectedTags([])
+    setShowFollowingOnly(false)
+    router.replace('/browse') // Clear URL params
   }
 
   const filteredReleases = releases.filter(release => {
@@ -124,11 +175,6 @@ function BrowseContent() {
   return (
     <div className="container">
       <h1>Browse Music</h1>
-      
-      <nav>
-        <Link href="/">← Back to home</Link>
-        {session && <Link href="/upload">Upload music</Link>}
-      </nav>
 
       {/* Search and Filter */}
       <div className="mb-20">
@@ -144,6 +190,21 @@ function BrowseContent() {
             placeholder="Type to search..."
           />
         </div>
+
+        {/* Following Filter */}
+        {session && (
+          <div className="mb-10">
+            <label>
+              <input
+                type="checkbox"
+                checked={showFollowingOnly}
+                onChange={(e) => handleFollowingToggle(e.target.checked)}
+                style={{ marginRight: '8px' }}
+              />
+              Show only releases from users I follow
+            </label>
+          </div>
+        )}
 
         <div className="mb-10">
           <label>Filter by tags (click to toggle):</label><br />
@@ -170,11 +231,12 @@ function BrowseContent() {
           <small>Selected tags: {selectedTags.length > 0 ? selectedTags.join(', ') : 'None'}</small>
         </div>
 
-        {(searchTerm || selectedTags.length > 0) && (
+        {(searchTerm || selectedTags.length > 0 || showFollowingOnly) && (
           <p>
             Showing {filteredReleases.length} of {releases.length} releases
             {searchTerm && ` matching "${searchTerm}"`}
             {selectedTags.length > 0 && ` with tags: ${selectedTags.join(', ')}`}
+            {showFollowingOnly && ` from users you follow`}
             {" "}
             <button 
               onClick={clearAllFilters}
@@ -193,11 +255,20 @@ function BrowseContent() {
         <div>
           {releases.length === 0 ? (
             <div>
-              <p>No music uploaded yet.</p>
-              {session ? (
-                <p><Link href="/upload">Be the first to upload a release!</Link></p>
+              {showFollowingOnly ? (
+                <div>
+                  <p>No releases from users you follow yet.</p>
+                  <p><Link href="/browse" onClick={() => setShowFollowingOnly(false)}>Browse all releases</Link> to discover new artists to follow.</p>
+                </div>
               ) : (
-                <p><Link href="/register">Create an account</Link> to start sharing your music.</p>
+                <div>
+                  <p>No music uploaded yet.</p>
+                  {session ? (
+                    <p><Link href="/upload">Be the first to upload a release!</Link></p>
+                  ) : (
+                    <p><Link href="/register">Create an account</Link> to start sharing your music.</p>
+                  )}
+                </div>
               )}
             </div>
           ) : (

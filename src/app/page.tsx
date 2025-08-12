@@ -68,28 +68,6 @@ export default function HomePage() {
 
   return (
     <div className="container">
-      <header>
-        <h1>nbd</h1>
-        <p>a simple platform for musicians to share demos, works in progress, and more</p>
-      </header>
-
-      <nav>
-        {session?.user ? (
-          <>
-            <Link href="/upload">Upload Music</Link>
-            <Link href="/browse">Browse Music</Link>
-            <Link href="/profile">My Profile</Link>
-            <button onClick={() => signOut()}>Logout</button>
-          </>
-        ) : (
-          <>
-            <Link href="/login">Login</Link>
-            <Link href="/register">Register</Link>
-            <Link href="/browse">Browse Music</Link>
-          </>
-        )}
-      </nav>
-
       <main>
         {session?.user ? (
           <div>
@@ -115,7 +93,7 @@ export default function HomePage() {
             <p>Loading recent releases...</p>
           ) : recentReleases.length > 0 ? (
             <div>
-              <p>Check out what local musicians have been sharing:</p>
+              <p>Check out what others have been sharing:</p>
               {recentReleases.map(release => (
                 <ReleaseCard key={release.id} release={release} />
               ))}

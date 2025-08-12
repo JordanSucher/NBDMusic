@@ -76,7 +76,7 @@ li {
 /* Links */
 a {
   color: #0000ff;
-  text-decoration: underline !important;
+  text-decoration: underline;
   font-family: 'Courier New', monospace !important;
 }
 
@@ -294,13 +294,6 @@ th, td {
 th {
   background-color: #ccc !important;
   font-weight: bold !important;
-}
-
-/* Navigation */
-nav {
-  margin-bottom: 20px !important;
-  padding-bottom: 10px !important;
-  border-bottom: 2px solid #000 !important;
 }
 
 nav a {

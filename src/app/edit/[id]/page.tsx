@@ -482,12 +482,7 @@ export default function EditReleasePage() {
   return (
     <div className="container">
       <h1>Edit Release</h1>
-      
-      <nav>
-        <Link href="/profile">← Back to profile</Link>
-        <Link href="/browse">Browse music</Link>
-      </nav>
-
+  
       <form onSubmit={handleSubmit}>
         {error && <div className="error">{error}</div>}
         {success && <div className="success">{success}</div>}
@@ -823,15 +818,6 @@ export default function EditReleasePage() {
         </button>
       </form>
 
-      <div className="mb-20">
-        <h3>Edit Tips:</h3>
-        <ul>
-          <li><strong>Artwork:</strong> Upload new artwork to replace current, or remove current artwork</li>
-          <li><strong>Tracks:</strong> Edit track titles, reorder with ↑↓ buttons, mark for deletion, or add new tracks</li>
-          <li><strong>Track order:</strong> Use the up/down arrows to reorder tracks. Numbers update automatically</li>
-          <li><strong>Deletions:</strong> Marked tracks will be permanently deleted when you save</li>
-        </ul>
-      </div>
     </div>
   )
 }

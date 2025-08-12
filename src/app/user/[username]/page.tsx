@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import ReleaseCard from "@/components/ReleaseCard"
+import FollowButton from "@/components/FollowButton"
 
 interface Track {
   id: string
@@ -47,6 +48,8 @@ interface UserProfile {
     album: number
     demo: number
   }
+  followerCount?: number
+  followingCount?: number
 }
 
 export default function PublicUserProfilePage() {
@@ -56,6 +59,7 @@ export default function PublicUserProfilePage() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [localFollowerCount, setLocalFollowerCount] = useState<number | null>(null)
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -65,6 +69,7 @@ export default function PublicUserProfilePage() {
           const data = await response.json()
           setReleases(data.releases)
           setUserProfile(data.profile)
+          setLocalFollowerCount(data.profile.followerCount || 0)
         } else if (response.status === 404) {
           setError("User not found")
         } else {
@@ -88,6 +93,14 @@ export default function PublicUserProfilePage() {
     const sizes = ['Bytes', 'KB', 'MB', 'GB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  }
+
+  const handleFollowChange = (isFollowing: boolean) => {
+    // Update local follower count when follow status changes
+    setLocalFollowerCount(prev => {
+      if (prev === null) return null
+      return isFollowing ? prev + 1 : prev - 1
+    })
   }
 
   if (loading) {
@@ -122,11 +135,6 @@ export default function PublicUserProfilePage() {
   return (
     <div className="container">
       <h1>{userProfile.username}&apos;s Profile</h1>
-      
-      <nav>
-        <Link href="/browse">← Back to browse</Link>
-        <Link href="/">Home</Link>
-      </nav>
 
       {/* User Stats */}
       <div className="mb-20" style={{ 
@@ -135,7 +143,18 @@ export default function PublicUserProfilePage() {
         backgroundColor: '#fff',
         marginBottom: '20px'
       }}>
-        <h2>About {userProfile.username}</h2>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'flex-start',
+          marginBottom: '10px'
+        }}>
+          <h2>About {userProfile.username}</h2>
+          <FollowButton 
+            username={userProfile.username} 
+            onFollowChange={handleFollowChange}
+          />
+        </div>
         <div className="mb-10">
           <ul>
             <li>Releases shared: {userProfile.releaseCount}</li>
@@ -147,6 +166,13 @@ export default function PublicUserProfilePage() {
               {userProfile.releaseTypeCounts.demo} demo{userProfile.releaseTypeCounts.demo !== 1 ? 's' : ''}
             </li>
             <li>Total content: {formatFileSize(userProfile.totalFileSize)}</li>
+            {(localFollowerCount !== null || userProfile.followingCount !== undefined) && (
+              <li>
+                {localFollowerCount !== null && `${localFollowerCount} follower${localFollowerCount !== 1 ? 's' : ''}`}
+                {localFollowerCount !== null && userProfile.followingCount !== undefined && ' • '}
+                {userProfile.followingCount !== undefined && `${userProfile.followingCount} following`}
+              </li>
+            )}
             <li>Genres/tags: {userProfile.allTags.length > 0 ? userProfile.allTags.join(', ') : 'None yet'}</li>
             <li>Member since: {new Date(userProfile.joinedAt).toLocaleDateString()}</li>
           </ul>
@@ -169,29 +195,6 @@ export default function PublicUserProfilePage() {
           </div>
         )}
       </div>
-
-      {/* Discovery */}
-      {releases.length > 0 && (
-        <div className="mb-20">
-          <h3>Discover More</h3>
-          <ul>
-            <li><Link href="/browse">Browse all releases</Link></li>
-            {userProfile.allTags.length > 0 && (
-              <li>
-                Similar artists with tags: {" "}
-                {userProfile.allTags.slice(0, 3).map((tag, index) => (
-                  <span key={tag}>
-                    <Link href={`/browse?tag=${encodeURIComponent(tag)}`}>
-                      {tag}
-                    </Link>
-                    {index < userProfile.allTags.slice(0, 3).length - 1 && ", "}
-                  </span>
-                ))}
-              </li>
-            )}
-          </ul>
-        </div>
-      )}
     </div>
   )
 }

@@ -38,10 +38,16 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [followStats, setFollowStats] = useState<{
+    followerCount: number
+    followingCount: number
+    recentFollowers: Array<{ username: string, name: string | null }>
+  } | null>(null)
 
   useEffect(() => {
     if (session) {
       fetchUserReleases()
+      fetchFollowStats()
     } else if (status !== "loading") {
       setLoading(false)
     }
@@ -60,6 +66,18 @@ export default function ProfilePage() {
       setError("Something went wrong")
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchFollowStats = async () => {
+    try {
+      const response = await fetch('/api/user/stats')
+      if (response.ok) {
+        const data = await response.json()
+        setFollowStats(data)
+      }
+    } catch (error) {
+      console.error("Failed to load follow stats:", error)
     }
   }
 
@@ -164,14 +182,6 @@ export default function ProfilePage() {
 
   return (
     <div className="container">
-      <h1>My Profile</h1>
-      
-      <nav>
-        <Link href="/">← Back to home</Link>
-        <Link href="/upload">Upload new release</Link>
-        <Link href="/browse">Browse all releases</Link>
-      </nav>
-
       {/* User Stats */}
       <div className="mb-20" style={{ 
         border: '2px solid #000', 
@@ -187,9 +197,39 @@ export default function ProfilePage() {
             <li>Total tracks: {getTotalTracks()}</li>
             <li>Singles: {releaseTypeCounts.single} | EPs: {releaseTypeCounts.ep} | Albums: {releaseTypeCounts.album} | Demos: {releaseTypeCounts.demo}</li>
             <li>Total storage used: {formatFileSize(getTotalFileSize())}</li>
+            {followStats && (
+              <li>
+                <Link href="/followers" style={{ color: '#0000ff', textDecoration: 'underline' }}>
+                  {followStats.followerCount} follower{followStats.followerCount !== 1 ? 's' : ''}
+                </Link>
+                {' • '}
+                <Link href="/following" style={{ color: '#0000ff', textDecoration: 'underline' }}>
+                  {followStats.followingCount} following
+                </Link>
+              </li>
+            )}
             <li>Tags you&apos;ve used: {getAllTags().length > 0 ? getAllTags().join(', ') : 'None yet'}</li>
             <li>Member since: {(session.user as { createdAt?: string }).createdAt ? new Date((session.user as { createdAt?: string }).createdAt!).toLocaleDateString() : 'Recently'}</li>
           </ul>
+          
+          {followStats && followStats.recentFollowers.length > 0 && (
+            <div style={{ marginTop: '10px' }}>
+              <strong>Recent followers:</strong>
+              <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                {followStats.recentFollowers.slice(0, 5).map((follower, index) => (
+                  <span key={follower.username}>
+                    <Link href={`/user/${encodeURIComponent(follower.username)}`} style={{ color: '#0000ff' }}>
+                      {follower.name || follower.username}
+                    </Link>
+                    {index < Math.min(followStats.recentFollowers.length, 5) - 1 && ', '}
+                  </span>
+                ))}
+                {followStats.recentFollowers.length > 5 && (
+                  <span> and {followStats.recentFollowers.length - 5} more</span>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -208,32 +248,12 @@ export default function ProfilePage() {
         ) : (
           <div>
             {releases.map(release => (
-              <div key={release.id} style={{ position: 'relative' }}>
-                <ReleaseCard 
-                  release={release}
-                />
-                
-                {/* Delete Button */}
-                <div style={{ 
-                  textAlign: 'right', 
-                  marginTop: '5px', 
-                  marginBottom: '10px',
-                  paddingRight: '10px'
-                }}>
-                  <button
-                    onClick={() => handleDeleteRelease(release.id)}
-                    disabled={deletingId === release.id}
-                    style={{
-                      backgroundColor: '#ff4444',
-                      color: 'white',
-                      fontSize: '12px',
-                      padding: '2px 6px'
-                    }}
-                  >
-                    {deletingId === release.id ? "Deleting..." : "Delete Release"}
-                  </button>
-                </div>
-              </div>
+              <ReleaseCard 
+                key={release.id}
+                release={release}
+                onDelete={handleDeleteRelease}
+                isDeleting={deletingId === release.id}
+              />
             ))}
           </div>
         )}
