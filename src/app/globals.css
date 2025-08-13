@@ -244,6 +244,12 @@ button[style*="background-color: #ff4444"]:active {
   min-width: 250px !important;
 }
 
+@media (max-width: 768px) {
+  .track-row .track-title-input {
+    min-width: 0 !important;
+  }
+}
+
 .track-row .track-actions {
   display: flex;
   gap: 4px;
