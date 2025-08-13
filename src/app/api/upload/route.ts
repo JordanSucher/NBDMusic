@@ -1,8 +1,27 @@
+// api/upload/route.ts
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
-import { put } from "@vercel/blob"
 import { db } from "@/lib/db"
 import { authOptions } from "@/lib/auth"
+
+interface UploadedTrack {
+  title: string
+  trackNumber: number
+  fileName: string
+  fileUrl: string
+  fileSize: number
+  mimeType: string
+}
+
+interface UploadRequestBody {
+  releaseTitle: string
+  releaseDescription?: string
+  releaseType: string
+  tags?: string
+  releaseDate?: string
+  artworkUrl?: string
+  tracks: UploadedTrack[]
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,17 +34,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const formData = await request.formData()
+    const body: UploadRequestBody = await request.json()
     
-    // Extract release data
-    const releaseTitle = formData.get('releaseTitle') as string
-    const releaseDescription = formData.get('releaseDescription') as string
-    const releaseType = formData.get('releaseType') as string
-    const tags = formData.get('tags') as string
-    const trackCount = parseInt(formData.get('trackCount') as string)
-    const artworkFile = formData.get('artwork') as File | null
-    const releaseDate = formData.get('releaseDate') as string
-    const parsedReleaseDate = releaseDate ? new Date(releaseDate) : null
+    // Extract release data from JSON body (files are already uploaded)
+    const {
+      releaseTitle,
+      releaseDescription,
+      releaseType,
+      tags,
+      releaseDate,
+      artworkUrl,
+      tracks
+    } = body
 
     if (!releaseTitle?.trim()) {
       return NextResponse.json(
@@ -34,84 +54,40 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (trackCount === 0) {
+    if (!tracks || tracks.length === 0) {
       return NextResponse.json(
         { error: "At least one track is required" },
         { status: 400 }
       )
     }
 
-    // Upload artwork to blob storage if provided
-    let artworkUrl: string | null = null
-    if (artworkFile && artworkFile.size > 0) {
-      try {
-        const artworkBlob = await put(`artwork/${Date.now()}-${artworkFile.name}`, artworkFile, {
-          access: 'public',
-        })
-        artworkUrl = artworkBlob.url
-      } catch (error) {
-        console.error("Failed to upload artwork:", error)
-        return NextResponse.json(
-          { error: "Failed to upload artwork" },
-          { status: 500 }
-        )
-      }
-    }
-
-    // Upload all track files to blob storage
-    const trackUploads = []
-    for (let i = 0; i < trackCount; i++) {
-      const trackFile = formData.get(`track_${i}_file`) as File
-      const trackTitle = formData.get(`track_${i}_title`) as string
-      const trackNumber = parseInt(formData.get(`track_${i}_number`) as string)
-
-      if (!trackFile || !trackTitle) {
-        return NextResponse.json(
-          { error: `Track ${i + 1} is missing file or title` },
-          { status: 400 }
-        )
-      }
-
-      try {
-        const blob = await put(`tracks/${Date.now()}-${trackFile.name}`, trackFile, {
-          access: 'public',
-        })
-
-        trackUploads.push({
-          title: trackTitle.trim(),
-          trackNumber,
-          fileName: trackFile.name,
-          fileUrl: blob.url,
-          fileSize: trackFile.size,
-          mimeType: trackFile.type
-        })
-      } catch (error) {
-        console.error(`Failed to upload track ${i + 1}:`, error)
-        return NextResponse.json(
-          { error: `Failed to upload track: ${trackTitle}` },
-          { status: 500 }
-        )
-      }
-    }
+    const parsedReleaseDate = releaseDate ? new Date(releaseDate) : null
 
     // Create release in database
     const release = await db.release.create({
       data: {
         title: releaseTitle.trim(),
-        description: releaseDescription.trim() || null,
+        description: releaseDescription?.trim() || null,
         releaseType,
-        artworkUrl,
+        artworkUrl: artworkUrl || null,
         releaseDate: parsedReleaseDate,
         userId: session.user.id,
         tracks: {
-          create: trackUploads
+          create: tracks.map((track: UploadedTrack) => ({
+            title: track.title.trim(),
+            trackNumber: track.trackNumber,
+            fileName: track.fileName,
+            fileUrl: track.fileUrl,
+            fileSize: track.fileSize,
+            mimeType: track.mimeType
+          }))
         }
       }
     })
 
     // Handle tags if provided
-    if (tags.trim()) {
-      const tagNames = tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
+    if (tags?.trim()) {
+      const tagNames = tags.split(',').map((tag: string) => tag.trim()).filter((tag: string) => tag.length > 0)
       
       for (const tagName of tagNames) {
         // Find or create the tag
@@ -134,7 +110,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       message: "Release uploaded successfully!",
       releaseId: release.id,
-      trackCount: trackUploads.length,
+      trackCount: tracks.length,
       hasArtwork: !!artworkUrl
     })
 

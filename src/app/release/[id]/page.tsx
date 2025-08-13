@@ -161,146 +161,166 @@ export default function ReleasePage() {
 
       {/* Release header */}
       <div className="song-card" style={{ marginBottom: '20px' }}>
-        <div style={{ display: 'flex', gap: '20px', marginBottom: '15px' }}>
-          {/* Artwork */}
-          {release.artworkUrl ? (
-            <div style={{ flexShrink: 0 }}>
-              <img 
-                src={release.artworkUrl} 
-                alt={`${release.title} artwork`}
-                style={{ 
-                  width: '200px', 
-                  height: '200px', 
-                  objectFit: 'cover',
-                  border: '2px solid #000',
-                  backgroundColor: '#f0f0f0'
-                }}
-              />
-            </div>
-          ) : (
-            <div style={{ 
-              width: '200px', 
-              height: '200px', 
-              flexShrink: 0,
-              border: '2px solid #000', 
-              backgroundColor: '#f0f0f0',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '14px',
-              color: '#666',
-              textAlign: 'center'
-            }}>
-              No Artwork
-            </div>
-          )}
-
-          {/* Release info */}
-          <div style={{ flex: 1 }}>
-            <h1 style={{ 
-              fontSize: '24px', 
-              fontWeight: 'bold', 
-              marginBottom: '10px',
-              fontFamily: 'Courier New, monospace'
-            }}>
-              {release.title}
-              <span style={{ 
-                fontSize: '14px', 
-                marginLeft: '15px', 
-                padding: '4px 8px', 
-                backgroundColor: '#ddd',
-                border: '1px solid #999'
-              }}>
-                {getReleaseTypeLabel(release.releaseType)}
-              </span>
-            </h1>
-            
-            <div className="song-meta" style={{ marginBottom: '15px' }}>
-              By: <Link href={`/user/${encodeURIComponent(release.user.username)}`}>
-                <strong>{release.user.username}</strong>
-              </Link>
-              <br />
-              {release.releaseDate && (
-                <>
-                  {isScheduledRelease(release.releaseDate) ? 'Scheduled for' : 'Released'}: {formatReleaseDate(release.releaseDate)}
-                  <br />
-                </>
-              )}
-              {!release.releaseDate && (
-                <>
-                  Uploaded: {formatDate(release.uploadedAt)}
-                  <br />
-                </>
-              )}
-              {release.tracks.length} track{release.tracks.length !== 1 ? 's' : ''} • Total size: {formatFileSize(getTotalSize())}
-              {isScheduledRelease(release.releaseDate) && (
-                <span style={{ 
-                  marginLeft: '10px',
-                  padding: '2px 6px',
-                  backgroundColor: '#ff9900',
-                  color: 'white',
-                  fontSize: '11px',
-                  fontWeight: 'bold'
-                }}>
-                  SCHEDULED
-                </span>
-              )}
-            </div>
-
-            {release.description && (
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column',
+          gap: '20px'
+        }}>
+          {/* Album art and info section */}
+          <div style={{ 
+            display: 'flex', 
+            gap: '20px',
+            flexDirection: window.innerWidth <= 768 ? 'column' : 'row'
+          }}>
+            {/* Artwork */}
+            {release.artworkUrl ? (
               <div style={{ 
-                fontSize: '14px', 
-                marginBottom: '15px',
-                fontStyle: 'italic',
-                color: '#555',
-                lineHeight: '1.4'
+                flexShrink: 0,
+                alignSelf: window.innerWidth <= 768 ? 'left' : 'flex-start'
               }}>
-                {release.description}
+                <img 
+                  src={release.artworkUrl} 
+                  alt={`${release.title} artwork`}
+                  style={{ 
+                    width: '150px', 
+                    height: '150px', 
+                    objectFit: 'cover',
+                    border: '2px solid #000',
+                    backgroundColor: '#f0f0f0'
+                  }}
+                />
+              </div>
+            ) : (
+              <div style={{ 
+                width: '150px', 
+                height: '150px', 
+                flexShrink: 0,
+                border: '2px solid #000', 
+                backgroundColor: '#f0f0f0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '14px',
+                color: '#666',
+                textAlign: 'center',
+                alignSelf: window.innerWidth <= 768 ? 'center' : 'flex-start'
+              }}>
+                No Artwork
               </div>
             )}
 
-            {/* Action buttons */}
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <button
-                onClick={copyShareLink}
+            {/* Release info */}
+            <div style={{ flex: 1 }}>
+              <h1 style={{ 
+                fontSize: '24px', 
+                fontWeight: 'bold', 
+                marginBottom: '10px',
+                fontFamily: 'Courier New, monospace'
+              }}>
+                {release.title}
+                <span style={{ 
+                  fontSize: '14px', 
+                  marginLeft: '15px', 
+                  padding: '4px 8px', 
+                  backgroundColor: '#ddd',
+                  border: '1px solid #999'
+                }}>
+                  {getReleaseTypeLabel(release.releaseType)}
+                </span>
+              </h1>
+              
+              <div className="song-meta" style={{ marginBottom: '15px' }}>
+                By: <Link href={`/user/${encodeURIComponent(release.user.username)}`}>
+                  <strong>{release.user.username}</strong>
+                </Link>
+                <br />
+                {release.releaseDate && (
+                  <>
+                    {isScheduledRelease(release.releaseDate) ? 'Scheduled for' : 'Released'}: {formatReleaseDate(release.releaseDate)}
+                    <br />
+                  </>
+                )}
+                {!release.releaseDate && (
+                  <>
+                    Uploaded: {formatDate(release.uploadedAt)}
+                    <br />
+                  </>
+                )}
+                {release.tracks.length} track{release.tracks.length !== 1 ? 's' : ''} • Total size: {formatFileSize(getTotalSize())}
+                {isScheduledRelease(release.releaseDate) && (
+                  <span style={{ 
+                    marginLeft: '10px',
+                    padding: '2px 6px',
+                    backgroundColor: '#ff9900',
+                    color: 'white',
+                    fontSize: '11px',
+                    fontWeight: 'bold'
+                  }}>
+                    SCHEDULED
+                  </span>
+                )}
+              </div>
+
+              {/* {release.description && (
+                <div style={{ 
+                  fontSize: '14px', 
+                  marginBottom: '15px',
+                  fontStyle: 'italic',
+                  color: '#555',
+                  lineHeight: '1.4'
+                }}>
+                  {release.description}
+                </div>
+              )} */}
+            </div>
+          </div>
+
+          {/* Action buttons row */}
+          <div style={{ 
+            display: 'flex', 
+            gap: '10px', 
+            alignItems: 'center',
+            flexWrap: 'wrap'
+          }}>
+            <button
+              onClick={copyShareLink}
+              style={{
+                padding: '8px 16px',
+                fontSize: '12px',
+                backgroundColor: '#4444ff',
+                color: 'white',
+                border: '1px solid #000',
+                cursor: 'pointer',
+                fontFamily: 'Courier New, monospace'
+              }}
+            >
+              📋 Copy Share Link
+            </button>
+
+            {isOwner && (
+              <Link
+                href={`/edit/${release.id}`}
                 style={{
                   padding: '8px 16px',
                   fontSize: '12px',
-                  backgroundColor: '#4444ff',
+                  fontWeight: 'bold',
+                  backgroundColor: 'blue',
                   color: 'white',
                   border: '1px solid #000',
-                  cursor: 'pointer',
-                  fontFamily: 'Courier New, monospace'
+                  textDecoration: 'none',
+                  fontFamily: 'Courier New, monospace',
+                  display: 'inline-block'
                 }}
               >
-                📋 Copy Share Link
-              </button>
-
-              {isOwner && (
-                <Link
-                  href={`/edit/${release.id}`}
-                  style={{
-                    padding: '8px 16px',
-                    fontSize: '12px',
-                    fontWeight: 'bold',
-                    backgroundColor: 'blue',
-                    color: 'white',
-                    border: '1px solid #000',
-                    textDecoration: 'none',
-                    fontFamily: 'Courier New, monospace',
-                    display: 'inline-block'
-                  }}
-                >
-                  ✏️ Edit Release
-                </Link>
-              )}
-            </div>
+                ✏️ Edit Release
+              </Link>
+            )}
           </div>
         </div>
 
         {/* Tags */}
         {release.tags.length > 0 && (
-          <div className="song-tags" style={{ marginBottom: '20px' }}>
+          <div className="song-tags" style={{ marginTop: '20px' }}>
             Tags: {release.tags.map(releaseTag => (
               <Link
                 key={releaseTag.tag.name}
@@ -315,6 +335,15 @@ export default function ReleasePage() {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Description */}
+      <div 
+      className="mt-[20px]! bg-[#fff]! border-[2px]! border-[#000]! p-[10px]! font-[12px]! text-[#666]! mb-[20px]!"
+      >
+        <p>
+          {release.description && ` ${release.description}`}
+        </p>
       </div>
 
       {/* Audio player and track list */}
@@ -401,13 +430,6 @@ export default function ReleasePage() {
         )}
       </div>
 
-      {/* SEO-friendly content */}
-      <div style={{ marginTop: '30px', fontSize: '12px', color: '#666', borderTop: '1px solid #ddd', paddingTop: '15px' }}>
-        <p>
-          Listen to &quot;{release.title}&quot; by {release.user.username} on nbd. 
-          {release.description && ` ${release.description}`}
-        </p>
-      </div>
     </div>
   )
 }

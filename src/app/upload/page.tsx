@@ -16,6 +16,15 @@ interface TrackUpload {
   trackNumber: number
 }
 
+interface UploadedFile {
+  title: string
+  trackNumber: number
+  fileName: string
+  fileUrl: string
+  fileSize: number
+  mimeType: string
+}
+
 export default function UploadPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -36,6 +45,7 @@ export default function UploadPage() {
   
   // UI state
   const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState("")
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [allTags, setAllTags] = useState<TagWithCount[]>([])
@@ -62,6 +72,43 @@ export default function UploadPage() {
       }
     } catch (err) {
       console.error("Failed to load tags:", err)
+    }
+  }
+
+  // Direct upload function
+  const uploadFileDirectly = async (file: File, fileType: 'track' | 'artwork'): Promise<string> => {
+    try {
+      // Get upload info
+      const urlResponse = await fetch('/api/upload-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename: file.name,
+          contentType: file.type,
+          fileType,
+          fileSize: file.size
+        })
+      })
+
+      if (!urlResponse.ok) {
+        const error = await urlResponse.json()
+        throw new Error(error.error || 'Failed to get upload info')
+      }
+
+      const { pathname } = await urlResponse.json()
+
+      // Use Vercel Blob's client-side upload
+      const { upload } = await import('@vercel/blob/client')
+      
+      const blob = await upload(pathname, file, {
+        access: 'public',
+        handleUploadUrl: '/api/blob/upload'
+      })
+
+      return blob.url
+    } catch (error) {
+      console.error('Upload error:', error)
+      throw error
     }
   }
 
@@ -349,54 +396,83 @@ export default function UploadPage() {
     setUploading(true)
     setError("")
     setSuccess("")
+    setUploadProgress("Starting upload...")
 
     try {
-      const formData = new FormData()
-      formData.append('releaseTitle', releaseTitle.trim())
-      formData.append('releaseDescription', releaseDescription.trim())
-      formData.append('releaseType', releaseType)
-      formData.append('releaseDate', releaseDate || '')
-      formData.append('tags', tags.trim())
-      
-      // Add artwork if provided
+      // Upload artwork if provided
+      let artworkUrl = null
       if (artworkFile) {
-        formData.append('artwork', artworkFile)
+        setUploadProgress("Uploading artwork...")
+        artworkUrl = await uploadFileDirectly(artworkFile, 'artwork')
       }
-      
-      // Add all tracks
-      tracks.forEach((track, index) => {
-        formData.append(`track_${index}_file`, track.file)
-        formData.append(`track_${index}_title`, track.title.trim())
-        formData.append(`track_${index}_number`, track.trackNumber.toString())
-      })
-      
-      formData.append('trackCount', tracks.length.toString())
+
+      // Upload all track files
+      setUploadProgress("Uploading tracks...")
+      const uploadedTracks: UploadedFile[] = []
+
+      for (let i = 0; i < tracks.length; i++) {
+        const track = tracks[i]
+        setUploadProgress(`Uploading track ${i + 1} of ${tracks.length}: ${track.title}`)
+        
+        const fileUrl = await uploadFileDirectly(track.file, 'track')
+
+        uploadedTracks.push({
+          title: track.title.trim(),
+          trackNumber: track.trackNumber,
+          fileName: track.file.name,
+          fileUrl,
+          fileSize: track.file.size,
+          mimeType: track.file.type
+        })
+      }
+
+      // Submit release data to database
+      setUploadProgress("Creating release...")
+      const releaseData = {
+        releaseTitle: releaseTitle.trim(),
+        releaseDescription: releaseDescription.trim(),
+        releaseType,
+        tags: tags.trim(),
+        releaseDate: releaseDate || undefined,
+        artworkUrl,
+        tracks: uploadedTracks
+      }
 
       const response = await fetch('/api/upload', {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(releaseData)
       })
 
-      if (response.ok) {
-        setSuccess("Release uploaded successfully!")
-        setReleaseTitle("")
-        setReleaseDescription("")
-        setReleaseDate("")
-        setTracks([])
-        setTags("")
-        removeArtwork()
-        const fileInput = document.getElementById('files') as HTMLInputElement
-        if (fileInput) fileInput.value = ''
-        
-        setTimeout(() => {
-          router.push('/browse')
-        }, 2000)
-      } else {
-        const data = await response.json()
-        setError(data.error || "Upload failed")
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to create release')
       }
-    } catch {
-      setError("Something went wrong during upload")
+
+      const result = await response.json()
+      
+      setSuccess("Release uploaded successfully!")
+      setUploadProgress("")
+      
+      // Clear form
+      setReleaseTitle("")
+      setReleaseDescription("")
+      setReleaseDate("")
+      setTracks([])
+      setTags("")
+      removeArtwork()
+      const fileInput = document.getElementById('files') as HTMLInputElement
+      if (fileInput) fileInput.value = ''
+      
+      // Redirect to release page
+      setTimeout(() => {
+        router.push(`/release/${result.releaseId}`)
+      }, 2000)
+
+    } catch (error) {
+      console.error('Upload failed:', error)
+      setError(error instanceof Error ? error.message : 'Upload failed')
+      setUploadProgress("")
     } finally {
       setUploading(false)
     }
@@ -423,6 +499,11 @@ export default function UploadPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         {error && <div className="error">{error}</div>}
         {success && <div className="success">{success}</div>}
+        {uploadProgress && (
+          <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded">
+            {uploadProgress}
+          </div>
+        )}
         
         {/* Artwork Upload */}
         <div className="space-y-2">
@@ -432,7 +513,8 @@ export default function UploadPage() {
             id="artwork"
             accept="image/jpeg,image/jpg,image/png,image/gif"
             onChange={handleArtworkChange}
-            className="w-full p-2 border-2 border-gray-300 text-sm font-mono bg-white file:mr-2 file:py-1 file:px-2 file:border-0 file:bg-gray-200 file:text-black"
+            disabled={uploading}
+            className="w-full p-2 border-2 border-gray-300 text-sm font-mono bg-white file:mr-2 file:py-1 file:px-2 file:border-0 file:bg-gray-200 file:text-black disabled:opacity-50"
           />
           <small className="text-xs text-gray-600 block">JPG, PNG, or GIF. Minimum 1000x1000 pixels, max 10MB. Square images work best.</small>
           
@@ -443,7 +525,8 @@ export default function UploadPage() {
                 <button
                   type="button"
                   onClick={removeArtwork}
-                  className="ml-2 text-xs py-1 px-2 bg-red-500 text-white"
+                  disabled={uploading}
+                  className="ml-2 text-xs py-1 px-2 bg-red-500 text-white disabled:opacity-50"
                 >
                   Remove
                 </button>
@@ -470,7 +553,8 @@ export default function UploadPage() {
             multiple
             onChange={handleFilesChange}
             required
-            className="w-full p-2 border-2 border-gray-300 text-sm font-mono bg-white file:mr-2 file:py-1 file:px-2 file:border-0 file:bg-gray-200 file:text-black"
+            disabled={uploading}
+            className="w-full p-2 border-2 border-gray-300 text-sm font-mono bg-white file:mr-2 file:py-1 file:px-2 file:border-0 file:bg-gray-200 file:text-black disabled:opacity-50"
           />
           <small className="text-xs text-gray-600 block">Select one or more audio files. Supported: MP3, WAV, M4A, AAC, OGG (max 50MB each)</small>
         </div>
@@ -487,9 +571,9 @@ export default function UploadPage() {
                       <button
                         type="button"
                         onClick={() => moveTrackUp(index)}
-                        disabled={index === 0}
+                        disabled={index === 0 || uploading}
                         className={`w-6 h-6 text-xs border flex items-center justify-center ${
-                          index === 0 
+                          index === 0 || uploading
                             ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
                             : 'bg-gray-300 text-black hover:bg-gray-400'
                         }`}
@@ -500,9 +584,9 @@ export default function UploadPage() {
                       <button
                         type="button"
                         onClick={() => moveTrackDown(index)}
-                        disabled={index === tracks.length - 1}
+                        disabled={index === tracks.length - 1 || uploading}
                         className={`w-6 h-6 text-xs border flex items-center justify-center ${
-                          index === tracks.length - 1 
+                          index === tracks.length - 1 || uploading
                             ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
                             : 'bg-gray-300 text-black hover:bg-gray-400'
                         }`}
@@ -514,13 +598,13 @@ export default function UploadPage() {
 
                     <div className="track-number">Track {track.trackNumber}:</div>
 
-
                   <div className="track-details">
                         <input
                           type="text"
                           value={track.title}
                           onChange={(e) => updateTrackTitle(index, e.target.value)}
-                          className="track-title-input"
+                          disabled={uploading}
+                          className="track-title-input disabled:opacity-50"
                           placeholder="Track title"
                         />
                         <div className="track-info">
@@ -532,7 +616,8 @@ export default function UploadPage() {
                       <button
                         type="button"
                         onClick={() => removeTrack(index)}
-                        className="px-2 py-1 text-xs bg-red-500 text-white hover:bg-red-600 shrink-0 ml-auto"
+                        disabled={uploading}
+                        className="px-2 py-1 text-xs bg-red-500 text-white hover:bg-red-600 shrink-0 ml-auto disabled:opacity-50"
                       >
                         Remove
                       </button>
@@ -558,7 +643,8 @@ export default function UploadPage() {
             onChange={(e) => setReleaseTitle(e.target.value)}
             placeholder="Enter release title"
             required
-            className="w-full p-2 border-2 border-gray-300 font-mono text-base bg-white"
+            disabled={uploading}
+            className="w-full p-2 border-2 border-gray-300 font-mono text-base bg-white disabled:opacity-50"
           />
           <small className="text-xs text-gray-600 block">Auto-filled from tracks, but you can edit it</small>
         </div>
@@ -569,7 +655,8 @@ export default function UploadPage() {
             id="releaseType"
             value={releaseType}
             onChange={(e) => setReleaseType(e.target.value)}
-            className="p-2 border-2 border-gray-300 font-mono text-sm bg-white w-48"
+            disabled={uploading}
+            className="p-2 border-2 border-gray-300 font-mono text-sm bg-white w-48 disabled:opacity-50"
           >
             <option value="single">Single</option>
             <option value="ep">EP</option>
@@ -587,7 +674,8 @@ export default function UploadPage() {
             value={releaseDate}
             onChange={(e) => setReleaseDate(e.target.value)}
             min={formatDateForInput(new Date())}
-            className="p-2 border-2 border-gray-300 font-mono text-sm bg-white w-48"
+            disabled={uploading}
+            className="p-2 border-2 border-gray-300 font-mono text-sm bg-white w-48 disabled:opacity-50"
           />
           <div className="text-xs text-gray-600 space-y-1 mt-1!">
             <div>Leave empty to publish immediately. Future dates will keep the release private until that date.</div>
@@ -607,7 +695,8 @@ export default function UploadPage() {
             onChange={(e) => setReleaseDescription(e.target.value)}
             placeholder="Describe your release..."
             rows={3}
-            className="w-full p-2 border-2 border-gray-300 font-mono text-sm bg-white resize-y"
+            disabled={uploading}
+            className="w-full p-2 border-2 border-gray-300 font-mono text-sm bg-white resize-y disabled:opacity-50"
           />
         </div>
 
@@ -621,11 +710,12 @@ export default function UploadPage() {
             onFocus={() => tags.length > 0 && setShowSuggestions(true)}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
             placeholder="demo, rock, work-in-progress, acoustic (comma separated)"
-            className="w-full p-2 border-2 border-gray-300 font-mono text-base bg-white"
+            disabled={uploading}
+            className="w-full p-2 border-2 border-gray-300 font-mono text-base bg-white disabled:opacity-50"
           />
           <small className="text-xs text-gray-600 block">Start typing to see suggestions from other releases</small>
           
-          {showSuggestions && tagSuggestions.length > 0 && (
+          {showSuggestions && tagSuggestions.length > 0 && !uploading && (
             <div className="absolute top-full left-0 right-0 bg-white border-2 border-gray-300 border-t-0 max-h-36 overflow-y-auto z-50">
               {tagSuggestions.map(tag => (
                 <div
