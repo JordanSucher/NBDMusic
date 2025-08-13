@@ -48,13 +48,13 @@ export async function GET(
       )
     }
 
-    // Verify ownership
-    if (release.userId !== session.user.id) {
-      return NextResponse.json(
-        { error: "You can only edit your own releases" },
-        { status: 403 }
-      )
-    }
+    // // Verify ownership
+    // if (release.userId !== session.user.id) {
+    //   return NextResponse.json(
+    //     { error: "You can only edit your own releases" },
+    //     { status: 403 }
+    //   )
+    // }
 
     return NextResponse.json({ release })
   } catch (error) {

@@ -179,7 +179,15 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
         {/* Release Info */}
         <div style={{ flex: 1 }}>
           <div className="song-title">
-            {release.title}
+            <Link 
+              href={`/release/${release.id}`}
+              style={{
+                textDecoration: 'none',
+                color: 'inherit'
+              }}
+            >
+              {release.title}
+            </Link>
             <span style={{ 
               fontSize: '11px', 
               marginLeft: '10px', 
