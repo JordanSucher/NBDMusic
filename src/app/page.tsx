@@ -21,6 +21,7 @@ interface Release {
   title: string
   description: string | null
   releaseType: string
+  releaseDate: string | null
   artworkUrl: string | null
   uploadedAt: string
   user: {
