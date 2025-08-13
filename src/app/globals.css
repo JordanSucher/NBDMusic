@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 /* Reset all default styles */
 * {
   margin: 0;
@@ -105,7 +107,7 @@ input[type="email"],
 input[type="password"],
 input[type="file"],
 textarea {
-  width: 100% !important;
+  width: 100%;
   padding: 4px !important;
   border: 2px inset #ccc !important;
   font-family: 'Courier New', monospace !important;
@@ -379,3 +381,4 @@ audio {
   margin-bottom: 10px !important;
   font-family: 'Courier New', monospace !important;
 }
+

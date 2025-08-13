@@ -355,6 +355,7 @@ export default function UploadPage() {
       formData.append('releaseTitle', releaseTitle.trim())
       formData.append('releaseDescription', releaseDescription.trim())
       formData.append('releaseType', releaseType)
+      formData.append('releaseDate', releaseDate || '')
       formData.append('tags', tags.trim())
       
       // Add artwork if provided
@@ -380,6 +381,7 @@ export default function UploadPage() {
         setSuccess("Release uploaded successfully!")
         setReleaseTitle("")
         setReleaseDescription("")
+        setReleaseDate("")
         setTracks([])
         setTags("")
         removeArtwork()
@@ -418,41 +420,30 @@ export default function UploadPage() {
     <div className="container">
       <h1>Upload Music</h1>
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="space-y-6">
         {error && <div className="error">{error}</div>}
         {success && <div className="success">{success}</div>}
         
         {/* Artwork Upload */}
-        <div className="mb-10">
-          <label htmlFor="artwork">Artwork (optional):</label><br />
+        <div className="space-y-2">
+          <label htmlFor="artwork" className="block text-sm font-medium">Artwork (optional):</label>
           <input
             type="file"
             id="artwork"
             accept="image/jpeg,image/jpg,image/png,image/gif"
             onChange={handleArtworkChange}
+            className="w-full p-2 border-2 border-gray-300 text-sm font-mono bg-white file:mr-2 file:py-1 file:px-2 file:border-0 file:bg-gray-200 file:text-black"
           />
-          <small>JPG, PNG, or GIF. Minimum 1000x1000 pixels, max 10MB. Square images work best.</small>
+          <small className="text-xs text-gray-600 block">JPG, PNG, or GIF. Minimum 1000x1000 pixels, max 10MB. Square images work best.</small>
           
           {artworkPreview && (
-            <div style={{ 
-              marginTop: '10px', 
-              border: '2px solid #000', 
-              padding: '10px', 
-              backgroundColor: '#fff',
-              display: 'inline-block'
-            }}>
-              <div style={{ marginBottom: '5px', fontSize: '12px' }}>
+            <div className="mt-2 p-2 border-2 border-black bg-white inline-block">
+              <div className="mb-1 text-xs">
                 <strong>Artwork preview:</strong>
                 <button
                   type="button"
                   onClick={removeArtwork}
-                  style={{ 
-                    marginLeft: '10px',
-                    fontSize: '11px', 
-                    padding: '2px 4px',
-                    backgroundColor: '#ff6666',
-                    color: 'white'
-                  }}
+                  className="ml-2 text-xs py-1 px-2 bg-red-500 text-white"
                 >
                   Remove
                 </button>
@@ -460,13 +451,9 @@ export default function UploadPage() {
               <img 
                 src={artworkPreview} 
                 alt="Artwork preview" 
-                style={{ 
-                  maxWidth: '120px', 
-                  maxHeight: '120px',
-                  border: '1px solid #ccc'
-                }}
+                className="max-w-[120px] max-h-[120px] border border-gray-300"
               />
-              <div style={{ fontSize: '11px', marginTop: '5px', color: '#666' }}>
+              <div className="text-xs mt-1 text-gray-600">
                 {artworkFile?.name} ({formatFileSize(artworkFile?.size || 0)})
               </div>
             </div>
@@ -474,8 +461,8 @@ export default function UploadPage() {
         </div>
 
         {/* File Upload */}
-        <div className="mb-10">
-          <label htmlFor="files">Audio Files:</label><br />
+        <div className="space-y-2">
+          <label htmlFor="files" className="block text-sm font-medium">Audio Files:</label>
           <input
             type="file"
             id="files"
@@ -483,69 +470,78 @@ export default function UploadPage() {
             multiple
             onChange={handleFilesChange}
             required
+            className="w-full p-2 border-2 border-gray-300 text-sm font-mono bg-white file:mr-2 file:py-1 file:px-2 file:border-0 file:bg-gray-200 file:text-black"
           />
-          <small>Select one or more audio files. Supported: MP3, WAV, M4A, AAC, OGG (max 50MB each)</small>
+          <small className="text-xs text-gray-600 block">Select one or more audio files. Supported: MP3, WAV, M4A, AAC, OGG (max 50MB each)</small>
         </div>
 
         {/* Track List */}
         {tracks.length > 0 && (
-          <div className="mb-20" style={{ border: '2px solid #000', padding: '10px', backgroundColor: '#fff' }}>
-            <h3>Tracks ({tracks.length})</h3>
-            {tracks.map((track, index) => (
-              <div key={index} className="track-row">
-                <div className="track-reorder-buttons">
-                  <button
-                    type="button"
-                    className="track-move-btn move-up"
-                    onClick={() => moveTrackUp(index)}
-                    disabled={index === 0}
-                    title="Move up"
-                  >
-                    ↑
-                  </button>
-                  <button
-                    type="button"
-                    className="track-move-btn move-down"
-                    onClick={() => moveTrackDown(index)}
-                    disabled={index === tracks.length - 1}
-                    title="Move down"
-                  >
-                    ↓
-                  </button>
-                </div>
-                
-                <div className="track-number">Track {track.trackNumber}:</div>
-                
-                <div className="track-details">
-                  <input
-                    type="text"
-                    value={track.title}
-                    onChange={(e) => updateTrackTitle(index, e.target.value)}
-                    className="track-title-input"
-                    placeholder="Track title"
-                  />
-                  <div className="track-info">
-                    {track.file.name} ({formatFileSize(track.file.size)})
+          <div className="mb-20" style={{ border: '1px solid #000', padding: '10px', backgroundColor: '#fff' }}>
+            <h3 className="font-bold">Tracks ({tracks.length})</h3>
+            <div className="space-y-2">
+              {tracks.map((track, index) => (
+                <div key={index} className="track-row">
+                  {/* Single line with all controls */}
+                  <div className="track-reorder-buttons">
+                      <button
+                        type="button"
+                        onClick={() => moveTrackUp(index)}
+                        disabled={index === 0}
+                        className={`w-6 h-6 text-xs border flex items-center justify-center ${
+                          index === 0 
+                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                            : 'bg-gray-300 text-black hover:bg-gray-400'
+                        }`}
+                        title="Move up"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveTrackDown(index)}
+                        disabled={index === tracks.length - 1}
+                        className={`w-6 h-6 text-xs border flex items-center justify-center ${
+                          index === tracks.length - 1 
+                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                            : 'bg-gray-300 text-black hover:bg-gray-400'
+                        }`}
+                        title="Move down"
+                      >
+                        ↓
+                      </button>
+                    </div>
+
+                    <div className="track-number">Track {track.trackNumber}:</div>
+
+
+                  <div className="track-details">
+                        <input
+                          type="text"
+                          value={track.title}
+                          onChange={(e) => updateTrackTitle(index, e.target.value)}
+                          className="track-title-input"
+                          placeholder="Track title"
+                        />
+                        <div className="track-info">
+                          {track.title} ({formatFileSize(track.file?.size || 0)})
+                        </div>
                   </div>
+
+                  <div className="track-actions">
+                      <button
+                        type="button"
+                        onClick={() => removeTrack(index)}
+                        className="px-2 py-1 text-xs bg-red-500 text-white hover:bg-red-600 shrink-0 ml-auto"
+                      >
+                        Remove
+                      </button>
+                  </div>
+                  
                 </div>
-                
-                <div className="track-actions">
-                  <button
-                    type="button"
-                    onClick={() => removeTrack(index)}
-                    style={{ 
-                      fontSize: '11px', 
-                      padding: '2px 4px',
-                      backgroundColor: '#ff6666',
-                      color: 'white'
-                    }}
-                  >
-                    Remove
-                  </button>
-                </div>
-              </div>
-            ))}
-            <div style={{ fontSize: '12px', marginTop: '10px' }}>
+              ))}
+            </div>
+            <div className="text-xs text-gray-700">
               <strong>Total size:</strong> {formatFileSize(getTotalSize())}
               {artworkFile && <span> (includes artwork)</span>}
             </div>
@@ -553,8 +549,8 @@ export default function UploadPage() {
         )}
 
         {/* Release Info */}
-        <div className="mb-10">
-          <label htmlFor="releaseTitle">Release Title:</label><br />
+        <div className="space-y-2">
+          <label htmlFor="releaseTitle" className="block text-sm font-medium">Release Title:</label>
           <input
             type="text"
             id="releaseTitle"
@@ -562,25 +558,18 @@ export default function UploadPage() {
             onChange={(e) => setReleaseTitle(e.target.value)}
             placeholder="Enter release title"
             required
+            className="w-full p-2 border-2 border-gray-300 font-mono text-base bg-white"
           />
-          <small>Auto-filled from tracks, but you can edit it</small>
+          <small className="text-xs text-gray-600 block">Auto-filled from tracks, but you can edit it</small>
         </div>
 
-        <div className="mb-10">
-          <label htmlFor="releaseType">Release Type:</label><br />
+        <div className="space-y-2 mb-2!">
+          <label htmlFor="releaseType" className="block text-sm font-medium">Release Type:</label>
           <select
             id="releaseType"
             value={releaseType}
             onChange={(e) => setReleaseType(e.target.value)}
-            style={{
-              padding: '4px',
-              border: '2px inset #ccc',
-              fontFamily: 'Courier New, monospace',
-              fontSize: '14px',
-              marginBottom: '10px',
-              background: 'white',
-              width: '200px'
-            }}
+            className="p-2 border-2 border-gray-300 font-mono text-sm bg-white w-48"
           >
             <option value="single">Single</option>
             <option value="ep">EP</option>
@@ -590,57 +579,40 @@ export default function UploadPage() {
         </div>
 
         {/* Release Date */}
-        <div className="mb-10">
-          <label htmlFor="releaseDate">Release Date:</label><br />
+        <div className="space-y-2 mb-2!">
+          <label htmlFor="releaseDate" className="block text-sm font-medium">Release Date:</label>
           <input
             type="date"
             id="releaseDate"
             value={releaseDate}
             onChange={(e) => setReleaseDate(e.target.value)}
-            min={formatDateForInput(new Date())} // Prevent past dates
-            style={{
-              padding: '4px',
-              border: '2px inset #ccc',
-              fontFamily: 'Courier New, monospace',
-              fontSize: '14px',
-              marginBottom: '10px',
-              background: 'white',
-              width: '200px'
-            }}
+            min={formatDateForInput(new Date())}
+            className="p-2 border-2 border-gray-300 font-mono text-sm bg-white w-48"
           />
-          <small>
-            Leave empty to publish immediately. Future dates will keep the release private until that date.
+          <div className="text-xs text-gray-600 space-y-1 mt-1!">
+            <div>Leave empty to publish immediately. Future dates will keep the release private until that date.</div>
             {releaseDate && new Date(releaseDate) > new Date() && (
-              <span style={{ color: '#ff6600', fontWeight: 'bold' }}>
-                <br />⚠️ This release will be scheduled and not publicly visible until {new Date(releaseDate).toLocaleDateString()}
-              </span>
+              <div className="text-orange-600 font-bold">
+                ⚠️ This release will be scheduled and not publicly visible until {new Date(releaseDate).toLocaleDateString()}
+              </div>
             )}
-          </small>
+          </div>
         </div>
 
-        <div className="mb-10">
-          <label htmlFor="releaseDescription">Description (optional):</label><br />
+        <div className="space-y-2">
+          <label htmlFor="releaseDescription" className="block text-sm font-medium">Description (optional):</label>
           <textarea
             id="releaseDescription"
             value={releaseDescription}
             onChange={(e) => setReleaseDescription(e.target.value)}
             placeholder="Describe your release..."
             rows={3}
-            style={{
-              width: '100%',
-              padding: '4px',
-              border: '2px inset #ccc',
-              fontFamily: 'Courier New, monospace',
-              fontSize: '14px',
-              marginBottom: '10px',
-              background: 'white',
-              resize: 'vertical'
-            }}
+            className="w-full p-2 border-2 border-gray-300 font-mono text-sm bg-white resize-y"
           />
         </div>
 
-        <div className="mb-10" style={{ position: 'relative' }}>
-          <label htmlFor="tags">Tags (optional):</label><br />
+        <div className="space-y-2 relative">
+          <label htmlFor="tags" className="block text-sm font-medium">Tags (optional):</label>
           <input
             type="text"
             id="tags"
@@ -649,35 +621,17 @@ export default function UploadPage() {
             onFocus={() => tags.length > 0 && setShowSuggestions(true)}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
             placeholder="demo, rock, work-in-progress, acoustic (comma separated)"
+            className="w-full p-2 border-2 border-gray-300 font-mono text-base bg-white"
           />
-          <small>Start typing to see suggestions from other releases</small>
+          <small className="text-xs text-gray-600 block">Start typing to see suggestions from other releases</small>
           
           {showSuggestions && tagSuggestions.length > 0 && (
-            <div style={{
-              position: 'absolute',
-              top: '100%',
-              left: 0,
-              right: 0,
-              backgroundColor: 'white',
-              border: '2px solid #ccc',
-              borderTop: 'none',
-              maxHeight: '150px',
-              overflowY: 'auto',
-              zIndex: 1000
-            }}>
+            <div className="absolute top-full left-0 right-0 bg-white border-2 border-gray-300 border-t-0 max-h-36 overflow-y-auto z-50">
               {tagSuggestions.map(tag => (
                 <div
                   key={tag.name}
                   onClick={() => addSuggestedTag(tag.name)}
-                  style={{
-                    padding: '8px',
-                    cursor: 'pointer',
-                    borderBottom: '1px solid #eee',
-                    fontFamily: 'Courier New, monospace',
-                    fontSize: '12px'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
+                  className="p-2 cursor-pointer border-b border-gray-200 font-mono text-xs hover:bg-gray-100"
                 >
                   <strong>{tag.name}</strong> ({tag.count} release{tag.count !== 1 ? 's' : ''})
                 </div>
@@ -686,11 +640,14 @@ export default function UploadPage() {
           )}
         </div>
 
-        <button type="submit" disabled={uploading || tracks.length === 0}>
+        <button 
+          type="submit" 
+          disabled={uploading || tracks.length === 0}
+          className="px-4 py-2 border border-black font-mono text-sm bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
+        >
           {uploading ? "Uploading..." : `Upload ${releaseType}`}
         </button>
       </form>
-
     </div>
   )
 }
