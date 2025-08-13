@@ -114,6 +114,9 @@ export async function PUT(
     const tags = formData.get('tags') as string
     const removeCurrentArtwork = formData.get('removeCurrentArtwork') === 'true'
     const newArtworkFile = formData.get('artwork') as File | null
+    const releaseDate = formData.get('releaseDate') as string
+    const parsedReleaseDate = releaseDate ? new Date(releaseDate) : null
+
 
     if (!releaseTitle?.trim()) {
       return NextResponse.json(
@@ -231,6 +234,7 @@ export async function PUT(
         title: releaseTitle.trim(),
         description: releaseDescription.trim() || null,
         releaseType,
+        releaseDate: parsedReleaseDate,
         artworkUrl
       }
     })

@@ -72,6 +72,7 @@ model Release {
   title       String
   description String?
   releaseType String   @default("single") // "single", "ep", "album", "demo"
+  releaseDate DateTime? // Optional release date
   artworkUrl  String?  // New field for release artwork
   uploadedAt  DateTime @default(now())
   

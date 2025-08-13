@@ -39,7 +39,18 @@ export async function GET(request: NextRequest) {
       whereCondition = {
         userId: {
           in: followingUserIds
-        }
+        },
+        OR: [
+          { releaseDate: null }, // Include releases without a release date
+          { releaseDate: { lte: new Date() } }
+        ]
+      }
+    } else {
+      whereCondition = {
+        OR: [
+          { releaseDate: null }, // Include releases without a release date
+          { releaseDate: { lte: new Date() } }
+        ]
       }
     }
 

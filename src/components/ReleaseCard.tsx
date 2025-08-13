@@ -25,6 +25,7 @@ interface ReleaseCardProps {
     title: string
     description: string | null
     releaseType: string
+    releaseDate: string | null
     artworkUrl: string | null
     uploadedAt: string
     user: {
@@ -49,6 +50,17 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
   useEffect(() => {
     fetchTagCounts()
   }, [])
+
+  const isScheduledRelease = (releaseDate: string | null) => {
+    if (!releaseDate) return false
+    return new Date(releaseDate) > new Date()
+  }
+
+  const formatReleaseDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString()
+  }
+
 
   const fetchTagCounts = async () => {
     try {
@@ -183,9 +195,26 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
             By: <Link href={`/user/${encodeURIComponent(release.user.username)}`}>
               <strong>{release.user.username}</strong>
             </Link> | 
-            Uploaded: {formatDate(release.uploadedAt)} | 
-            {' ' + release.tracks.length} track{release.tracks.length !== 1 ? 's' : ''} | 
+            {release.releaseDate && (
+              <>
+                {isScheduledRelease(release.releaseDate) ? 'Scheduled for' : 'Released'}: {formatReleaseDate(release.releaseDate)} | 
+              </>
+            )}
+            {!release.releaseDate && <>Uploaded: {formatDate(release.uploadedAt)} | </>}
+            {release.tracks.length} track{release.tracks.length !== 1 ? 's' : ''} | 
             Total size: {formatFileSize(getTotalSize())}
+            {isScheduledRelease(release.releaseDate) && (
+              <span style={{ 
+                marginLeft: '10px',
+                padding: '2px 4px',
+                backgroundColor: '#ff9900',
+                color: 'white',
+                fontSize: '10px',
+                fontWeight: 'bold'
+              }}>
+                SCHEDULED
+              </span>
+            )}
           </div>
 
           {release.description && (

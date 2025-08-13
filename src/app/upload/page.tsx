@@ -23,6 +23,7 @@ export default function UploadPage() {
   // Release info
   const [releaseTitle, setReleaseTitle] = useState("")
   const [releaseDescription, setReleaseDescription] = useState("")
+  const [releaseDate, setReleaseDate] = useState("")
   const [releaseType, setReleaseType] = useState("single")
   const [tags, setTags] = useState("")
   
@@ -40,6 +41,13 @@ export default function UploadPage() {
   const [allTags, setAllTags] = useState<TagWithCount[]>([])
   const [tagSuggestions, setTagSuggestions] = useState<TagWithCount[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
+
+  const formatDateForInput = (date: Date) => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
 
   useEffect(() => {
     fetchTagsWithCounts()
@@ -579,6 +587,35 @@ export default function UploadPage() {
             <option value="album">Album</option>
             <option value="demo">Demo</option>
           </select>
+        </div>
+
+        {/* Release Date */}
+        <div className="mb-10">
+          <label htmlFor="releaseDate">Release Date:</label><br />
+          <input
+            type="date"
+            id="releaseDate"
+            value={releaseDate}
+            onChange={(e) => setReleaseDate(e.target.value)}
+            min={formatDateForInput(new Date())} // Prevent past dates
+            style={{
+              padding: '4px',
+              border: '2px inset #ccc',
+              fontFamily: 'Courier New, monospace',
+              fontSize: '14px',
+              marginBottom: '10px',
+              background: 'white',
+              width: '200px'
+            }}
+          />
+          <small>
+            Leave empty to publish immediately. Future dates will keep the release private until that date.
+            {releaseDate && new Date(releaseDate) > new Date() && (
+              <span style={{ color: '#ff6600', fontWeight: 'bold' }}>
+                <br />⚠️ This release will be scheduled and not publicly visible until {new Date(releaseDate).toLocaleDateString()}
+              </span>
+            )}
+          </small>
         </div>
 
         <div className="mb-10">

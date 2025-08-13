@@ -24,6 +24,8 @@ export async function POST(request: NextRequest) {
     const tags = formData.get('tags') as string
     const trackCount = parseInt(formData.get('trackCount') as string)
     const artworkFile = formData.get('artwork') as File | null
+    const releaseDate = formData.get('releaseDate') as string
+    const parsedReleaseDate = releaseDate ? new Date(releaseDate) : null
 
     if (!releaseTitle?.trim()) {
       return NextResponse.json(
@@ -99,6 +101,7 @@ export async function POST(request: NextRequest) {
         description: releaseDescription.trim() || null,
         releaseType,
         artworkUrl,
+        releaseDate: parsedReleaseDate,
         userId: session.user.id,
         tracks: {
           create: trackUploads

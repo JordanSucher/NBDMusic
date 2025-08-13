@@ -43,6 +43,7 @@ export default function EditReleasePage() {
   // Release info
   const [releaseTitle, setReleaseTitle] = useState("")
   const [releaseDescription, setReleaseDescription] = useState("")
+  const [releaseDate, setReleaseDate] = useState("")
   const [releaseType, setReleaseType] = useState("single")
   const [tags, setTags] = useState("")
   
@@ -58,13 +59,69 @@ export default function EditReleasePage() {
   // UI state
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [allTags, setAllTags] = useState<TagWithCount[]>([])
   const [tagSuggestions, setTagSuggestions] = useState<TagWithCount[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
 
+  const formatDateForInput = (date: Date) => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
   useEffect(() => {
+      const fetchReleaseData = async () => {
+        try {
+          const response = await fetch(`/api/releases/${releaseId}`)
+          if (response.ok) {
+            const data = await response.json()
+            const release = data.release
+            
+            // Populate form with existing data
+            setReleaseTitle(release.title)
+            setReleaseDescription(release.description || "")
+            setReleaseType(release.releaseType)
+            setCurrentArtworkUrl(release.artworkUrl)
+            setReleaseDate(release.releaseDate ? formatDateForInput(new Date(release.releaseDate)) : "")
+            
+            // Set existing tracks
+            const existingTracks: TrackUpdate[] = release.tracks.map((track: Track) => ({
+              id: track.id,
+              title: track.title,
+              trackNumber: track.trackNumber,
+              fileName: track.fileName,
+              fileUrl: track.fileUrl,
+              fileSize: track.fileSize,
+              mimeType: track.mimeType,
+              isNew: false,
+              toDelete: false
+            }))
+            setTracks(existingTracks)
+            
+            // Set existing tags
+            const existingTagNames = release.tags.map((rt: { tag: { name: string } }) => rt.tag.name)
+            setTags(existingTagNames.join(', '))
+            
+          } else if (response.status === 404) {
+            setError("Release not found")
+          } else if (response.status === 403) {
+            setError("You can only edit your own releases")
+          } else {
+            setError("Failed to load release")
+          }
+        } catch {
+          setError("Something went wrong loading the release")
+        } finally {
+          setLoading(false)
+        }
+      }
+
+
     fetchTagsWithCounts()
     if (releaseId) {
       fetchReleaseData()
@@ -83,50 +140,7 @@ export default function EditReleasePage() {
     }
   }
 
-  const fetchReleaseData = async () => {
-    try {
-      const response = await fetch(`/api/releases/${releaseId}`)
-      if (response.ok) {
-        const data = await response.json()
-        const release = data.release
-        
-        // Populate form with existing data
-        setReleaseTitle(release.title)
-        setReleaseDescription(release.description || "")
-        setReleaseType(release.releaseType)
-        setCurrentArtworkUrl(release.artworkUrl)
-        
-        // Set existing tracks
-        const existingTracks: TrackUpdate[] = release.tracks.map((track: Track) => ({
-          id: track.id,
-          title: track.title,
-          trackNumber: track.trackNumber,
-          fileName: track.fileName,
-          fileUrl: track.fileUrl,
-          fileSize: track.fileSize,
-          mimeType: track.mimeType,
-          isNew: false,
-          toDelete: false
-        }))
-        setTracks(existingTracks)
-        
-        // Set existing tags
-        const existingTagNames = release.tags.map((rt: { tag: { name: string } }) => rt.tag.name)
-        setTags(existingTagNames.join(', '))
-        
-      } else if (response.status === 404) {
-        setError("Release not found")
-      } else if (response.status === 403) {
-        setError("You can only edit your own releases")
-      } else {
-        setError("Failed to load release")
-      }
-    } catch {
-      setError("Something went wrong loading the release")
-    } finally {
-      setLoading(false)
-    }
-  }
+
 
   // Redirect if not logged in
   if (status === "loading" || loading) {
@@ -382,6 +396,41 @@ export default function EditReleasePage() {
     setShowSuggestions(false)
   }
 
+  const handleDelete = async () => {
+    if (!showDeleteConfirm) {
+      setShowDeleteConfirm(true)
+      return
+    }
+
+    setDeleting(true)
+    setError("")
+
+    try {
+      const response = await fetch(`/api/releases/${releaseId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        setSuccess("Release deleted successfully!")
+        setTimeout(() => {
+          router.push('/profile')
+        }, 1500)
+      } else {
+        const data = await response.json()
+        setError(data.error || "Delete failed")
+      }
+    } catch {
+      setError("Something went wrong during deletion")
+    } finally {
+      setDeleting(false)
+      setShowDeleteConfirm(false)
+    }
+  }
+
+  const cancelDelete = () => {
+    setShowDeleteConfirm(false)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -431,6 +480,9 @@ export default function EditReleasePage() {
         formData.append(`new_${index}_number`, track.trackNumber.toString())
       })
       formData.append('newTrackCount', newTracks.length.toString())
+
+      // Add release date if provided
+      formData.append('releaseDate', releaseDate || '')
 
       const response = await fetch(`/api/releases/${releaseId}`, {
         method: 'PUT',
@@ -499,7 +551,6 @@ export default function EditReleasePage() {
             required
           />
         </div>
-
 
         {/* Artwork Management */}
         <div className="mb-10">
@@ -631,7 +682,7 @@ export default function EditReleasePage() {
           <input
             type="file"
             id="newTracks"
-            accept="audio/*"
+            accept=".mp3,.wav,.m4a,.aac,.ogg,audio/mpeg,audio/wav,audio/mp4,audio/x-m4a,audio/aac,audio/ogg"
             multiple
             onChange={handleAddTracks}
           />
@@ -745,6 +796,39 @@ export default function EditReleasePage() {
           </select>
         </div>
 
+        {/* Release Date */}
+        <div className="mb-10">
+          <label htmlFor="releaseDate">Release Date:</label><br />
+          <input
+            type="date"
+            id="releaseDate"
+            value={releaseDate}
+            onChange={(e) => setReleaseDate(e.target.value)}
+            style={{
+              padding: '4px',
+              border: '2px inset #ccc',
+              fontFamily: 'Courier New, monospace',
+              fontSize: '14px',
+              marginBottom: '10px',
+              background: 'white',
+              width: '200px'
+            }}
+          />
+          <small>
+            Leave empty for immediate release. Future dates keep the release private until that date.
+            {releaseDate && new Date(releaseDate) > new Date() && (
+              <span style={{ color: '#ff6600', fontWeight: 'bold' }}>
+                <br />⚠️ This release is scheduled and not publicly visible until {new Date(releaseDate).toLocaleDateString('UTC', {timeZone: 'UTC'})}
+              </span>
+            )}
+            {releaseDate && new Date(releaseDate) <= new Date() && (
+              <span style={{ color: '#008800' }}>
+                <br />✓ This release is publicly visible
+              </span>
+            )}
+          </small>
+        </div>
+
         <div className="mb-10">
           <label htmlFor="releaseDescription">Description (optional):</label><br />
           <textarea
@@ -813,9 +897,99 @@ export default function EditReleasePage() {
           )}
         </div>
 
-        <button type="submit" disabled={saving || tracks.filter(t => !t.toDelete).length === 0}>
-          {saving ? "Saving..." : "Update Release"}
-        </button>
+        {/* Action Buttons */}
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column',
+          gap: '15px', 
+          alignItems: 'left',
+          marginTop: '20px',
+          paddingTop: '20px',
+          borderTop: '2px solid #ccc'
+        }}>
+          <button 
+            type="submit" 
+            disabled={saving || tracks.filter(t => !t.toDelete).length === 0}
+            style={{width: '200px'}}
+            >
+            {saving ? "Saving..." : "Update Release"}
+          </button>
+
+          <div style={{ 
+            border: '2px solid #ff4444', 
+            padding: '10px', 
+            backgroundColor: '#ffe6e6',
+            fontFamily: 'Courier New, monospace',
+            width: 'fit-content'
+          }}>
+            <div style={{ fontSize: '12px', marginBottom: '8px', color: '#666' }}>
+              <strong>Danger Zone:</strong>
+            </div>
+            
+            {!showDeleteConfirm ? (
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleting}
+                style={{
+                  backgroundColor: '#ff4444',
+                  color: 'white',
+                  fontSize: '12px',
+                  padding: '6px 12px',
+                  width: '200px',
+                  border: '1px solid #000',
+                  cursor: deleting ? 'not-allowed' : 'pointer',
+                  fontFamily: 'Courier New, monospace'
+                }}
+              >
+                Delete Entire Release
+              </button>
+            ) : (
+              <div style={{ fontSize: '12px' }}>
+                <div style={{ marginBottom: '8px', color: '#000' }}>
+                  <strong>⚠️ Are you sure?</strong><br />
+                  This will permanently delete this release and all its tracks. This cannot be undone.
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    style={{
+                      backgroundColor: '#ff0000',
+                      color: 'white',
+                      fontSize: '11px',
+                      padding: '4px 8px',
+                      width: '200px',
+                      border: '1px solid #000',
+                      cursor: deleting ? 'not-allowed' : 'pointer',
+                      fontFamily: 'Courier New, monospace'
+                    }}
+                  >
+                    {deleting ? "Deleting..." : "Yes, Delete Forever"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={cancelDelete}
+                    disabled={deleting}
+                    style={{
+                      backgroundColor: '#ddd',
+                      color: '#000',
+                      fontSize: '11px',
+                      padding: '4px 8px',
+                      width: '200px',
+                      border: '1px solid #000',
+                      cursor: deleting ? 'not-allowed' : 'pointer',
+                      fontFamily: 'Courier New, monospace'
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </form>
 
     </div>
