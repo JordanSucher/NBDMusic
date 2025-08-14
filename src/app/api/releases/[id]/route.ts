@@ -4,20 +4,12 @@ import { put, del } from "@vercel/blob"
 import { db } from "@/lib/db"
 import { authOptions } from "@/lib/auth"
 
-// GET endpoint to fetch release data for editing
+// GET endpoint to fetch release data for viewing (no auth required)
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions as Record<string, unknown>) as { user?: { id?: string } } | null
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "You must be logged in" },
-        { status: 401 }
-      )
-    }
-
     const { id } = await context.params
 
     const release = await db.release.findUnique({
@@ -47,14 +39,6 @@ export async function GET(
         { status: 404 }
       )
     }
-
-    // // Verify ownership
-    // if (release.userId !== session.user.id) {
-    //   return NextResponse.json(
-    //     { error: "You can only edit your own releases" },
-    //     { status: 403 }
-    //   )
-    // }
 
     return NextResponse.json({ release })
   } catch (error) {

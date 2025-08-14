@@ -51,7 +51,8 @@ function BrowseContent() {
 
   const fetchReleases = useCallback(async () => {
     try {
-      const url = showFollowingOnly ? '/api/releases?following=true' : '/api/releases'
+      // Don't send following=true if user isn't logged in
+      const url = (showFollowingOnly && session) ? '/api/releases?following=true' : '/api/releases'
       const response = await fetch(url)
       if (response.ok) {
         const data = await response.json()
@@ -64,7 +65,7 @@ function BrowseContent() {
     } finally {
       setLoading(false)
     }
-  }, [showFollowingOnly])
+  }, [showFollowingOnly, session])
 
   const updateURL = useCallback((following: boolean, tags: string[] = selectedTags, search: string = searchTerm) => {
     const params = new URLSearchParams()
