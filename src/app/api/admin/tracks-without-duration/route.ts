@@ -14,47 +14,34 @@ export async function GET() {
       )
     }
 
-    // Get user's releases
-    const releases = await db.release.findMany({
+    // Get all tracks without duration data
+    const tracks = await db.track.findMany({
       where: {
-        userId: session.user.id
+        OR: [
+          { duration: null },
+          { duration: 0 }
+        ]
       },
-      include: {
-        user: {
-          select: {
-            username: true
-          }
-        },
-        tags: {
-          include: {
-            tag: true
-          }
-        },
-        tracks: {
-          include: {
-            _count: {
-              select: {
-                listens: true
-              }
-            }
-          },
-          orderBy: {
-            trackNumber: 'asc'
-          }
-        }
+      select: {
+        id: true,
+        title: true,
+        fileUrl: true,
+        duration: true
       },
       orderBy: {
-        uploadedAt: 'desc'
+        id: 'asc'
       }
     })
 
     return NextResponse.json({
-      releases
+      tracks,
+      count: tracks.length
     })
+
   } catch (error) {
-    console.error("Error fetching user releases:", error)
+    console.error("Error fetching tracks without duration:", error)
     return NextResponse.json(
-      { error: "Failed to fetch releases" },
+      { error: "Failed to fetch tracks" },
       { status: 500 }
     )
   }

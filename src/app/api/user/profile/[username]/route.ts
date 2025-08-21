@@ -36,6 +36,13 @@ export async function GET(
           }
         },
         tracks: {
+          include: {
+            _count: {
+              select: {
+                listens: true
+              }
+            }
+          },
           orderBy: {
             trackNumber: 'asc'
           }
@@ -52,8 +59,8 @@ export async function GET(
     })
 
     // Calculate stats
-    const totalFileSize = releases.reduce((total, release) => {
-      return total + release.tracks.reduce((releaseTotal, track) => releaseTotal + track.fileSize, 0)
+    const totalDuration = releases.reduce((total, release) => {
+      return total + release.tracks.reduce((releaseTotal, track) => releaseTotal + (track.duration || 0), 0)
     }, 0)
     
     const trackCount = releases.reduce((total, release) => total + release.tracks.length, 0)
@@ -95,7 +102,7 @@ export async function GET(
       username: user.username,
       releaseCount: releases.length,
       trackCount,
-      totalFileSize,
+      totalDuration,
       joinedAt: user.createdAt.toISOString(),
       allTags,
       releaseTypeCounts,

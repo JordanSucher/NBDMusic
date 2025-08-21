@@ -5,6 +5,8 @@ interface AudioPlayerProps {
   src: string
   title: string
   artist: string
+  trackId?: string // Add trackId for listen tracking
+  listenCount?: number // Add listen count to display
   onTrackEnd?: () => void
   onNextTrack?: () => void
   onPrevTrack?: () => void
@@ -20,6 +22,8 @@ export default function AudioPlayer({
   src, 
   title, 
   artist, 
+  trackId,
+  listenCount,
   onTrackEnd,
   onNextTrack,
   onPrevTrack,
@@ -40,8 +44,42 @@ export default function AudioPlayer({
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
+  const [listenTracked, setListenTracked] = useState(false) // Track if we've recorded a listen for this track
 
   const audioContext = useAudioContext()
+
+  // Function to track a listen
+  const trackListen = async () => {
+    if (!trackId || listenTracked) return
+    
+    try {
+      const response = await fetch(`/api/tracks/${trackId}/listen`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      if (response.ok) {
+        setListenTracked(true)
+        console.log('Listen tracked for track:', trackId)
+      }
+    } catch (error) {
+      console.error('Failed to track listen:', error)
+    }
+  }
+
+  // Check if we should track a listen based on current time and duration
+  const shouldTrackListen = (currentTime: number, duration: number): boolean => {
+    if (listenTracked || !trackId || duration === 0) return false
+    
+    // Track after 30 seconds OR 25% of track duration, whichever is shorter
+    const thirtySeconds = 30
+    const twentyFivePercent = duration * 0.25
+    const threshold = Math.min(thirtySeconds, twentyFivePercent)
+    
+    return currentTime >= threshold
+  }
 
   useEffect(() => {
     const playerId = playerIdRef.current
@@ -74,7 +112,14 @@ export default function AudioPlayer({
     }
 
     const handleTimeUpdate = () => {
-      setCurrentTime(audio.currentTime)
+      const newCurrentTime = audio.currentTime
+      setCurrentTime(newCurrentTime)
+      
+      // Check if we should track a listen
+      if (shouldTrackListen(newCurrentTime, audio.duration)) {
+        setListenTracked(true) // Set this immediately to prevent duplicates
+        trackListen()
+      }
     }
 
     const handleDurationChange = () => {
@@ -152,6 +197,7 @@ export default function AudioPlayer({
     setCurrentTime(0)
     setDuration(0)
     setIsPlaying(false)
+    setListenTracked(false) // Reset listen tracking for new track
     
     // Mark that we've loaded the first track
     if (isFirstLoad) {
@@ -247,7 +293,9 @@ export default function AudioPlayer({
         <div>
           <strong>{title}</strong>
           <br />
-          <span style={{ color: '#666' }}>by {artist}</span>
+          <span style={{ color: '#666' }}>
+            by {artist}{listenCount !== undefined && ` • ${listenCount} plays`}
+          </span>
         </div>
         {currentTrackIndex !== undefined && totalTracks !== undefined && totalTracks > 1 && (
           <div style={{ fontSize: '11px', color: '#666' }}>

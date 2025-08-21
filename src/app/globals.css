@@ -360,6 +360,18 @@ audio {
   margin-top: 10px !important;
 }
 
+/* Release page mobile responsive */
+@media (max-width: 768px) {
+  .artwork-info-wrapper {
+    flex-direction: column !important;
+  }
+  
+  .share-buttons {
+    flex-direction: column !important;
+    gap: 4px !important;
+  }
+}
+
 /* Utility classes */
 .text-center {
   text-align: center !important;

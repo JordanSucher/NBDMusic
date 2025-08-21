@@ -30,6 +30,9 @@ interface Release {
     fileSize: number
     duration: number | null
     mimeType: string
+    _count: {
+      listens: number
+    }
   }[]
 }
 
@@ -131,9 +134,9 @@ export default function ProfilePage() {
     }
   }
 
-  const getTotalFileSize = () => {
+  const getTotalDuration = () => {
     return releases.reduce((total, release) => {
-      return total + release.tracks.reduce((releaseTotal, track) => releaseTotal + track.fileSize, 0)
+      return total + release.tracks.reduce((releaseTotal, track) => releaseTotal + (track.duration || 0), 0)
     }, 0)
   }
 
@@ -141,12 +144,10 @@ export default function ProfilePage() {
     return releases.reduce((total, release) => total + release.tracks.length, 0)
   }
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes'
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  const formatDuration = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60)
+    const remainingSeconds = seconds % 60
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
   }
 
   const getAllTags = () => {
@@ -197,7 +198,7 @@ export default function ProfilePage() {
             <li>Releases: {releases.length}</li>
             <li>Total tracks: {getTotalTracks()}</li>
             <li>Singles: {releaseTypeCounts.single} | EPs: {releaseTypeCounts.ep} | Albums: {releaseTypeCounts.album} | Demos: {releaseTypeCounts.demo}</li>
-            <li>Total storage used: {formatFileSize(getTotalFileSize())}</li>
+            <li>Total duration: {formatDuration(getTotalDuration())}</li>
             {followStats && (
               <li>
                 <Link href="/followers" style={{ color: '#0000ff', textDecoration: 'underline' }}>

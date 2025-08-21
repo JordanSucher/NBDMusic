@@ -4,9 +4,11 @@ import { useSession } from "next-auth/react"
 interface FollowButtonProps {
   username: string
   onFollowChange?: (isFollowing: boolean) => void
+  size?: 'normal' | 'small'
+  variant?: 'button' | 'link'
 }
 
-export default function FollowButton({ username, onFollowChange }: FollowButtonProps) {
+export default function FollowButton({ username, onFollowChange, size = 'normal', variant = 'button' }: FollowButtonProps) {
   const { data: session } = useSession()
   const [isFollowing, setIsFollowing] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -70,15 +72,26 @@ export default function FollowButton({ username, onFollowChange }: FollowButtonP
   }
 
   if (loading) {
+    if (variant === 'link') {
+      return (
+        <span style={{
+          fontSize: '10px',
+          color: '#999',
+          fontFamily: 'Courier New, monospace'
+        }}>
+          ...
+        </span>
+      )
+    }
     return (
       <button
         disabled
         style={{
-          padding: '4px 12px',
-          fontSize: '12px',
+          padding: size === 'small' ? '2px 6px' : '4px 12px',
+          fontSize: size === 'small' ? '10px' : '12px',
           backgroundColor: '#f0f0f0',
           color: '#999',
-          border: '2px outset #ddd',
+          border: size === 'small' ? '1px outset #ddd' : '2px outset #ddd',
           cursor: 'not-allowed',
           fontFamily: 'Courier New, monospace'
         }}
@@ -88,16 +101,35 @@ export default function FollowButton({ username, onFollowChange }: FollowButtonP
     )
   }
 
+  if (variant === 'link') {
+    return (
+      <span
+        onClick={handleFollowToggle}
+        style={{
+          fontSize: '10px',
+          color: actionLoading ? '#999' : isFollowing ? '#ff0000' : '#0000ff',
+          cursor: actionLoading ? 'default' : 'pointer',
+          fontFamily: 'Courier New, monospace',
+          textDecoration: 'underline'
+        }}
+        onMouseDown={(e) => e.preventDefault()}
+        onFocus={(e) => e.blur()}
+      >
+        {actionLoading ? '...' : isFollowing ? 'unfollow' : 'follow'}
+      </span>
+    )
+  }
+
   return (
     <button
       onClick={handleFollowToggle}
       disabled={actionLoading}
       style={{
-        padding: '4px 12px',
-        fontSize: '12px',
+        padding: size === 'small' ? '2px 6px' : '4px 12px',
+        fontSize: size === 'small' ? '10px' : '12px',
         backgroundColor: actionLoading ? '#f0f0f0' : isFollowing ? '#ff6666' : '#4444ff',
         color: 'white',
-        border: `2px outset ${actionLoading ? '#ddd' : isFollowing ? '#ff6666' : '#4444ff'}`,
+        border: `${size === 'small' ? '1px' : '2px'} outset ${actionLoading ? '#ddd' : isFollowing ? '#ff6666' : '#4444ff'}`,
         cursor: actionLoading ? 'not-allowed' : 'pointer',
         fontFamily: 'Courier New, monospace',
         fontWeight: 'bold'

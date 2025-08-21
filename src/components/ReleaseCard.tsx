@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
 import AudioPlayer from "./AudioPlayer"
+import FollowButton from "./FollowButton"
 
 interface Track {
   id: string
@@ -12,6 +13,9 @@ interface Track {
   fileSize: number
   duration: number | null
   mimeType: string
+  _count: {
+    listens: number
+  }
 }
 
 interface TagWithCount {
@@ -79,21 +83,19 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
     return tagData?.count || 0
   }
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes'
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-  }
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
 
-  const getTotalSize = () => {
-    return release.tracks.reduce((total, track) => total + track.fileSize, 0)
+  const formatDuration = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60)
+    const remainingSeconds = seconds % 60
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
+  }
+
+  const getTotalDuration = () => {
+    return release.tracks.reduce((total, track) => total + (track.duration || 0), 0)
   }
 
   const getReleaseTypeLabel = (type: string) => {
@@ -146,17 +148,20 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
         {/* Artwork */}
         {release.artworkUrl ? (
           <div style={{ flexShrink: 0 }}>
-            <img 
-              src={release.artworkUrl} 
-              alt={`${release.title} artwork`}
-              style={{ 
-                width: '120px', 
-                height: '120px', 
-                objectFit: 'cover',
-                border: '2px solid #000',
-                backgroundColor: '#f0f0f0'
-              }}
-            />
+            <Link href={`/release/${release.id}`}>
+              <img 
+                src={release.artworkUrl} 
+                alt={`${release.title} artwork`}
+                style={{ 
+                  width: '120px', 
+                  height: '120px', 
+                  objectFit: 'cover',
+                  border: '2px solid #000',
+                  backgroundColor: '#f0f0f0',
+                  cursor: 'pointer'
+                }}
+              />
+            </Link>
           </div>
         ) : (
           <div style={{ 
@@ -172,7 +177,21 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
             color: '#666',
             textAlign: 'center'
           }}>
-            No Artwork
+            <Link 
+              href={`/release/${release.id}`}
+              style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textDecoration: 'none',
+                color: '#666',
+                cursor: 'pointer'
+              }}
+            >
+              No Artwork
+            </Link>
           </div>
         )}
 
@@ -202,27 +221,27 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
           <div className="song-meta">
             By: <Link href={`/user/${encodeURIComponent(release.user.username)}`}>
               <strong>{release.user.username}</strong>
-            </Link> | 
-            {release.releaseDate && (
-              <>
-                {isScheduledRelease(release.releaseDate) ? 'Scheduled for' : 'Released'}: {formatReleaseDate(release.releaseDate)} | 
-              </>
-            )}
-            {!release.releaseDate && <>Uploaded: {formatDate(release.uploadedAt)} | </>}
-            {release.tracks.length} track{release.tracks.length !== 1 ? 's' : ''} | 
-            Total size: {formatFileSize(getTotalSize())}
-            {isScheduledRelease(release.releaseDate) && (
-              <span style={{ 
-                marginLeft: '10px',
-                padding: '2px 4px',
-                backgroundColor: '#ff9900',
-                color: 'white',
-                fontSize: '10px',
-                fontWeight: 'bold'
-              }}>
-                SCHEDULED
-              </span>
-            )}
+            </Link>
+            {' '}
+            <FollowButton username={release.user.username} variant="link" />
+              {release.releaseDate && (
+                <> | {isScheduledRelease(release.releaseDate) ? 'Scheduled for' : 'Released'}: {formatReleaseDate(release.releaseDate)}</>
+              )}
+              {!release.releaseDate && <> | Uploaded: {formatDate(release.uploadedAt)}</>}
+              {' | '}{release.tracks.length} track{release.tracks.length !== 1 ? 's' : ''}
+              {' | '}Total duration: {formatDuration(getTotalDuration())}
+              {isScheduledRelease(release.releaseDate) && (
+                <span style={{ 
+                  marginLeft: '10px',
+                  padding: '2px 4px',
+                  backgroundColor: '#ff9900',
+                  color: 'white',
+                  fontSize: '10px',
+                  fontWeight: 'bold'
+                }}>
+                  SCHEDULED
+                </span>
+              )}
           </div>
 
           {release.description && (
@@ -267,6 +286,8 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
             src={sortedTracks[0].fileUrl} 
             title={sortedTracks[0].title}
             artist={release.user.username}
+            trackId={sortedTracks[0].id}
+            listenCount={sortedTracks[0]._count.listens}
             currentTrackIndex={0}
             totalTracks={1}
             releaseId={release.id}
@@ -284,6 +305,8 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
             src={sortedTracks[currentTrack].fileUrl} 
             title={`${sortedTracks[currentTrack].trackNumber}. ${sortedTracks[currentTrack].title}`}
             artist={release.user.username}
+            trackId={sortedTracks[currentTrack].id}
+            listenCount={sortedTracks[currentTrack]._count.listens}
             onTrackEnd={handleTrackEnd}
             onNextTrack={handleNextTrack}
             onPrevTrack={handlePrevTrack}
@@ -325,8 +348,8 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
                   }}
                 >
                   {track.trackNumber}. {track.title}
-                  <span style={{ float: 'right', color: '#666' }}>
-                    {formatFileSize(track.fileSize)}
+                  <span style={{ float: 'right', color: '#666', fontSize: '11px' }}>
+                    {track.duration ? formatDuration(track.duration) : '--'} • {track._count.listens} plays
                   </span>
                 </div>
               )
@@ -346,13 +369,16 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
           <Link 
             href={`/edit/${release.id}`}
             style={{
+              display: 'inline-block',
               backgroundColor: '#4444ff',
               color: 'white',
               fontSize: '12px',
               padding: '4px 8px',
               textDecoration: 'none',
               marginRight: '8px',
-              border: '1px solid #000'
+              border: '2px outset #4444ff',
+              cursor: 'pointer',
+              fontFamily: 'Courier New, monospace'
             }}
           >
             Edit Release
@@ -366,7 +392,7 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
                 color: 'white',
                 fontSize: '12px',
                 padding: '4px 8px',
-                border: '1px solid #000',
+                border: '2px outset #ff4444',
                 cursor: isDeleting ? 'not-allowed' : 'pointer'
               }}
             >

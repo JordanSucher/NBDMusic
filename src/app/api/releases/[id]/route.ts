@@ -21,6 +21,13 @@ export async function GET(
           }
         },
         tracks: {
+          include: {
+            _count: {
+              select: {
+                listens: true
+              }
+            }
+          },
           orderBy: {
             trackNumber: 'asc'
           }

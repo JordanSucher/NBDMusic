@@ -47,6 +47,7 @@ model User {
   accounts Account[]
   sessions Session[]
   releases Release[]
+  listens  Listen[]
   
   // Follow relationships
   following Follow[] @relation("Follower")
@@ -99,6 +100,8 @@ model Track {
   releaseId   String
   release     Release  @relation(fields: [releaseId], references: [id], onDelete: Cascade)
   
+  listens     Listen[]
+  
   @@index([releaseId])
 }
 
@@ -124,4 +127,21 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model Listen {
+  id        String   @id @default(cuid())
+  trackId   String
+  userId    String?  // nullable to allow anonymous listens
+  listenedAt DateTime @default(now())
+  ipAddress String?  // for anonymous tracking and abuse prevention
+  userAgent String?  // for analytics
+  
+  track     Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([trackId])
+  @@index([userId])
+  @@index([listenedAt])
+  @@index([ipAddress])
 }

@@ -23,6 +23,7 @@ interface UploadedFile {
   fileUrl: string
   fileSize: number
   mimeType: string
+  duration?: number
 }
 
 export default function UploadPage() {
@@ -248,6 +249,25 @@ export default function UploadPage() {
       .replace(/\b\w/g, l => l.toUpperCase())
   }
 
+  const getAudioDuration = (file: File): Promise<number> => {
+    return new Promise((resolve, reject) => {
+      const audio = document.createElement('audio')
+      const url = URL.createObjectURL(file)
+      
+      audio.addEventListener('loadedmetadata', () => {
+        URL.revokeObjectURL(url)
+        resolve(Math.floor(audio.duration))
+      })
+      
+      audio.addEventListener('error', () => {
+        URL.revokeObjectURL(url)
+        reject(new Error('Failed to load audio metadata'))
+      })
+      
+      audio.src = url
+    })
+  }
+
   const handleFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || [])
     
@@ -414,6 +434,16 @@ export default function UploadPage() {
         const track = tracks[i]
         setUploadProgress(`Uploading track ${i + 1} of ${tracks.length}: ${track.title}`)
         
+        // Calculate duration
+        let duration: number | undefined
+        try {
+          setUploadProgress(`Getting duration for track ${i + 1}: ${track.title}`)
+          duration = await getAudioDuration(track.file)
+        } catch (error) {
+          console.warn(`Failed to get duration for ${track.title}:`, error)
+          duration = undefined
+        }
+        
         const fileUrl = await uploadFileDirectly(track.file, 'track')
 
         uploadedTracks.push({
@@ -422,7 +452,8 @@ export default function UploadPage() {
           fileName: track.file.name,
           fileUrl,
           fileSize: track.file.size,
-          mimeType: track.file.type
+          mimeType: track.file.type,
+          duration
         })
       }
 

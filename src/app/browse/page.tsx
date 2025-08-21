@@ -15,6 +15,9 @@ interface Track {
   fileSize: number
   duration: number | null
   mimeType: string
+  _count: {
+    listens: number
+  }
 }
 
 interface Release {

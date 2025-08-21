@@ -6,6 +6,7 @@ import { useParams } from "next/navigation"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
 import AudioPlayer from "@/components/AudioPlayer"
+import FollowButton from "@/components/FollowButton"
 
 interface Track {
   id: string
@@ -16,6 +17,9 @@ interface Track {
   fileSize: number
   duration: number | null
   mimeType: string
+  _count: {
+    listens: number
+  }
 }
 
 interface Release {
@@ -46,6 +50,7 @@ export default function ReleasePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [currentTrack, setCurrentTrack] = useState(0)
+  const [showQR, setShowQR] = useState(false)
 
   useEffect(() => {
     const fetchRelease = async () => {
@@ -77,12 +82,10 @@ export default function ReleasePage() {
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes'
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  const formatDuration = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60)
+    const remainingSeconds = seconds % 60
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
   }
 
   const getReleaseTypeLabel = (type: string) => {
@@ -95,8 +98,8 @@ export default function ReleasePage() {
     return labels[type as keyof typeof labels] || type
   }
 
-  const getTotalSize = () => {
-    return release?.tracks.reduce((total, track) => total + track.fileSize, 0) || 0
+  const getTotalDuration = () => {
+    return release?.tracks.reduce((total, track) => total + (track.duration || 0), 0) || 0
   }
 
   const isScheduledRelease = (releaseDate: string | null) => {
@@ -130,6 +133,35 @@ export default function ReleasePage() {
   const copyShareLink = () => {
     const url = window.location.href
     navigator.clipboard.writeText(url)
+    // Could add a toast notification here
+  }
+
+  const generateQRCode = () => {
+    const url = window.location.href
+    // Using a simple QR code service
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`
+    return qrUrl
+  }
+
+  const downloadQRCode = async () => {
+    try {
+      const qrUrl = generateQRCode()
+      const response = await fetch(qrUrl)
+      const blob = await response.blob()
+      
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${release?.title?.replace(/[^a-zA-Z0-9]/g, '-') || 'release'}-qr-code.png`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Failed to download QR code:', error)
+      // Fallback: open in new tab
+      window.open(generateQRCode(), '_blank')
+    }
   }
 
   if (loading) {
@@ -160,23 +192,63 @@ export default function ReleasePage() {
     <div className="container">
 
       {/* Release header */}
-      <div className="song-card" style={{ marginBottom: '20px' }}>
+      <div className="song-card" style={{ marginBottom: '20px', position: 'relative' }}>
+        {/* Share buttons in top right */}
+        <div style={{
+          position: 'absolute',
+          top: '10px',
+          right: '10px',
+          display: 'flex',
+          flexDirection: 'row',
+          gap: '8px',
+          zIndex: 1
+        }}
+        className="share-buttons"
+        >
+          <button
+            onClick={copyShareLink}
+            style={{
+              padding: '6px 12px',
+              fontSize: '11px',
+              backgroundColor: '#4444ff',
+              color: 'white',
+              border: '1px solid #000',
+              cursor: 'pointer',
+              fontFamily: 'Courier New, monospace'
+            }}
+          >
+            📋 Copy Link
+          </button>
+          <button
+            onClick={() => setShowQR(true)}
+            style={{
+              padding: '6px 12px',
+              fontSize: '11px',
+              backgroundColor: '#44ff44',
+              color: 'black',
+              border: '1px solid #000',
+              cursor: 'pointer',
+              fontFamily: 'Courier New, monospace'
+            }}
+          >
+            📱 QR Code
+          </button>
+        </div>
         <div style={{ 
           display: 'flex', 
           flexDirection: 'column',
           gap: '20px'
         }}>
           {/* Album art and info section */}
-          <div style={{ 
+          <div className="artwork-info-wrapper" style={{ 
             display: 'flex', 
             gap: '20px',
-            flexDirection: window.innerWidth <= 768 ? 'column' : 'row'
+            flexDirection: 'row'
           }}>
             {/* Artwork */}
             {release.artworkUrl ? (
               <div style={{ 
-                flexShrink: 0,
-                alignSelf: window.innerWidth <= 768 ? 'left' : 'flex-start'
+                flexShrink: 0
               }}>
                 <img 
                   src={release.artworkUrl} 
@@ -203,7 +275,7 @@ export default function ReleasePage() {
                 fontSize: '14px',
                 color: '#666',
                 textAlign: 'center',
-                alignSelf: window.innerWidth <= 768 ? 'center' : 'flex-start'
+                alignSelf: 'flex-start'
               }}>
                 No Artwork
               </div>
@@ -233,6 +305,8 @@ export default function ReleasePage() {
                 By: <Link href={`/user/${encodeURIComponent(release.user.username)}`}>
                   <strong>{release.user.username}</strong>
                 </Link>
+                {' '}
+                <FollowButton username={release.user.username} variant="link" />
                 <br />
                 {release.releaseDate && (
                   <>
@@ -246,7 +320,7 @@ export default function ReleasePage() {
                     <br />
                   </>
                 )}
-                {release.tracks.length} track{release.tracks.length !== 1 ? 's' : ''} • Total size: {formatFileSize(getTotalSize())}
+                {release.tracks.length} track{release.tracks.length !== 1 ? 's' : ''} • Total duration: {formatDuration(getTotalDuration())}
                 {isScheduledRelease(release.releaseDate) && (
                   <span style={{ 
                     marginLeft: '10px',
@@ -275,29 +349,9 @@ export default function ReleasePage() {
             </div>
           </div>
 
-          {/* Action buttons row */}
-          <div style={{ 
-            display: 'flex', 
-            gap: '10px', 
-            alignItems: 'center',
-            flexWrap: 'wrap'
-          }}>
-            <button
-              onClick={copyShareLink}
-              style={{
-                padding: '8px 16px',
-                fontSize: '12px',
-                backgroundColor: '#4444ff',
-                color: 'white',
-                border: '1px solid #000',
-                cursor: 'pointer',
-                fontFamily: 'Courier New, monospace'
-              }}
-            >
-              📋 Copy Share Link
-            </button>
-
-            {isOwner && (
+          {/* Owner actions */}
+          {isOwner && (
+            <div style={{ marginTop: '15px' }}>
               <Link
                 href={`/edit/${release.id}`}
                 style={{
@@ -314,8 +368,8 @@ export default function ReleasePage() {
               >
                 ✏️ Edit Release
               </Link>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Tags */}
@@ -356,6 +410,8 @@ export default function ReleasePage() {
               src={sortedTracks[0].fileUrl} 
               title={sortedTracks[0].title}
               artist={release.user.username}
+              trackId={sortedTracks[0].id}
+              listenCount={sortedTracks[0]._count.listens}
               currentTrackIndex={0}
               totalTracks={1}
               releaseId={release.id}
@@ -371,6 +427,8 @@ export default function ReleasePage() {
               src={sortedTracks[currentTrack].fileUrl} 
               title={`${sortedTracks[currentTrack].trackNumber}. ${sortedTracks[currentTrack].title}`}
               artist={release.user.username}
+              trackId={sortedTracks[currentTrack].id}
+              listenCount={sortedTracks[currentTrack]._count.listens}
               onTrackEnd={handleTrackEnd}
               onNextTrack={handleNextTrack}
               onPrevTrack={handlePrevTrack}
@@ -420,7 +478,7 @@ export default function ReleasePage() {
                       {isCurrentTrack && <span style={{ color: '#007700', marginLeft: '8px' }}>♪ Playing</span>}
                     </span>
                     <span style={{ color: '#666', fontSize: '11px' }}>
-                      {formatFileSize(track.fileSize)}
+                      {track.duration ? formatDuration(track.duration) : '--'} • {track._count.listens} plays
                     </span>
                   </div>
                 )
@@ -429,6 +487,93 @@ export default function ReleasePage() {
           </div>
         )}
       </div>
+
+      {/* QR Code Modal */}
+      {showQR && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: '20px',
+            border: '2px solid #000',
+            textAlign: 'center',
+            width: '100%',
+            maxWidth: '320px',
+            maxHeight: '90vh',
+            fontFamily: 'Courier New, monospace',
+            overflow: 'auto'
+          }}>
+            <h3 style={{ marginBottom: '15px', fontSize: '16px' }}>Share this release</h3>
+            
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              marginBottom: '15px' 
+            }}>
+              <img 
+                src={generateQRCode()} 
+                alt="QR Code for release"
+                style={{ 
+                  width: '100%',
+                  maxWidth: '200px',
+                  height: 'auto',
+                  border: '1px solid #ccc'
+                }}
+              />
+            </div>
+            
+            <p style={{ fontSize: '12px', color: '#666', marginBottom: '15px' }}>
+              Scan with your phone to share
+            </p>
+            
+            <div style={{ 
+              display: 'flex', 
+              gap: '8px', 
+              justifyContent: 'center' 
+            }}>
+              <button
+                onClick={downloadQRCode}
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '12px',
+                  backgroundColor: '#4444ff',
+                  color: 'white',
+                  border: '1px solid #000',
+                  cursor: 'pointer',
+                  fontFamily: 'Courier New, monospace'
+                }}
+              >
+                📥 Download
+              </button>
+              <button
+                onClick={() => setShowQR(false)}
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '12px',
+                  backgroundColor: '#ddd',
+                  color: 'black',
+                  border: '1px solid #000',
+                  cursor: 'pointer',
+                  fontFamily: 'Courier New, monospace'
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )

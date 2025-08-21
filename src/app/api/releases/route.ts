@@ -68,6 +68,13 @@ export async function GET(request: NextRequest) {
           }
         },
         tracks: {
+          include: {
+            _count: {
+              select: {
+                listens: true
+              }
+            }
+          },
           orderBy: {
             trackNumber: 'asc'
           }

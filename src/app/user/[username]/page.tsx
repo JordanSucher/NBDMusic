@@ -15,6 +15,9 @@ interface Track {
   fileSize: number
   duration: number | null
   mimeType: string
+  _count: {
+    listens: number
+  }
 }
 
 interface Release {
@@ -40,7 +43,7 @@ interface UserProfile {
   username: string
   releaseCount: number
   trackCount: number
-  totalFileSize: number
+  totalDuration: number
   joinedAt: string
   allTags: string[]
   releaseTypeCounts: {
@@ -88,12 +91,10 @@ export default function PublicUserProfilePage() {
     }
   }, [username])
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes'
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  const formatDuration = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60)
+    const remainingSeconds = seconds % 60
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
   }
 
   const handleFollowChange = (isFollowing: boolean) => {
@@ -166,7 +167,7 @@ export default function PublicUserProfilePage() {
               {userProfile.releaseTypeCounts.album} album{userProfile.releaseTypeCounts.album !== 1 ? 's' : ''}, {" "}
               {userProfile.releaseTypeCounts.demo} demo{userProfile.releaseTypeCounts.demo !== 1 ? 's' : ''}
             </li>
-            <li>Total content: {formatFileSize(userProfile.totalFileSize)}</li>
+            <li>Total duration: {formatDuration(userProfile.totalDuration)}</li>
             {(localFollowerCount !== null || userProfile.followingCount !== undefined) && (
               <li>
                 {localFollowerCount !== null && `${localFollowerCount} follower${localFollowerCount !== 1 ? 's' : ''}`}
