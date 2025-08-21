@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from "react"
 import { useAudioContext } from "@/contexts/AudioContext"
+import DitheredBackground from "./DitheredBackground"
 
 interface AudioPlayerProps {
   src: string
@@ -132,6 +133,7 @@ export default function AudioPlayer({
 
     const handleCanPlay = () => {
       setIsLoading(false)
+      
       // Only auto-play if:
       // 1. This is not the first load (track changed due to auto-advance)
       // 2. User has interacted with the player before
@@ -272,12 +274,15 @@ export default function AudioPlayer({
   const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0
 
   return (
-    <div style={{ 
-      border: '2px solid #000', 
+    <div className="subtle-dither" style={{ 
+      border: '1px solid #ccc', 
       padding: '8px', 
-      backgroundColor: '#f8f8f8',
-      fontFamily: 'Courier New, monospace'
+      backgroundColor: '#f9f9f9',
+      fontFamily: 'Courier New, monospace',
+      position: 'relative',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
     }}>
+
       {/* Hidden audio element */}
       <audio ref={audioRef} preload="metadata">
         <source src={src} />
@@ -335,18 +340,19 @@ export default function AudioPlayer({
 
         {/* Play/Pause Button */}
         <button
-          className="play-pause-btn"
+          className="play-pause-btn elegant-dither"
           onClick={togglePlayPause}
           disabled={isLoading}
           style={{
             padding: '6px 12px',
             fontSize: '14px',
-            backgroundColor: isLoading ? '#f0f0f0' : '#ddd',
+            backgroundColor: isLoading ? '#f0f0f0' : '#e8e8e8',
             color: isLoading ? '#999' : '#000',
-            border: '2px outset #ddd',
+            border: '1px solid #bbb',
             cursor: isLoading ? 'not-allowed' : 'pointer',
             fontFamily: 'Courier New, monospace',
-            minWidth: '60px'
+            minWidth: '60px',
+            transition: 'all 0.1s ease'
           }}
         >
           {isLoading ? '...' : isPlaying ? '⏸' : '▶'}
@@ -387,26 +393,29 @@ export default function AudioPlayer({
       <div 
         ref={progressRef}
         onClick={handleProgressClick}
+        className="subtle-dither"
         style={{
           height: '16px',
-          backgroundColor: '#fff',
-          border: '2px inset #ccc',
+          backgroundColor: '#f5f5f5',
+          border: '1px solid #ccc',
           cursor: 'pointer',
           position: 'relative',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          borderRadius: '2px'
         }}
       >
         {/* Progress Fill */}
         <div
+          className="elegant-dither"
           style={{
             height: '100%',
             width: `${progressPercentage}%`,
-            backgroundColor: 'black',
-            border: progressPercentage > 0 ? '1px solid #000' : 'none',
+            backgroundColor: '#666',
             transition: 'width 0.1s ease'
           }}
         />
-        {/* Progress Bar Pattern */}
+        
+        {/* Vertical tick marks */}
         <div
           style={{
             position: 'absolute',
@@ -414,11 +423,12 @@ export default function AudioPlayer({
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 8px, #ddd 8px, #ddd 9px)',
+            backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 8px, rgba(0,0,0,0.1) 8px, rgba(0,0,0,0.1) 9px)',
             pointerEvents: 'none'
           }}
         />
       </div>
+
     </div>
   )
 }

@@ -4,6 +4,7 @@ import { Providers } from "@/components/providers"
 import Header from "@/components/Header"
 import Footer from "@/components/Footer"
 import "./globals.css";
+import "../styles/dithered.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,7 +29,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased fine-grain`}
       >
         <Providers>
           <Header />

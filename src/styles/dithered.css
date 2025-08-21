@@ -1,0 +1,36 @@
+/* Subtle dithered aesthetics CSS */
+
+/* Pixelated rendering for images */
+img, canvas, video {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}
+
+/* Subtle dithering patterns - true Floyd-Steinberg inspired */
+
+.subtle-dither {
+  background-image: 
+    radial-gradient(circle at 0px 0px, rgba(0,0,0,0.05) 0.5px, transparent 0.5px),
+    radial-gradient(circle at 1px 1px, rgba(0,0,0,0.03) 0.5px, transparent 0.5px),
+    radial-gradient(circle at 2px 0px, rgba(0,0,0,0.02) 0.5px, transparent 0.5px);
+  background-size: 3px 3px;
+  background-position: 0 0, 0 0, 0 0;
+}
+
+.elegant-dither {
+  background-image: 
+    linear-gradient(45deg, transparent 49%, rgba(0,0,0,0.02) 49%, rgba(0,0,0,0.02) 51%, transparent 51%),
+    linear-gradient(-45deg, transparent 49%, rgba(0,0,0,0.02) 49%, rgba(0,0,0,0.02) 51%, transparent 51%);
+  background-size: 2px 2px;
+}
+
+.fine-grain {
+  background: 
+    repeating-conic-gradient(from 0deg at 50% 50%, 
+      transparent 0deg, transparent 45deg,
+      rgba(0,0,0,0.01) 45deg, rgba(0,0,0,0.01) 90deg,
+      transparent 90deg, transparent 135deg,
+      rgba(0,0,0,0.015) 135deg, rgba(0,0,0,0.015) 180deg);
+  background-size: 1px 1px;
+}
