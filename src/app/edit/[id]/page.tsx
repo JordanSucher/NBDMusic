@@ -102,7 +102,7 @@ export default function EditReleasePage() {
           setTracks(existingTracks)
           
           // Set tags
-          const tagNames = release.tags?.map((rt: any) => rt.tag.name) || []
+          const tagNames = release.tags?.map((rt: { tag: { name: string } }) => rt.tag.name) || []
           setTags(tagNames.join(', '))
           
         } else if (response.status === 404) {
