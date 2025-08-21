@@ -237,10 +237,10 @@ export default function ReleaseForm({
 
 
 
-      {/* File Upload (for upload page only) */}
-      {!isEdit && onFileUpload && (
+      {/* File Upload */}
+      {onFileUpload && (
         <div className="mb-20">
-          <h2>Audio Files</h2>
+          <h2>{isEdit ? 'Add More Tracks' : 'Audio Files'}</h2>
           <label htmlFor="files">Select audio files:</label>
           <div style={{ position: 'relative' }}>
             <input

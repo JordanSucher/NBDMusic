@@ -105,38 +105,19 @@ export default function UploadPage() {
 
   const uploadFileDirectly = async (file: File, fileType: 'track' | 'artwork'): Promise<string> => {
     try {
-      const response = await fetch('/api/upload-url', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          filename: file.name,
-          contentType: file.type,
-          fileType
-        })
+      const { upload } = await import('@vercel/blob/client')
+      
+      // Generate unique filename
+      const timestamp = Date.now()
+      const folder = fileType === 'artwork' ? 'artwork' : 'tracks'
+      const filename = `${folder}/${timestamp}-${file.name}`
+
+      const blob = await upload(filename, file, {
+        access: 'public',
+        handleUploadUrl: '/api/blob/upload'
       })
 
-      if (!response.ok) {
-        const error = await response.text()
-        throw new Error(error || 'Failed to get upload URL')
-      }
-
-      const { uploadUrl, fileUrl } = await response.json()
-
-      const uploadResponse = await fetch(uploadUrl, {
-        method: 'PUT',
-        body: file,
-        headers: {
-          'Content-Type': file.type,
-        }
-      })
-
-      if (!uploadResponse.ok) {
-        throw new Error('Failed to upload file')
-      }
-
-      return fileUrl
+      return blob.url
     } catch (error) {
       console.error(`Upload error for ${file.name}:`, error)
       throw error

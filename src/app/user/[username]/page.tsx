@@ -15,6 +15,7 @@ interface Track {
   fileSize: number
   duration: number | null
   mimeType: string
+  lyrics: string | null
   _count: {
     listens: number
   }
