@@ -153,7 +153,7 @@ export async function PUT(
     // Handle existing tracks
     const existingTrackCount = parseInt(formData.get('existingTrackCount') as string || '0')
     const tracksToDelete: string[] = []
-    const tracksToUpdate: Array<{ id: string, title: string, trackNumber: number }> = []
+    const tracksToUpdate: Array<{ id: string, title: string, trackNumber: number, lyrics: string }> = []
 
     for (let i = 0; i < existingTrackCount; i++) {
       const trackId = formData.get(`existing_${i}_id`) as string
@@ -163,8 +163,9 @@ export async function PUT(
         tracksToDelete.push(trackId)
       } else {
         const title = formData.get(`existing_${i}_title`) as string
+        const lyrics = formData.get(`existing_${i}_lyrics`) as string
         const trackNumber = parseInt(formData.get(`existing_${i}_number`) as string)
-        tracksToUpdate.push({ id: trackId, title: title.trim(), trackNumber })
+        tracksToUpdate.push({ id: trackId, title: title.trim(), lyrics: lyrics.trim(), trackNumber })
       }
     }
 
@@ -191,6 +192,7 @@ export async function PUT(
     for (let i = 0; i < newTrackCount; i++) {
       const trackFile = formData.get(`new_${i}_file`) as File
       const trackTitle = formData.get(`new_${i}_title`) as string
+      const trackLyrics = formData.get(`new_${i}_lyrics`) as string
       const trackNumber = parseInt(formData.get(`new_${i}_number`) as string)
 
       if (!trackFile || !trackTitle) continue
@@ -207,6 +209,7 @@ export async function PUT(
           fileUrl: blob.url,
           fileSize: trackFile.size,
           mimeType: trackFile.type,
+          lyrics: trackLyrics?.trim() || null,
           releaseId: id
         })
       } catch (error) {
@@ -236,7 +239,8 @@ export async function PUT(
         where: { id: track.id },
         data: {
           title: track.title,
-          trackNumber: track.trackNumber
+          trackNumber: track.trackNumber,
+          lyrics: track.lyrics || null
         }
       })
     }

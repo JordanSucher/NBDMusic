@@ -12,6 +12,7 @@ interface UploadedTrack {
   fileSize: number
   mimeType: string
   duration?: number
+  lyrics?: string
 }
 
 interface UploadRequestBody {
@@ -81,7 +82,8 @@ export async function POST(request: NextRequest) {
             fileUrl: track.fileUrl,
             fileSize: track.fileSize,
             mimeType: track.mimeType,
-            duration: track.duration || null
+            duration: track.duration || null,
+            lyrics: track.lyrics?.trim() || null
           }))
         }
       }

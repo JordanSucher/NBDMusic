@@ -117,10 +117,6 @@ export default function HomePage() {
           )}
         </div>
       </main>
-
-      <footer style={{ marginTop: '40px', borderTop: '1px solid #ccc', paddingTop: '20px' }}>
-        <p>no big deal.</p>
-      </footer>
     </div>
   )
 }

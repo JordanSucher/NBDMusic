@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
 import AudioPlayer from "./AudioPlayer"
 import FollowButton from "./FollowButton"
+import { useAudioContext } from "@/contexts/AudioContext"
 
 interface Track {
   id: string
@@ -13,6 +14,7 @@ interface Track {
   fileSize: number
   duration: number | null
   mimeType: string
+  lyrics: string | null
   _count: {
     listens: number
   }
@@ -48,12 +50,21 @@ interface ReleaseCardProps {
 
 export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCardProps) {
   const { data: session } = useSession()
+  const audioContext = useAudioContext()
+  const playerIdRef = useRef<string>(`card-${release.id}-${Math.random().toString(36).substr(2, 9)}`)
   const [tagCounts, setTagCounts] = useState<TagWithCount[]>([])
   const [currentTrack, setCurrentTrack] = useState(0)
+  const [playerKey, setPlayerKey] = useState(0)
+  const [expandedLyrics, setExpandedLyrics] = useState<{[trackId: string]: boolean}>({})
 
   useEffect(() => {
     fetchTagCounts()
   }, [])
+
+  // Force re-render when current track changes
+  useEffect(() => {
+    // This useEffect will trigger re-renders when currentTrackId changes
+  }, [audioContext.currentTrackId])
 
   const isScheduledRelease = (releaseDate: string | null) => {
     if (!releaseDate) return false
@@ -139,6 +150,13 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
     if (currentTrack > 0) {
       setCurrentTrack(currentTrack - 1)
     }
+  }
+
+  const toggleLyrics = (trackId: string) => {
+    setExpandedLyrics(prev => ({
+      ...prev,
+      [trackId]: !prev[trackId]
+    }))
   }
 
   return (
@@ -279,84 +297,144 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
       )}
 
       {/* Track List */}
-      {release.tracks.length === 1 ? (
-        // Single track - show player directly
-        <div style={{ marginTop: '10px' }}>
-          <AudioPlayer 
-            src={sortedTracks[0].fileUrl} 
-            title={sortedTracks[0].title}
-            artist={release.user.username}
-            trackId={sortedTracks[0].id}
-            listenCount={sortedTracks[0]._count.listens}
-            currentTrackIndex={0}
-            totalTracks={1}
-            releaseId={release.id}
-          />
+      <div style={{ marginTop: '10px' }}>
+        <div style={{ marginBottom: '10px' }}>
+          <strong>Tracks:</strong>
         </div>
-      ) : (
-        // Multiple tracks - show track list with player
-        <div style={{ marginTop: '10px' }}>
-          <div style={{ marginBottom: '10px' }}>
-            <strong>Tracks:</strong>
-          </div>
 
           {/* Current track player with auto-play support */}
-          <AudioPlayer 
-            src={sortedTracks[currentTrack].fileUrl} 
-            title={`${sortedTracks[currentTrack].trackNumber}. ${sortedTracks[currentTrack].title}`}
-            artist={release.user.username}
-            trackId={sortedTracks[currentTrack].id}
-            listenCount={sortedTracks[currentTrack]._count.listens}
-            onTrackEnd={handleTrackEnd}
-            onNextTrack={handleNextTrack}
-            onPrevTrack={handlePrevTrack}
-            hasNextTrack={currentTrack < sortedTracks.length - 1}
-            hasPrevTrack={currentTrack > 0}
-            currentTrackIndex={currentTrack}
-            totalTracks={sortedTracks.length}
-            autoPlay={true}
-            releaseId={release.id}
-          />
+          <div data-release-id={release.id}>
+            <AudioPlayer 
+              key={playerKey}
+              src={sortedTracks[currentTrack].fileUrl} 
+              title={`${sortedTracks[currentTrack].trackNumber}. ${sortedTracks[currentTrack].title}`}
+              artist={release.user.username}
+              trackId={sortedTracks[currentTrack].id}
+              listenCount={sortedTracks[currentTrack]._count.listens}
+              onTrackEnd={handleTrackEnd}
+              onNextTrack={handleNextTrack}
+              onPrevTrack={handlePrevTrack}
+              hasNextTrack={currentTrack < sortedTracks.length - 1}
+              hasPrevTrack={currentTrack > 0}
+              currentTrackIndex={currentTrack}
+              totalTracks={sortedTracks.length}
+              autoPlay={true}
+              releaseId={release.id}
+            />
+          </div>
 
           {/* Track selection */}
           <div style={{ marginTop: '10px' }}>
             {sortedTracks.map((track, index) => {
-              const isCurrentTrack = index === currentTrack
+              // Highlight if this track is the globally current track
+              const isActiveGlobalTrack = audioContext.currentTrackId === track.id
               
               return (
-                <div 
-                  key={track.id}
-                  onClick={() => setCurrentTrack(index)}
-                  style={{
-                    padding: '4px 8px',
-                    margin: '2px 0',
-                    backgroundColor: isCurrentTrack ? '#ffff00' : '#f5f5f5',
-                    border: isCurrentTrack ? '1px solid #000' : '1px solid #ccc',
-                    cursor: 'pointer',
-                    fontSize: '12px',
-                    fontFamily: 'Courier New, monospace'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isCurrentTrack) {
-                      e.currentTarget.style.backgroundColor = '#e0e0e0'
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isCurrentTrack) {
-                      e.currentTarget.style.backgroundColor = '#f5f5f5'
-                    }
-                  }}
-                >
-                  {track.trackNumber}. {track.title}
-                  <span style={{ float: 'right', color: '#666', fontSize: '11px' }}>
-                    {track.duration ? formatDuration(track.duration) : '--'} • {track._count.listens} plays
+                <div key={track.id}>
+                  <div 
+                    onClick={() => {
+                      audioContext.setCurrentTrackId(track.id)
+                      setCurrentTrack(index)
+                      // Always trigger play when clicking a track
+                      setTimeout(() => {
+                        // Find and click the play button for this release's audio player
+                        const playButton = document.querySelector(`[data-release-id="${release.id}"] .play-pause-btn`)
+                        if (playButton) {
+                          (playButton as HTMLElement).click()
+                        }
+                      }, 0)
+                    }}
+                    style={{
+                      padding: '4px 8px',
+                      margin: '2px 0',
+                      backgroundColor: isActiveGlobalTrack ? '#ffff00' : '#f5f5f5',
+                      border: isActiveGlobalTrack ? '1px solid #000' : '1px solid #ccc',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      fontFamily: 'Courier New, monospace',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActiveGlobalTrack) {
+                        e.currentTarget.style.backgroundColor = '#e0e0e0'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActiveGlobalTrack) {
+                        e.currentTarget.style.backgroundColor = '#f5f5f5'
+                      }
+                    }}
+                  >
+                  <span style={{ 
+                    minWidth: 0,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}>
+                    <span>
+                      {track.trackNumber}. {track.title}
+                    </span>
+                    {track.lyrics && (
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleLyrics(track.id)
+                        }}
+                        style={{
+                          fontSize: '11px',
+                          textDecoration: 'underline',
+                          marginLeft: '4px',
+                          cursor: 'pointer',
+                          color: expandedLyrics[track.id] ? 'blue' : 'blue',
+                          userSelect: 'none'
+                        }}
+                        title="Toggle lyrics"
+                      >
+                      lyrics
+                      </span>
+                    )}
                   </span>
+                  <div style={{ 
+                    color: '#666', 
+                    fontSize: '11px',
+                    flexShrink: 0,
+                    whiteSpace: 'nowrap',
+                    fontFamily: 'Courier New, monospace'
+                  }}>
+                    <span style={{ display: 'inline-block', width: '35px', textAlign: 'right' }}>
+                      {track.duration ? formatDuration(track.duration) : '--'}
+                    </span>
+                    {' • '}
+                    <span style={{ display: 'inline-block', width: '60px', textAlign: 'right' }}>
+                      {track._count.listens} plays
+                    </span>
+                  </div>
+                  </div>
+                  {track.lyrics && expandedLyrics[track.id] && (
+                    <div style={{
+                      padding: '8px',
+                      margin: '2px 0',
+                      backgroundColor: '#f9f9f9',
+                      border: '1px solid #ddd',
+                      fontSize: '11px',
+                      fontFamily: 'Courier New, monospace',
+                      whiteSpace: 'pre-wrap',
+                      color: '#444'
+                    }}>
+                      {track.lyrics}
+                    </div>
+                  )}
                 </div>
               )
             })}
           </div>
         </div>
-      )}
 
       {/* Owner Actions */}
       {isOwner && (

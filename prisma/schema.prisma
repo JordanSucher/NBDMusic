@@ -96,6 +96,7 @@ model Track {
   fileSize    Int
   duration    Int?     // in seconds
   mimeType    String
+  lyrics      String?  // optional lyrics field
   
   releaseId   String
   release     Release  @relation(fields: [releaseId], references: [id], onDelete: Cascade)

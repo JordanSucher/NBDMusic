@@ -15,9 +15,11 @@ interface ActiveTrack {
 interface AudioContextType {
   activeTrack: ActiveTrack | null;
   isGloballyPlaying: boolean;
+  currentTrackId: string | null;
   registerPlayer: (playerId: string, onStop: () => void) => void;
   unregisterPlayer: (playerId: string) => void;
   requestPlay: (playerId: string, track: ActiveTrack) => boolean;
+  setCurrentTrackId: (trackId: string | null) => void;
   notifyStop: (playerId: string) => void;
   notifyPlay: (playerId: string) => void;
   notifyPause: (playerId: string) => void;
@@ -28,6 +30,7 @@ const AudioContext = createContext<AudioContextType | null>(null);
 export function AudioProvider({ children }: { children: ReactNode }) {
   const [activeTrack, setActiveTrack] = useState<ActiveTrack | null>(null);
   const [isGloballyPlaying, setIsGloballyPlaying] = useState(false);
+  const [currentTrackId, setCurrentTrackId] = useState<string | null>(null);
   const playerCallbacks = useRef<Map<string, () => void>>(new Map());
 
   const registerPlayer = useCallback((playerId: string, onStop: () => void) => {
@@ -59,6 +62,10 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     return true;
   }, []);
 
+  const setCurrentTrackIdCallback = useCallback((trackId: string | null) => {
+    setCurrentTrackId(trackId);
+  }, []);
+
   const notifyStop = useCallback((playerId: string) => {
     if (activeTrack?.playerId === playerId) {
       setIsGloballyPlaying(false);
@@ -82,9 +89,11 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       value={{
         activeTrack,
         isGloballyPlaying,
+        currentTrackId,
         registerPlayer,
         unregisterPlayer,
         requestPlay,
+        setCurrentTrackId: setCurrentTrackIdCallback,
         notifyStop,
         notifyPlay,
         notifyPause,

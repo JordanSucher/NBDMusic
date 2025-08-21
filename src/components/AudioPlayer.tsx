@@ -149,6 +149,7 @@ export default function AudioPlayer({
         }
         
         if (audioContext.requestPlay(playerIdRef.current, trackInfo)) {
+          audioContext.setCurrentTrackId(trackId || null)
           audio.play().then(() => {
             setIsPlaying(true)
             audioContext.notifyPlay(playerIdRef.current)
@@ -226,6 +227,7 @@ export default function AudioPlayer({
       }
       
       if (audioContext.requestPlay(playerIdRef.current, trackInfo)) {
+        audioContext.setCurrentTrackId(trackId || null)
         audio.play().catch(error => {
           console.log("Play prevented:", error)
         })
@@ -333,6 +335,7 @@ export default function AudioPlayer({
 
         {/* Play/Pause Button */}
         <button
+          className="play-pause-btn"
           onClick={togglePlayPause}
           disabled={isLoading}
           style={{
