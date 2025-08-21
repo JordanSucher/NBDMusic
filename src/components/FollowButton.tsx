@@ -113,7 +113,7 @@ export default function FollowButton({ username, onFollowChange, size = 'normal'
           textDecoration: 'underline'
         }}
         onMouseDown={(e) => e.preventDefault()}
-        onFocus={(e) => e.blur()}
+        onFocus={(e) => (e.target as HTMLElement).blur()}
       >
         {actionLoading ? '...' : isFollowing ? 'unfollow' : 'follow'}
       </span>
