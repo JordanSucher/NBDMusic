@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "nbd",
-  description: "Weird shit summer.",
+  description: "Release the music!!",
 };
 
 export default function RootLayout({
