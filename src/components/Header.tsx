@@ -32,7 +32,8 @@ export default function Header() {
         padding: '0 20px'
       }}>
         {/* Logo/Site Name */}
-        <div>
+        <div
+        className="flex flex-col">
           <Link 
             href="/" 
             style={{ 
@@ -44,8 +45,12 @@ export default function Header() {
             }}
             onClick={closeMobileMenu}
           >
-            nbd
+          nbd
           </Link>
+          <span
+          className="text-xs">
+            release the music!
+          </span>
         </div>
 
         {/* Mobile Menu Button */}

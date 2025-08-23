@@ -568,7 +568,9 @@ export default function ReleasePage() {
                         fontFamily: 'Courier New, monospace',
                         display: 'flex',
                         justifyContent: 'space-between',
-                        alignItems: 'center'
+                        alignItems: 'flex-start',
+                        gap: '8px',
+                        flexWrap: 'nowrap'
                       }}
                       onMouseEnter={(e) => {
                         if (!isCurrentTrack) {
@@ -581,7 +583,7 @@ export default function ReleasePage() {
                         }
                       }}
                     >
-                      <span>
+                      <span style={{ flex: '1', minWidth: '0', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {track.trackNumber}. {track.title}
                         {track.lyrics && (
                           <span
@@ -602,7 +604,12 @@ export default function ReleasePage() {
                           </span>
                         )}
                       </span>
-                      <span style={{ color: '#666', fontSize: '11px' }}>
+                      <span style={{ 
+                        color: '#666', 
+                        fontSize: '11px',
+                        flexShrink: '0',
+                        whiteSpace: 'nowrap'
+                      }}>
                         {track.duration ? formatDuration(track.duration) : '--'} • {track._count.listens} plays
                       </span>
                     </div>
