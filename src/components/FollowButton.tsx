@@ -8,6 +8,14 @@ interface FollowButtonProps {
   variant?: 'button' | 'link'
 }
 
+// Define the custom event type
+interface FollowStateChangedEvent extends CustomEvent {
+  detail: {
+    changedUsername: string
+    isFollowing: boolean
+  }
+}
+
 export default function FollowButton({ username, onFollowChange, size = 'normal', variant = 'button' }: FollowButtonProps) {
   const { data: session } = useSession()
   const [isFollowing, setIsFollowing] = useState(false)
@@ -38,16 +46,17 @@ export default function FollowButton({ username, onFollowChange, size = 'normal'
 
   // Listen for follow state changes from other FollowButton instances
   useEffect(() => {
-    const handleFollowChange = (event: CustomEvent) => {
-      const { changedUsername, isFollowing: newFollowState } = event.detail
+    const handleFollowChange = (event: Event) => {
+      const customEvent = event as FollowStateChangedEvent
+      const { changedUsername, isFollowing: newFollowState } = customEvent.detail
       if (changedUsername === username) {
         setIsFollowing(newFollowState)
       }
     }
 
-    window.addEventListener('followStateChanged' as any, handleFollowChange)
+    window.addEventListener('followStateChanged', handleFollowChange)
     return () => {
-      window.removeEventListener('followStateChanged' as any, handleFollowChange)
+      window.removeEventListener('followStateChanged', handleFollowChange)
     }
   }, [username])
 

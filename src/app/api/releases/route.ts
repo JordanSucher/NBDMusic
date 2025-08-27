@@ -3,6 +3,11 @@ import { getServerSession } from "next-auth"
 import { db } from "@/lib/db"
 import { authOptions } from "@/lib/auth"
 
+// Use Prisma's generated types or a flexible interface
+interface WhereCondition {
+  AND: Array<Record<string, unknown>>
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -16,7 +21,7 @@ export async function GET(request: NextRequest) {
     const page = pageParam ? Math.max(1, parseInt(pageParam, 10)) : 1
     const skip = (page - 1) * limit
 
-    let whereCondition: any = {
+    const whereCondition: WhereCondition = {
       AND: [
         // Base condition for published releases
         {
