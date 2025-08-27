@@ -29,10 +29,23 @@ export async function POST(request: NextRequest) {
   try {
     // Check authentication  
     const session = await getServerSession(authOptions)
-    if (!session?.user) {
+    if (!session?.user?.email) {
       return NextResponse.json(
         { error: "You must be logged in to upload music" },
         { status: 401 }
+      )
+    }
+
+    // Get current user from database to get their ID
+    const currentUser = await db.user.findUnique({
+      where: { email: session.user.email },
+      select: { id: true }
+    })
+
+    if (!currentUser) {
+      return NextResponse.json(
+        { error: "User not found" },
+        { status: 404 }
       )
     }
 
@@ -73,7 +86,7 @@ export async function POST(request: NextRequest) {
         releaseType,
         artworkUrl: artworkUrl || null,
         releaseDate: parsedReleaseDate,
-        userId: session.user.id,
+        userId: currentUser.id,
         tracks: {
           create: tracks.map((track: UploadedTrack) => ({
             title: track.title.trim(),
