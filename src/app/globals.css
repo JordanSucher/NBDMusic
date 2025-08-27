@@ -339,10 +339,13 @@ nav button {
 }
 
 .tag {
-  background-color: #ffff00 !important;
+  background-color: #f0f0f0 !important;
+  background-image: url("data:image/svg+xml,%3csvg width='4' height='4' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M0 0h1v1H0V0zm2 2h1v1H2V2z' fill='%23ccc'/%3e%3c/svg%3e") !important;
+  background-repeat: repeat !important;
   padding: 2px 4px !important;
   margin-right: 5px !important;
-  border: 1px solid #000 !important;
+  border: 1px solid #999 !important;
+  color: #333 !important;
   font-size: 11px !important;
   font-family: 'Courier New', monospace !important;
   display: inline-block !important;
@@ -350,7 +353,8 @@ nav button {
 }
 
 .tag-link .tag:hover {
-  background-color: #ffdd00 !important;
+  background-color: #e8e8e8 !important;
+  background-image: url("data:image/svg+xml,%3csvg width='4' height='4' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M0 0h1v1H0V0zm2 2h1v1H2V2z' fill='%23bbb'/%3e%3c/svg%3e") !important;
   text-decoration: underline !important;
 }
 
@@ -358,6 +362,11 @@ nav button {
 audio {
   width: 100% !important;
   margin-top: 10px !important;
+}
+
+
+.release-page-title {
+  width: 350px;
 }
 
 /* Release page mobile responsive */
@@ -369,6 +378,10 @@ audio {
   .share-buttons {
     flex-direction: column !important;
     gap: 4px !important;
+  }
+
+  .release-page-title {
+    width: 100% !important;
   }
 }
 

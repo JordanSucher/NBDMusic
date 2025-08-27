@@ -36,6 +36,21 @@ export default function FollowButton({ username, onFollowChange, size = 'normal'
     }
   }, [session, username])
 
+  // Listen for follow state changes from other FollowButton instances
+  useEffect(() => {
+    const handleFollowChange = (event: CustomEvent) => {
+      const { changedUsername, isFollowing: newFollowState } = event.detail
+      if (changedUsername === username) {
+        setIsFollowing(newFollowState)
+      }
+    }
+
+    window.addEventListener('followStateChanged' as any, handleFollowChange)
+    return () => {
+      window.removeEventListener('followStateChanged' as any, handleFollowChange)
+    }
+  }, [username])
+
 
   const handleFollowToggle = async () => {
     if (!session?.user) return
@@ -51,6 +66,15 @@ export default function FollowButton({ username, onFollowChange, size = 'normal'
       if (response.ok) {
         const newFollowStatus = !isFollowing
         setIsFollowing(newFollowStatus)
+        
+        // Broadcast the change to other FollowButton instances
+        const event = new CustomEvent('followStateChanged', {
+          detail: {
+            changedUsername: username,
+            isFollowing: newFollowStatus
+          }
+        })
+        window.dispatchEvent(event)
         
         if (onFollowChange) {
           onFollowChange(newFollowStatus)

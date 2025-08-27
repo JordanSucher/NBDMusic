@@ -299,7 +299,9 @@ export default function ReleasePage() {
 
             {/* Release info */}
             <div style={{ flex: 1 }}>
-              <h1 style={{ 
+              <h1 
+              className="release-page-title"
+              style={{ 
                 fontSize: '24px', 
                 fontWeight: 'bold', 
                 marginBottom: '10px',
@@ -491,8 +493,19 @@ export default function ReleasePage() {
                     </span>
                   )}
                 </span>
-                <span style={{ color: '#666', fontSize: '11px' }}>
-                  {sortedTracks[0].duration ? formatDuration(sortedTracks[0].duration) : '--'} • {sortedTracks[0]._count.listens} plays
+                <span style={{ 
+                  color: '#666', 
+                  fontSize: '11px',
+                  flexShrink: 0,
+                  whiteSpace: 'nowrap'
+                }}>
+                  <span style={{ display: 'inline-block', width: '35px', textAlign: 'right' }}>
+                    {sortedTracks[0].duration ? formatDuration(sortedTracks[0].duration) : '--'}
+                  </span>
+                  {' • '}
+                  <span style={{ display: 'inline-block', width: '60px', textAlign: 'right' }}>
+                    {sortedTracks[0]._count.listens} plays
+                  </span>
                 </span>
               </div>
               

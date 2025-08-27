@@ -40,6 +40,15 @@ interface Release {
   tracks: Track[]
 }
 
+interface PaginationInfo {
+  page: number
+  limit: number
+  totalCount: number
+  totalPages: number
+  hasNextPage: boolean
+  hasPrevPage: boolean
+}
+
 function BrowseContent() {
   const { data: session } = useSession()
   const searchParams = useSearchParams()
@@ -52,15 +61,36 @@ function BrowseContent() {
   const [showFollowingOnly, setShowFollowingOnly] = useState(false)
   const [allTags, setAllTags] = useState<{name: string, count: number}[]>([])
   const [isInitialLoad, setIsInitialLoad] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pagination, setPagination] = useState<PaginationInfo | null>(null)
+  const [tagInput, setTagInput] = useState('')
+  const [showTagSuggestions, setShowTagSuggestions] = useState(false)
 
-  const fetchReleases = useCallback(async () => {
+  const fetchReleases = useCallback(async (page: number = currentPage) => {
     try {
-      // Don't send following=true if user isn't logged in
-      const url = (showFollowingOnly && session) ? '/api/releases?following=true' : '/api/releases'
+      const params = new URLSearchParams()
+      params.set('page', page.toString())
+      params.set('limit', '10')
+      
+      if (showFollowingOnly && session) {
+        params.set('following', 'true')
+      }
+      
+      if (searchTerm.trim()) {
+        params.set('search', searchTerm.trim())
+      }
+      
+      if (selectedTags.length > 0) {
+        // For now, just use the first selected tag since API expects single tag
+        params.set('tag', selectedTags[0])
+      }
+      
+      const url = `/api/releases?${params.toString()}`
       const response = await fetch(url)
       if (response.ok) {
         const data = await response.json()
         setReleases(data.releases || [])
+        setPagination(data.pagination)
       } else {
         setError("Failed to load releases")
       }
@@ -69,9 +99,9 @@ function BrowseContent() {
     } finally {
       setLoading(false)
     }
-  }, [showFollowingOnly, session])
+  }, [showFollowingOnly, session, currentPage, searchTerm, selectedTags])
 
-  const updateURL = useCallback((following: boolean, tags: string[] = selectedTags, search: string = searchTerm) => {
+  const updateURL = useCallback((following: boolean, tags: string[] = selectedTags, search: string = searchTerm, page: number = currentPage) => {
     const params = new URLSearchParams()
     
     if (following) {
@@ -89,13 +119,45 @@ function BrowseContent() {
       params.set('search', search)
     }
     
+    if (page > 1) {
+      params.set('page', page.toString())
+    }
+    
     const newURL = params.toString() ? `/browse?${params.toString()}` : '/browse'
     router.replace(newURL)
-  }, [selectedTags, searchTerm, router])
+  }, [selectedTags, searchTerm, currentPage, router])
 
   const handleFollowingToggle = (checked: boolean) => {
     setShowFollowingOnly(checked)
-    updateURL(checked)
+    setCurrentPage(1) // Reset to first page when changing filters
+    updateURL(checked, selectedTags, searchTerm, 1)
+  }
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && pagination && newPage <= pagination.totalPages) {
+      setCurrentPage(newPage)
+      updateURL(showFollowingOnly, selectedTags, searchTerm, newPage)
+      setLoading(true)
+      fetchReleases(newPage)
+    }
+  }
+
+  const handleSearchChange = (newSearch: string) => {
+    setSearchTerm(newSearch)
+    setCurrentPage(1)
+    setLoading(true)
+    updateURL(showFollowingOnly, selectedTags, newSearch, 1)
+  }
+
+  const handleTagToggle = (tagName: string) => {
+    const newTags = selectedTags.includes(tagName)
+      ? selectedTags.filter(tag => tag !== tagName)
+      : [...selectedTags, tagName]
+    
+    setSelectedTags(newTags)
+    setCurrentPage(1)
+    setLoading(true)
+    updateURL(showFollowingOnly, newTags, searchTerm, 1)
   }
 
   useEffect(() => {
@@ -112,6 +174,15 @@ function BrowseContent() {
       if (followingFromUrl === 'true') {
         setShowFollowingOnly(true)
       }
+
+      // Check for page parameter in URL
+      const pageFromUrl = searchParams.get('page')
+      if (pageFromUrl) {
+        const pageNum = parseInt(pageFromUrl, 10)
+        if (pageNum > 0) {
+          setCurrentPage(pageNum)
+        }
+      }
       
       setIsInitialLoad(false)
     }
@@ -120,12 +191,12 @@ function BrowseContent() {
     fetchTags()
   }, [searchParams, fetchReleases, isInitialLoad])
 
-  // Refetch releases when following filter changes
+  // Refetch releases when filters change (excluding initial load)
   useEffect(() => {
-    if (!loading) {
+    if (!isInitialLoad && !loading) {
       fetchReleases()
     }
-  }, [showFollowingOnly, fetchReleases, loading])
+  }, [showFollowingOnly, searchTerm, selectedTags, fetchReleases, loading, isInitialLoad])
 
   const fetchTags = async () => {
     try {
@@ -140,43 +211,23 @@ function BrowseContent() {
   }
 
   const toggleTag = (tagName: string) => {
-    setSelectedTags(prev => {
-      if (prev.includes(tagName)) {
-        return prev.filter(tag => tag !== tagName)
-      } else {
-        return [...prev, tagName]
-      }
-    })
+    handleTagToggle(tagName)
   }
 
   const clearAllFilters = () => {
     setSearchTerm("")
     setSelectedTags([])
+    setTagInput("")
+    setShowTagSuggestions(false)
     setShowFollowingOnly(false)
+    setCurrentPage(1)
+    setLoading(true)
     router.replace('/browse') // Clear URL params
   }
 
-  const filteredReleases = releases.filter(release => {
-    const matchesSearch = release.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         release.user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         release.tracks.some(track => track.title.toLowerCase().includes(searchTerm.toLowerCase()))
-    
-    const matchesTags = selectedTags.length === 0 || 
-                       selectedTags.every(selectedTag => 
-                         release.tags.some(releaseTag => releaseTag.tag.name === selectedTag)
-                       )
-    
-    return matchesSearch && matchesTags
-  })
-
-  if (loading) {
-    return (
-      <div className="container">
-        <h1>Browse Music</h1>
-        <p>Loading releases...</p>
-      </div>
-    )
-  }
+  // Note: With pagination, we display all fetched releases
+  // Search and tag filtering should be moved to API level for proper pagination
+  const filteredReleases = releases
 
   return (
     <div className="container">
@@ -193,7 +244,13 @@ function BrowseContent() {
             id="search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Type to search..."
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleSearchChange(searchTerm)
+              }
+            }}
+            onBlur={() => handleSearchChange(searchTerm)}
+            placeholder="Type to search... (press Enter or click away to search)"
           />
         </div>
 
@@ -212,29 +269,160 @@ function BrowseContent() {
           </div>
         )}
 
-        <div className="mb-10">
-          <label>Filter by tags (click to toggle):</label><br />
-          <div style={{ marginTop: '5px' }}>
-            {allTags.map((tag) => (
-              <button
-                key={tag.name}
-                onClick={() => toggleTag(tag.name)}
-                style={{
-                  margin: '2px',
-                  padding: '4px 8px',
+        <div className="mb-10" style={{ position: 'relative' }}>
+          <label htmlFor="tagFilter">Filter by tag:</label><br />
+          <input
+            type="text"
+            id="tagFilter"
+            value={tagInput}
+            onChange={(e) => {
+              const value = e.target.value
+              setTagInput(value)
+              setShowTagSuggestions(value.length > 0)
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                const value = tagInput.trim()
+                if (value) {
+                  handleTagToggle(value)
+                  setTagInput('')
+                  setShowTagSuggestions(false)
+                }
+              } else if (e.key === 'Escape') {
+                setShowTagSuggestions(false)
+              }
+            }}
+            onFocus={() => {
+              if (tagInput.length > 0) {
+                setShowTagSuggestions(true)
+              }
+            }}
+            onBlur={() => {
+              // Delay hiding suggestions to allow clicking on them
+              setTimeout(() => setShowTagSuggestions(false), 150)
+            }}
+            placeholder="Type a tag name... (press Enter to filter)"
+          />
+          
+          {/* Autocomplete suggestions */}
+          {showTagSuggestions && tagInput.length > 0 && (
+            <div style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              right: 0,
+              backgroundColor: 'white',
+              border: '1px solid #ccc',
+              borderTop: 'none',
+              maxHeight: '150px',
+              overflowY: 'auto',
+              zIndex: 1000,
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}>
+              {allTags
+                .filter(tag => 
+                  tag.name.toLowerCase().includes(tagInput.toLowerCase()) &&
+                  !selectedTags.includes(tag.name)
+                )
+                .slice(0, 10)
+                .map((tag) => (
+                  <div
+                    key={tag.name}
+                    onClick={() => {
+                      handleTagToggle(tag.name)
+                      setTagInput('')
+                      setShowTagSuggestions(false)
+                    }}
+                    style={{
+                      padding: '8px 12px',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      fontFamily: 'Courier New, monospace',
+                      borderBottom: '1px solid #eee'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#f0f0f0'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'white'
+                    }}
+                  >
+                    {tag.name} <span style={{ color: '#666' }}>({tag.count})</span>
+                  </div>
+                ))
+              }
+              {allTags.filter(tag => 
+                tag.name.toLowerCase().includes(tagInput.toLowerCase()) &&
+                !selectedTags.includes(tag.name)
+              ).length === 0 && (
+                <div style={{
+                  padding: '8px 12px',
                   fontSize: '12px',
-                  backgroundColor: selectedTags.includes(tag.name) ? '#ffff00' : '#f0f0f0',
-                  border: selectedTags.includes(tag.name) ? '2px solid #000' : '1px solid #ccc',
-                  fontFamily: 'Courier New, monospace',
-                  cursor: 'pointer',
-                  fontWeight: selectedTags.includes(tag.name) ? 'bold' : 'normal'
-                }}
-              >
-                {tag.name} ({tag.count})
-              </button>
-            ))}
-          </div>
-          <small>Selected tags: {selectedTags.length > 0 ? selectedTags.join(', ') : 'None'}</small>
+                  color: '#666',
+                  fontStyle: 'italic',
+                  fontFamily: 'Courier New, monospace'
+                }}>
+                  No matching tags found
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Show selected tags */}
+          {selectedTags.length > 0 && (
+            <div style={{ marginTop: '10px' }}>
+              <span style={{ 
+                fontSize: '12px', 
+                color: '#666', 
+                fontFamily: 'Courier New, monospace',
+                marginRight: '8px'
+              }}>
+                Active filter:
+              </span>
+              {selectedTags.map((tag) => (
+                <span
+                  key={tag}
+                  className="tag"
+                  style={{
+                    display: 'inline-block',
+                    margin: '0 4px 4px 0',
+                    padding: '4px 8px',
+                    fontSize: '11px',
+                    backgroundColor: '#f0f0f0',
+                    color: '#333',
+                    border: '1px solid #999',
+                    fontFamily: 'Courier New, monospace',
+                    fontWeight: 'normal',
+                    borderRadius: '0',
+                    backgroundImage: `url("data:image/svg+xml,%3csvg width='4' height='4' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M0 0h1v1H0V0zm2 2h1v1H2V2z' fill='%23ccc'/%3e%3c/svg%3e")`,
+                    backgroundRepeat: 'repeat'
+                  }}
+                >
+                  {tag}
+                  <button
+                    onClick={() => {
+                      handleTagToggle(tag)
+                      setTagInput('')
+                    }}
+                    style={{
+                      marginLeft: '8px',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: 'bold',
+                      color: '#666',
+                      padding: '0',
+                      lineHeight: '1'
+                    }}
+                    title="Remove tag filter"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         {(searchTerm || selectedTags.length > 0 || showFollowingOnly) && (
@@ -257,7 +445,13 @@ function BrowseContent() {
       {/* Release List */}
       {error && <div className="error">{error}</div>}
       
-      {filteredReleases.length === 0 ? (
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '40px 0' }}>
+          <p style={{ fontSize: '14px', color: '#666', fontFamily: 'Courier New, monospace' }}>
+            Loading releases...
+          </p>
+        </div>
+      ) : filteredReleases.length === 0 ? (
         <div>
           {releases.length === 0 ? (
             <div>
@@ -283,10 +477,146 @@ function BrowseContent() {
         </div>
       ) : (
         <div>
-          <h3>Releases ({filteredReleases.length})</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <h3>
+              {pagination ? 
+                `Releases (${pagination.totalCount} total, showing ${filteredReleases.length} on page ${pagination.page})` :
+                `Releases (${filteredReleases.length})`
+              }
+            </h3>
+          </div>
+          
+          {/* Pagination Controls - Top */}
+          {pagination && pagination.totalPages > 1 && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'flex-start',
+              alignItems: 'center',
+              gap: '5px',
+              marginBottom: '20px',
+              padding: '15px 0'
+            }}>
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={!pagination.hasPrevPage}
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '12px',
+                  backgroundColor: pagination.hasPrevPage ? '#4444ff' : '#ccc',
+                  color: 'white',
+                  border: '1px solid #000',
+                  cursor: pagination.hasPrevPage ? 'pointer' : 'not-allowed',
+                  fontFamily: 'Courier New, monospace'
+                }}
+              >
+                ←
+              </button>
+              
+              {/* Page Numbers */}
+              {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map(pageNum => (
+                <button
+                  key={pageNum}
+                  onClick={() => handlePageChange(pageNum)}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '12px',
+                    backgroundColor: pageNum === currentPage ? '#ffff00' : '#f0f0f0',
+                    color: pageNum === currentPage ? '#000' : '#333',
+                    border: pageNum === currentPage ? '2px solid #000' : '1px solid #ccc',
+                    cursor: 'pointer',
+                    fontFamily: 'Courier New, monospace',
+                    fontWeight: pageNum === currentPage ? 'bold' : 'normal'
+                  }}
+                >
+                  {pageNum}
+                </button>
+              ))}
+              
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={!pagination.hasNextPage}
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '12px',
+                  backgroundColor: pagination.hasNextPage ? '#4444ff' : '#ccc',
+                  color: 'white',
+                  border: '1px solid #000',
+                  cursor: pagination.hasNextPage ? 'pointer' : 'not-allowed',
+                  fontFamily: 'Courier New, monospace'
+                }}
+              >
+                →
+              </button>
+            </div>
+          )}
+
           {filteredReleases.map(release => (
             <ReleaseCard key={release.id} release={release} />
           ))}
+          
+          {/* Pagination Controls - Bottom */}
+          {pagination && pagination.totalPages > 1 && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'flex-start',
+              alignItems: 'center',
+              gap: '5px',
+              marginTop: '30px',
+              padding: '20px 0'
+            }}>
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={!pagination.hasPrevPage}
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '12px',
+                  backgroundColor: pagination.hasPrevPage ? '#4444ff' : '#ccc',
+                  color: 'white',
+                  border: '1px solid #000',
+                  cursor: pagination.hasPrevPage ? 'pointer' : 'not-allowed',
+                  fontFamily: 'Courier New, monospace'
+                }}
+              >
+                ←
+              </button>
+              
+              {/* Page Numbers */}
+              {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map(pageNum => (
+                <button
+                  key={pageNum}
+                  onClick={() => handlePageChange(pageNum)}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '12px',
+                    backgroundColor: pageNum === currentPage ? '#ffff00' : '#f0f0f0',
+                    color: pageNum === currentPage ? '#000' : '#333',
+                    border: pageNum === currentPage ? '2px solid #000' : '1px solid #ccc',
+                    cursor: 'pointer',
+                    fontFamily: 'Courier New, monospace',
+                    fontWeight: pageNum === currentPage ? 'bold' : 'normal'
+                  }}
+                >
+                  {pageNum}
+                </button>
+              ))}
+              
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={!pagination.hasNextPage}
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '12px',
+                  backgroundColor: pagination.hasNextPage ? '#4444ff' : '#ccc',
+                  color: 'white',
+                  border: '1px solid #000',
+                  cursor: pagination.hasNextPage ? 'pointer' : 'not-allowed',
+                  fontFamily: 'Courier New, monospace'
+                }}
+              >
+                →
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

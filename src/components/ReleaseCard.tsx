@@ -51,11 +51,12 @@ interface ReleaseCardProps {
 export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCardProps) {
   const { data: session } = useSession()
   const audioContext = useAudioContext()
-  const playerIdRef = useRef<string>(`card-${release.id}-${Math.random().toString(36).substr(2, 9)}`)
   const [tagCounts, setTagCounts] = useState<TagWithCount[]>([])
   const [currentTrack, setCurrentTrack] = useState(0)
   const [playerKey, setPlayerKey] = useState(0)
   const [expandedLyrics, setExpandedLyrics] = useState<{[trackId: string]: boolean}>({})
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
+
 
   useEffect(() => {
     fetchTagCounts()
@@ -242,36 +243,71 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
             </Link>
             {' '}
             <FollowButton username={release.user.username} variant="link" />
-              {release.releaseDate && (
-                <> | {isScheduledRelease(release.releaseDate) ? 'Scheduled for' : 'Released'}: {formatReleaseDate(release.releaseDate)}</>
-              )}
-              {!release.releaseDate && <> | Uploaded: {formatDate(release.uploadedAt)}</>}
-              {' | '}{release.tracks.length} track{release.tracks.length !== 1 ? 's' : ''}
-              {' | '}Total duration: {formatDuration(getTotalDuration())}
-              {isScheduledRelease(release.releaseDate) && (
-                <span style={{ 
-                  marginLeft: '10px',
-                  padding: '2px 4px',
-                  backgroundColor: '#ff9900',
-                  color: 'white',
-                  fontSize: '10px',
-                  fontWeight: 'bold'
-                }}>
-                  SCHEDULED
-                </span>
-              )}
+            <br />
+            {release.releaseDate && (
+              <>
+                {isScheduledRelease(release.releaseDate) ? 'Scheduled for' : 'Released'}: {formatReleaseDate(release.releaseDate)}
+                <br />
+              </>
+            )}
+            {!release.releaseDate && (
+              <>
+                Uploaded: {formatDate(release.uploadedAt)}
+                <br />
+              </>
+            )}
+            {release.tracks.length} track{release.tracks.length !== 1 ? 's' : ''}
+            <br />
+            Total duration: {formatDuration(getTotalDuration())}
+            {isScheduledRelease(release.releaseDate) && (
+              <span style={{ 
+                marginLeft: '10px',
+                padding: '2px 4px',
+                backgroundColor: '#ff9900',
+                color: 'white',
+                fontSize: '10px',
+                fontWeight: 'bold'
+              }}>
+                SCHEDULED
+              </span>
+            )}
           </div>
 
           {release.description && (
-            <div style={{ 
-              fontSize: '13px', 
-              marginTop: '5px',
-              fontStyle: 'italic',
-              color: '#555'
-            }}>
-              {release.description}
+          <div style={{ 
+            fontSize: '13px', 
+            marginTop: '5px',
+            fontStyle: 'italic',
+            color: '#555'
+          }}>
+            <div
+              style={{ marginBottom: '5px' }}
+            >
+              {isDescriptionExpanded 
+                ? release.description 
+                : `${release.description.slice(0, 120)}${release.description.length > 120 ? '...' : ''}`
+              }
             </div>
-          )}
+            {release.description.length > 120 && (
+              <span
+                onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'blue',
+                  textDecoration: 'underline',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontFamily: 'Courier New, monospace',
+                  marginTop: '4px',
+                  padding: '0'
+                }}
+              >
+                {isDescriptionExpanded ? 'less' : 'more'}
+              </span>
+            )}
+          </div>
+        )}
         </div>
       </div>
 
@@ -287,7 +323,16 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
                 className="tag-link"
                 style={{ textDecoration: 'none' }}
               >
-                <span className="tag">
+                <span 
+                  className="tag"
+                  style={{
+                    backgroundColor: '#f0f0f0',
+                    backgroundImage: `url("data:image/svg+xml,%3csvg width='4' height='4' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M0 0h1v1H0V0zm2 2h1v1H2V2z' fill='%23ccc'/%3e%3c/svg%3e")`,
+                    backgroundRepeat: 'repeat',
+                    color: '#333',
+                    border: '1px solid #999'
+                  }}
+                >
                   {releaseTag.tag.name} ({count})
                 </span>
               </Link>
@@ -354,8 +399,9 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
                       fontFamily: 'Courier New, monospace',
                       display: 'flex',
                       justifyContent: 'space-between',
-                      alignItems: 'center',
-                      gap: '8px'
+                      alignItems: 'flex-start',
+                      gap: '8px',
+                      flexWrap: 'nowrap'
                     }}
                     onMouseEnter={(e) => {
                       if (!isActiveGlobalTrack) {
@@ -369,17 +415,12 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
                     }}
                   >
                   <span style={{ 
-                    minWidth: 0,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px'
+                    flex: '1', 
+                    minWidth: '0', 
+                    overflow: 'hidden', 
+                    textOverflow: 'ellipsis'
                   }}>
-                    <span>
-                      {track.trackNumber}. {track.title}
-                    </span>
+                    {track.trackNumber}. {track.title}
                     {track.lyrics && (
                       <span
                         onClick={(e) => {
@@ -387,12 +428,12 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
                           toggleLyrics(track.id)
                         }}
                         style={{
-                          fontSize: '11px',
+                          marginLeft: '8px',
+                          color: '#0066cc',
                           textDecoration: 'underline',
-                          marginLeft: '4px',
                           cursor: 'pointer',
-                          color: expandedLyrics[track.id] ? 'blue' : 'blue',
-                          userSelect: 'none'
+                          fontSize: '12px',
+                          fontFamily: 'Courier New, monospace'
                         }}
                         title="Toggle lyrics"
                       >

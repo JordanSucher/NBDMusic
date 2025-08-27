@@ -243,6 +243,42 @@ export default function UploadPage() {
     })
   }
 
+  // Function to calculate duration from audio file
+  const calculateDuration = (file: File): Promise<number> => {
+    return new Promise((resolve, reject) => {
+      const audio = new Audio()
+      const objectUrl = URL.createObjectURL(file)
+      
+      const handleLoadedMetadata = () => {
+        cleanup()
+        resolve(Math.floor(audio.duration))
+      }
+      
+      const handleError = () => {
+        cleanup()
+        reject(new Error('Failed to load audio metadata'))
+      }
+      
+      const cleanup = () => {
+        audio.removeEventListener('loadedmetadata', handleLoadedMetadata)
+        audio.removeEventListener('error', handleError)
+        URL.revokeObjectURL(objectUrl)
+      }
+      
+      audio.addEventListener('loadedmetadata', handleLoadedMetadata)
+      audio.addEventListener('error', handleError)
+      
+      // Add timeout
+      setTimeout(() => {
+        cleanup()
+        reject(new Error('Timeout loading audio metadata'))
+      }, 10000)
+      
+      audio.src = objectUrl
+      audio.load()
+    })
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!session?.user) return
@@ -270,14 +306,24 @@ export default function UploadPage() {
         artworkUrl = await uploadFileDirectly(artworkFile, 'artwork')
       }
 
-      // Upload all track files
-      setUploadProgress("Uploading tracks...")
+      // Upload all track files and calculate durations
+      setUploadProgress("Processing tracks...")
       const uploadedTracks = []
 
       for (let i = 0; i < tracks.length; i++) {
         const track = tracks[i]
-        setUploadProgress(`Uploading track ${i + 1} of ${tracks.length}: ${track.title}`)
+        setUploadProgress(`Processing track ${i + 1} of ${tracks.length}: ${track.title}`)
         
+        // Calculate duration first
+        let duration: number | null = null
+        try {
+          duration = await calculateDuration(track.file)
+        } catch (error) {
+          console.warn(`Failed to calculate duration for ${track.title}:`, error)
+          // Continue without duration - it can be calculated later if needed
+        }
+        
+        setUploadProgress(`Uploading track ${i + 1} of ${tracks.length}: ${track.title}`)
         const fileUrl = await uploadFileDirectly(track.file, 'track')
         
         uploadedTracks.push({
@@ -287,6 +333,7 @@ export default function UploadPage() {
           fileUrl,
           fileSize: track.file.size,
           mimeType: track.file.type,
+          duration: duration,
           lyrics: track.lyrics.trim()
         })
       }
