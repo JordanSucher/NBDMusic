@@ -1,32 +1,44 @@
 // /api/user/stats/route.ts
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
+import { getServerSession } from "next-auth/next"
 import { db } from "@/lib/db"
 import { authOptions } from "@/lib/auth"
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions as Record<string, unknown>) as { user?: { id?: string } } | null
-    if (!session?.user?.id) {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.email) {
       return NextResponse.json(
         { error: "You must be logged in" },
         { status: 401 }
       )
     }
 
+    const user = await db.user.findUnique({
+      where: { email: session.user.email },
+      select: { id: true }
+    })
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "User not found" },
+        { status: 404 }
+      )
+    }
+
     // Get follower count
     const followerCount = await db.follow.count({
-      where: { followingId: session.user.id }
+      where: { followingId: user.id }
     })
 
     // Get following count
     const followingCount = await db.follow.count({
-      where: { followerId: session.user.id }
+      where: { followerId: user.id }
     })
 
     // Get followers list (recent followers)
     const recentFollowers = await db.follow.findMany({
-      where: { followingId: session.user.id },
+      where: { followingId: user.id },
       include: {
         follower: {
           select: {
@@ -41,7 +53,7 @@ export async function GET() {
 
     // Get following list
     const following = await db.follow.findMany({
-      where: { followerId: session.user.id },
+      where: { followerId: user.id },
       include: {
         following: {
           select: {

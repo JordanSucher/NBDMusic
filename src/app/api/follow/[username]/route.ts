@@ -1,6 +1,6 @@
 // /api/follow/[username]/route.ts
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
+import { getServerSession } from "next-auth/next"
 import { db } from "@/lib/db"
 import { authOptions } from "@/lib/auth"
 
@@ -10,11 +10,23 @@ export async function POST(
   context: { params: Promise<{ username: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions as Record<string, unknown>) as { user?: { id?: string } } | null
-    if (!session?.user?.id) {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.email) {
       return NextResponse.json(
         { error: "You must be logged in to follow users" },
         { status: 401 }
+      )
+    }
+
+    const user = await db.user.findUnique({
+      where: { email: session.user.email },
+      select: { id: true }
+    })
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "User not found" },
+        { status: 404 }
       )
     }
 
@@ -35,7 +47,7 @@ export async function POST(
     }
 
     // Can't follow yourself
-    if (userToFollow.id === session.user.id) {
+    if (userToFollow.id === user.id) {
       return NextResponse.json(
         { error: "You cannot follow yourself" },
         { status: 400 }
@@ -46,7 +58,7 @@ export async function POST(
     const existingFollow = await db.follow.findUnique({
       where: {
         followerId_followingId: {
-          followerId: session.user.id,
+          followerId: user.id,
           followingId: userToFollow.id
         }
       }
@@ -62,7 +74,7 @@ export async function POST(
     // Create follow relationship
     await db.follow.create({
       data: {
-        followerId: session.user.id,
+        followerId: user.id,
         followingId: userToFollow.id
       }
     })
@@ -87,11 +99,23 @@ export async function DELETE(
   context: { params: Promise<{ username: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions as Record<string, unknown>) as { user?: { id?: string } } | null
-    if (!session?.user?.id) {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.email) {
       return NextResponse.json(
         { error: "You must be logged in" },
         { status: 401 }
+      )
+    }
+
+    const user = await db.user.findUnique({
+      where: { email: session.user.email },
+      select: { id: true }
+    })
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "User not found" },
+        { status: 404 }
       )
     }
 
@@ -114,7 +138,7 @@ export async function DELETE(
     // Delete follow relationship
     const deletedFollow = await db.follow.deleteMany({
       where: {
-        followerId: session.user.id,
+        followerId: user.id,
         followingId: userToUnfollow.id
       }
     })
@@ -146,8 +170,17 @@ export async function GET(
   context: { params: Promise<{ username: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions as Record<string, unknown>) as { user?: { id?: string } } | null
-    if (!session?.user?.id) {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.email) {
+      return NextResponse.json({ following: false })
+    }
+
+    const currentUser = await db.user.findUnique({
+      where: { email: session.user.email },
+      select: { id: true }
+    })
+
+    if (!currentUser) {
       return NextResponse.json({ following: false })
     }
 
@@ -155,12 +188,12 @@ export async function GET(
     const decodedUsername = decodeURIComponent(username)
 
     // Find the user
-    const user = await db.user.findUnique({
+    const targetUser = await db.user.findUnique({
       where: { username: decodedUsername },
       select: { id: true }
     })
 
-    if (!user) {
+    if (!targetUser) {
       return NextResponse.json({ following: false })
     }
 
@@ -168,8 +201,8 @@ export async function GET(
     const follow = await db.follow.findUnique({
       where: {
         followerId_followingId: {
-          followerId: session.user.id,
-          followingId: user.id
+          followerId: currentUser.id,
+          followingId: targetUser.id
         }
       }
     })

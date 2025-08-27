@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
+import { getServerSession } from "next-auth/next"
 import { put, del } from "@vercel/blob"
 import { db } from "@/lib/db"
 import { authOptions } from "@/lib/auth"
@@ -63,11 +63,23 @@ export async function PUT(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions as Record<string, unknown>) as { user?: { id?: string } } | null
-    if (!session?.user?.id) {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.email) {
       return NextResponse.json(
         { error: "You must be logged in" },
         { status: 401 }
+      )
+    }
+
+    const user = await db.user.findUnique({
+      where: { email: session.user.email },
+      select: { id: true }
+    })
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "User not found" },
+        { status: 404 }
       )
     }
 
@@ -91,7 +103,7 @@ export async function PUT(
     }
 
     // Verify ownership
-    if (existingRelease.userId !== session.user.id) {
+    if (existingRelease.userId !== user.id) {
       return NextResponse.json(
         { error: "You can only edit your own releases" },
         { status: 403 }
@@ -317,11 +329,23 @@ export async function DELETE(
     const { id: releaseId } = await context.params
     
     // Check authentication
-    const session = await getServerSession(authOptions as Record<string, unknown>) as { user?: { id?: string } } | null
-    if (!session?.user?.id) {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.email) {
       return NextResponse.json(
         { error: "You must be logged in" },
         { status: 401 }
+      )
+    }
+
+    const user = await db.user.findUnique({
+      where: { email: session.user.email },
+      select: { id: true }
+    })
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "User not found" },
+        { status: 404 }
       )
     }
 
@@ -341,7 +365,7 @@ export async function DELETE(
       )
     }
 
-    if (release.userId !== session.user.id) {
+    if (release.userId !== user.id) {
       return NextResponse.json(
         { error: "You can only delete your own releases" },
         { status: 403 }

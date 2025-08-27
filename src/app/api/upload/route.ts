@@ -1,6 +1,6 @@
 // api/upload/route.ts
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
+import { getServerSession } from "next-auth/next"
 import { db } from "@/lib/db"
 import { authOptions } from "@/lib/auth"
 
@@ -28,8 +28,8 @@ interface UploadRequestBody {
 export async function POST(request: NextRequest) {
   try {
     // Check authentication  
-    const session = await getServerSession(authOptions as Record<string, unknown>) as { user?: { id?: string } } | null
-    if (!session?.user?.id) {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
       return NextResponse.json(
         { error: "You must be logged in to upload music" },
         { status: 401 }

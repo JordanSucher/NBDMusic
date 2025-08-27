@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
+import { getServerSession } from "next-auth/next"
 import { db } from "@/lib/db"
 import { authOptions } from "@/lib/auth"
 
@@ -35,18 +35,31 @@ export async function GET(request: NextRequest) {
 
     // If following filter is requested, get user's following list
     if (followingOnly) {
-      const session = await getServerSession(authOptions as Record<string, unknown>) as { user?: { id?: string } } | null
+      const session = await getServerSession(authOptions)
       
-      if (!session?.user?.id) {
+      if (!session?.user?.email) {
         return NextResponse.json(
           { error: "You must be logged in to filter by following" },
           { status: 401 }
         )
       }
 
+      // Get current user from database to get their ID
+      const currentUser = await db.user.findUnique({
+        where: { email: session.user.email },
+        select: { id: true }
+      })
+
+      if (!currentUser) {
+        return NextResponse.json(
+          { error: "User not found" },
+          { status: 404 }
+        )
+      }
+
       // Get list of users the current user follows
       const following = await db.follow.findMany({
-        where: { followerId: session.user.id },
+        where: { followerId: currentUser.id },
         select: { followingId: true }
       })
 

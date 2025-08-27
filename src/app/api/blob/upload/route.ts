@@ -1,6 +1,6 @@
 // api/blob/upload/route.ts
 import { NextRequest } from "next/server"
-import { getServerSession } from "next-auth"
+import { getServerSession } from "next-auth/next"
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client"
 import { authOptions } from "@/lib/auth"
 
@@ -13,8 +13,8 @@ export async function POST(request: NextRequest): Promise<Response> {
       request,
       onBeforeGenerateToken: async (_pathname, _clientPayload) => {
         // Check authentication
-        const session = await getServerSession(authOptions as Record<string, unknown>) as { user?: { id?: string } } | null
-        if (!session?.user?.id) {
+        const session = await getServerSession(authOptions)
+        if (!session?.user) {
           throw new Error("You must be logged in to upload files")
         }
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
+import { getServerSession } from "next-auth/next"
 import { db } from "@/lib/db"
 import { authOptions } from "@/lib/auth"
 
@@ -11,8 +11,16 @@ export async function POST(
     const { id: trackId } = await context.params
     
     // Get session (optional - anonymous listens are allowed)
-    const session = await getServerSession(authOptions as Record<string, unknown>) as { user?: { id?: string } } | null
-    const userId = session?.user?.id || null
+    const session = await getServerSession(authOptions)
+    let userId = null
+    
+    if (session?.user?.email) {
+      const user = await db.user.findUnique({
+        where: { email: session.user.email },
+        select: { id: true }
+      })
+      userId = user?.id || null
+    }
     
     // Get client IP and user agent for analytics/abuse prevention
     const forwarded = request.headers.get("x-forwarded-for")
