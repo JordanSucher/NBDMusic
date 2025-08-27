@@ -1,6 +1,21 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 
+// Define the where condition type
+interface WhereCondition {
+  releases: {
+    some: {
+      OR: Array<{
+        releaseDate?: null | { lte: Date }
+      }>
+    }
+  }
+  username?: {
+    contains: string
+    mode: 'insensitive'
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -14,7 +29,7 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit
 
     // Build where condition for filtering users with releases
-    let whereCondition: any = {
+    const whereCondition: WhereCondition = {
       releases: {
         some: {
           OR: [
