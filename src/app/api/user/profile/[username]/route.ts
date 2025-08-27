@@ -15,6 +15,9 @@ export async function GET(
       select: {
         id: true,
         username: true,
+        name: true,
+        bio: true,
+        url: true,
         createdAt: true
       }
     })
@@ -100,6 +103,9 @@ export async function GET(
 
     const profile = {
       username: user.username,
+      name: user.name,
+      bio: user.bio,
+      url: user.url,
       releaseCount: releases.length,
       trackCount,
       totalDuration,

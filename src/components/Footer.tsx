@@ -121,13 +121,18 @@ export default function Footer() {
     <footer style={{ 
       marginTop: '40px', 
       borderTop: '1px solid #ccc', 
-      paddingTop: '20px',
-      paddingLeft: '20px',
-      textAlign: 'left',
-      fontSize: '14px',
-      color: '#666'
+      paddingTop: '20px'
     }}>
-      <p>{currentPhrase}.</p>
+      <div style={{
+        maxWidth: '800px',
+        margin: '0 auto',
+        padding: '0 20px',
+        textAlign: 'left',
+        fontSize: '14px',
+        color: '#666'
+      }}>
+        <p>{currentPhrase}.</p>
+      </div>
     </footer>
   )
 }
