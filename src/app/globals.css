@@ -338,7 +338,9 @@ nav button {
   margin-top: 5px !important;
 }
 
-.tag {
+.tag,
+span.tag,
+.song-tags .tag {
   background-color: #f0f0f0 !important;
   background-image: url("data:image/svg+xml,%3csvg width='4' height='4' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M0 0h1v1H0V0zm2 2h1v1H2V2z' fill='%23ccc'/%3e%3c/svg%3e") !important;
   background-repeat: repeat !important;
@@ -352,7 +354,9 @@ nav button {
   cursor: pointer !important;
 }
 
-.tag-link .tag:hover {
+.tag-link .tag:hover,
+.tag-link span.tag:hover,
+.song-tags .tag-link .tag:hover {
   background-color: #e8e8e8 !important;
   background-image: url("data:image/svg+xml,%3csvg width='4' height='4' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M0 0h1v1H0V0zm2 2h1v1H2V2z' fill='%23bbb'/%3e%3c/svg%3e") !important;
   text-decoration: underline !important;

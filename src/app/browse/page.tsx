@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react"
 import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import ReleaseCard from "@/components/ReleaseCard"
+import ArtistCard from "@/components/ArtistCard"
 
 interface Track {
   id: string
@@ -40,6 +41,23 @@ interface Release {
   tracks: Track[]
 }
 
+interface Artist {
+  id: string
+  username: string
+  name: string | null
+  releaseCount: number
+  followerCount: number
+  totalTracks: number
+  latestRelease: {
+    id: string
+    title: string
+    releaseType: string
+    artworkUrl: string | null
+    uploadedAt: string
+    releaseDate: string | null
+  } | null
+}
+
 interface PaginationInfo {
   page: number
   limit: number
@@ -54,6 +72,8 @@ function BrowseContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [releases, setReleases] = useState<Release[]>([])
+  const [artists, setArtists] = useState<Artist[]>([])
+  const [viewMode, setViewMode] = useState<'releases' | 'artists'>('releases')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
@@ -65,6 +85,7 @@ function BrowseContent() {
   const [pagination, setPagination] = useState<PaginationInfo | null>(null)
   const [tagInput, setTagInput] = useState('')
   const [showTagSuggestions, setShowTagSuggestions] = useState(false)
+  const [artistSortMode, setArtistSortMode] = useState<'latest' | 'alphabetical'>('latest')
 
   const fetchReleases = useCallback(async (page: number = currentPage) => {
     try {
@@ -101,15 +122,55 @@ function BrowseContent() {
     }
   }, [showFollowingOnly, session, currentPage, searchTerm, selectedTags])
 
-  const updateURL = useCallback((following: boolean, tags: string[] = selectedTags, search: string = searchTerm, page: number = currentPage) => {
+  const fetchArtists = useCallback(async (page: number = currentPage) => {
+    try {
+      const params = new URLSearchParams()
+      params.set('page', page.toString())
+      params.set('limit', '10')
+      
+      if (searchTerm.trim()) {
+        params.set('search', searchTerm.trim())
+      }
+      
+      params.set('sort', artistSortMode)
+      
+      const url = `/api/artists?${params.toString()}`
+      const response = await fetch(url)
+      if (response.ok) {
+        const data = await response.json()
+        setArtists(data.artists || [])
+        setPagination(data.pagination)
+      } else {
+        setError("Failed to load artists")
+      }
+    } catch (err) {
+      setError("Something went wrong:" + err)
+    } finally {
+      setLoading(false)
+    }
+  }, [currentPage, searchTerm, artistSortMode])
+
+  const fetchData = useCallback(async (page: number = currentPage) => {
+    if (viewMode === 'releases') {
+      await fetchReleases(page)
+    } else {
+      await fetchArtists(page)
+    }
+  }, [viewMode, fetchReleases, fetchArtists, currentPage])
+
+  const updateURL = useCallback((following: boolean, tags: string[] = selectedTags, search: string = searchTerm, page: number = currentPage, mode: 'releases' | 'artists' = viewMode) => {
     const params = new URLSearchParams()
     
-    if (following) {
+    if (mode === 'artists') {
+      params.set('view', 'artists')
+    }
+    
+    if (following && mode === 'releases') {
       params.set('following', 'true')
     }
     
-    if (tags.length > 0) {
-      // Keep existing tag logic if needed
+    if (tags.length > 0 && mode === 'releases') {
+      // Keep existing tag logic if needed for releases
       tags.forEach(tag => {
         params.append('tag', tag)
       })
@@ -125,7 +186,7 @@ function BrowseContent() {
     
     const newURL = params.toString() ? `/browse?${params.toString()}` : '/browse'
     router.replace(newURL)
-  }, [selectedTags, searchTerm, currentPage, router])
+  }, [selectedTags, searchTerm, currentPage, viewMode, router])
 
   const handleFollowingToggle = (checked: boolean) => {
     setShowFollowingOnly(checked)
@@ -133,12 +194,25 @@ function BrowseContent() {
     updateURL(checked, selectedTags, searchTerm, 1)
   }
 
+  const handleViewModeChange = (mode: 'releases' | 'artists') => {
+    setViewMode(mode)
+    setCurrentPage(1)
+    setLoading(true)
+    updateURL(showFollowingOnly, selectedTags, searchTerm, 1, mode)
+  }
+
+  const handleArtistSortChange = (sortMode: 'latest' | 'alphabetical') => {
+    setArtistSortMode(sortMode)
+    setCurrentPage(1)
+    setLoading(true)
+  }
+
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && pagination && newPage <= pagination.totalPages) {
       setCurrentPage(newPage)
       updateURL(showFollowingOnly, selectedTags, searchTerm, newPage)
       setLoading(true)
-      fetchReleases(newPage)
+      fetchData(newPage)
     }
   }
 
@@ -163,6 +237,12 @@ function BrowseContent() {
   useEffect(() => {
     // Only read URL params on initial load, not on subsequent URL changes we make
     if (isInitialLoad) {
+      // Check for view mode in URL
+      const viewFromUrl = searchParams.get('view')
+      if (viewFromUrl === 'artists') {
+        setViewMode('artists')
+      }
+
       // Check for tag filter in URL
       const tagFromUrl = searchParams.get('tag')
       if (tagFromUrl) {
@@ -187,16 +267,16 @@ function BrowseContent() {
       setIsInitialLoad(false)
     }
     
-    fetchReleases()
+    fetchData()
     fetchTags()
-  }, [searchParams, fetchReleases, isInitialLoad])
+  }, [searchParams, fetchData, isInitialLoad])
 
-  // Refetch releases when filters change (excluding initial load)
+  // Refetch data when filters change (excluding initial load)
   useEffect(() => {
     if (!isInitialLoad && !loading) {
-      fetchReleases()
+      fetchData()
     }
-  }, [showFollowingOnly, searchTerm, selectedTags, fetchReleases, loading, isInitialLoad])
+  }, [showFollowingOnly, searchTerm, selectedTags, viewMode, artistSortMode, fetchData, loading, isInitialLoad])
 
   const fetchTags = async () => {
     try {
@@ -220,6 +300,7 @@ function BrowseContent() {
     setTagInput("")
     setShowTagSuggestions(false)
     setShowFollowingOnly(false)
+    setViewMode('releases')
     setCurrentPage(1)
     setLoading(true)
     router.replace('/browse') // Clear URL params
@@ -237,8 +318,84 @@ function BrowseContent() {
       <div className="mb-20">
         <h3>Search & Filter</h3>
         
+        {/* View Mode Toggle */}
         <div className="mb-10">
-          <label htmlFor="search">Search releases, tracks, or artists:</label><br />
+          <label>Browse:</label><br />
+          <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
+            <button
+              onClick={() => handleViewModeChange('releases')}
+              style={{
+                padding: '6px 12px',
+                fontSize: '12px',
+                backgroundColor: viewMode === 'releases' ? '#4444ff' : '#f0f0f0',
+                color: viewMode === 'releases' ? 'white' : '#333',
+                border: '1px solid #000',
+                cursor: 'pointer',
+                fontFamily: 'Courier New, monospace',
+                fontWeight: viewMode === 'releases' ? 'bold' : 'normal'
+              }}
+            >
+              Releases
+            </button>
+            <button
+              onClick={() => handleViewModeChange('artists')}
+              style={{
+                padding: '6px 12px',
+                fontSize: '12px',
+                backgroundColor: viewMode === 'artists' ? '#4444ff' : '#f0f0f0',
+                color: viewMode === 'artists' ? 'white' : '#333',
+                border: '1px solid #000',
+                cursor: 'pointer',
+                fontFamily: 'Courier New, monospace',
+                fontWeight: viewMode === 'artists' ? 'bold' : 'normal'
+              }}
+            >
+              Artists
+            </button>
+          </div>
+        </div>
+        
+        {/* Artist Sort Toggle - Only show when in artists mode */}
+        {viewMode === 'artists' && (
+          <div className="mb-10">
+            <label>Sort artists by:</label><br />
+            <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
+              <button
+                onClick={() => handleArtistSortChange('latest')}
+                style={{
+                  padding: '4px 10px',
+                  fontSize: '11px',
+                  backgroundColor: artistSortMode === 'latest' ? '#4444ff' : '#f0f0f0',
+                  color: artistSortMode === 'latest' ? 'white' : '#333',
+                  border: '1px solid #999',
+                  cursor: 'pointer',
+                  fontFamily: 'Courier New, monospace',
+                  fontWeight: artistSortMode === 'latest' ? 'bold' : 'normal'
+                }}
+              >
+                Latest Release
+              </button>
+              <button
+                onClick={() => handleArtistSortChange('alphabetical')}
+                style={{
+                  padding: '4px 10px',
+                  fontSize: '11px',
+                  backgroundColor: artistSortMode === 'alphabetical' ? '#4444ff' : '#f0f0f0',
+                  color: artistSortMode === 'alphabetical' ? 'white' : '#333',
+                  border: '1px solid #999',
+                  cursor: 'pointer',
+                  fontFamily: 'Courier New, monospace',
+                  fontWeight: artistSortMode === 'alphabetical' ? 'bold' : 'normal'
+                }}
+              >
+                Alphabetical
+              </button>
+            </div>
+          </div>
+        )}
+        
+        <div className="mb-10">
+          <label htmlFor="search">{viewMode === 'releases' ? 'Search releases, tracks, or artists:' : 'Search artists:'}</label><br />
           <input
             type="text"
             id="search"
@@ -254,8 +411,8 @@ function BrowseContent() {
           />
         </div>
 
-        {/* Following Filter */}
-        {session && (
+        {/* Following Filter - Only for releases */}
+        {session && viewMode === 'releases' && (
           <div className="mb-10">
             <label>
               <input
@@ -269,7 +426,9 @@ function BrowseContent() {
           </div>
         )}
 
-        <div className="mb-10" style={{ position: 'relative' }}>
+        {/* Tag Filter - Only for releases */}
+        {viewMode === 'releases' && (
+          <div className="mb-10" style={{ position: 'relative' }}>
           <label htmlFor="tagFilter">Filter by tag:</label><br />
           <input
             type="text"
@@ -423,9 +582,10 @@ function BrowseContent() {
               ))}
             </div>
           )}
-        </div>
+          </div>
+        )}
 
-        {(searchTerm || selectedTags.length > 0 || showFollowingOnly) && (
+        {(searchTerm || (selectedTags.length > 0 && viewMode === 'releases') || (showFollowingOnly && viewMode === 'releases')) && (
           <p>
             Showing {filteredReleases.length} of {releases.length} releases
             {searchTerm && ` matching "${searchTerm}"`}
@@ -448,41 +608,57 @@ function BrowseContent() {
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px 0' }}>
           <p style={{ fontSize: '14px', color: '#666', fontFamily: 'Courier New, monospace' }}>
-            Loading releases...
+            Loading...
           </p>
         </div>
-      ) : filteredReleases.length === 0 ? (
+      ) : (viewMode === 'releases' ? filteredReleases.length === 0 : artists.length === 0) ? (
         <div>
-          {releases.length === 0 ? (
-            <div>
-              {showFollowingOnly ? (
-                <div>
-                  <p>No releases from users you follow yet.</p>
-                  <p><Link href="/browse" onClick={() => setShowFollowingOnly(false)}>Browse all releases</Link> to discover new artists to follow.</p>
-                </div>
-              ) : (
-                <div>
-                  <p>No music uploaded yet.</p>
-                  {session ? (
-                    <p><Link href="/upload">Be the first to upload a release!</Link></p>
-                  ) : (
-                    <p><Link href="/register">Create an account</Link> to start sharing your music.</p>
-                  )}
-                </div>
-              )}
-            </div>
+          {viewMode === 'releases' ? (
+            releases.length === 0 ? (
+              <div>
+                {showFollowingOnly ? (
+                  <div>
+                    <p>No releases from users you follow yet.</p>
+                    <p><Link href="/browse" onClick={() => setShowFollowingOnly(false)}>Browse all releases</Link> to discover new artists to follow.</p>
+                  </div>
+                ) : (
+                  <div>
+                    <p>No music uploaded yet.</p>
+                    {session ? (
+                      <p><Link href="/upload">Be the first to upload a release!</Link></p>
+                    ) : (
+                      <p><Link href="/register">Create an account</Link> to start sharing your music.</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p>No releases match your search criteria.</p>
+            )
           ) : (
-            <p>No releases match your search criteria.</p>
+            artists.length === 0 ? (
+              <div>
+                <p>No artists found.</p>
+                {searchTerm && <p>Try a different search term or browse all artists.</p>}
+              </div>
+            ) : (
+              <p>No artists match your search criteria.</p>
+            )
           )}
         </div>
       ) : (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
             <h3>
-              {pagination ? 
-                `Releases (${pagination.totalCount} total, showing ${filteredReleases.length} on page ${pagination.page})` :
-                `Releases (${filteredReleases.length})`
-              }
+              {viewMode === 'releases' ? (
+                pagination ? 
+                  `Releases (${pagination.totalCount} total, showing ${filteredReleases.length} on page ${pagination.page})` :
+                  `Releases (${filteredReleases.length})`
+              ) : (
+                pagination ? 
+                  `Artists (${pagination.totalCount} total, showing ${artists.length} on page ${pagination.page})` :
+                  `Artists (${artists.length})`
+              )}
             </h3>
           </div>
           
@@ -550,9 +726,15 @@ function BrowseContent() {
             </div>
           )}
 
-          {filteredReleases.map(release => (
-            <ReleaseCard key={release.id} release={release} />
-          ))}
+          {viewMode === 'releases' ? (
+            filteredReleases.map(release => (
+              <ReleaseCard key={release.id} release={release} />
+            ))
+          ) : (
+            artists.map(artist => (
+              <ArtistCard key={artist.id} artist={artist} />
+            ))
+          )}
           
           {/* Pagination Controls - Bottom */}
           {pagination && pagination.totalPages > 1 && (
