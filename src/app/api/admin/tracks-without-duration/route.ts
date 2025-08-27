@@ -7,7 +7,7 @@ export async function GET() {
   try {
     // Check authentication
     const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    if (!session?.user) {
       return NextResponse.json(
         { error: "You must be logged in" },
         { status: 401 }
