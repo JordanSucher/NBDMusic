@@ -85,14 +85,28 @@ export default function UploadPage() {
   const validateAudioFile = (file: File): string | null => {
     const validTypes = [
       'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav', 
-      'audio/mp4', 'audio/x-m4a', 'audio/aac', 'audio/ogg'
+      'audio/mp4', 'audio/x-m4a', 'audio/aac', 'audio/ogg',
+      'audio/mp4a-latm', 'audio/x-m4a', 'audio/x-mp4'
     ]
     
     const validExtensions = ['.mp3', '.wav', '.m4a', '.aac', '.ogg']
     const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'))
     
-    if (!validTypes.includes(file.type) && !validExtensions.includes(fileExtension)) {
-      return `Invalid file type: ${file.name}. Supported formats: MP3, WAV, M4A, AAC, OGG`
+    // On mobile devices, MIME type detection can be unreliable, so prioritize file extension
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+    const hasValidExtension = validExtensions.includes(fileExtension)
+    const hasValidMimeType = validTypes.includes(file.type) || file.type === ''
+    
+    if (isMobile) {
+      // On mobile, accept if extension is valid (MIME type may be missing/incorrect)
+      if (!hasValidExtension) {
+        return `Invalid file type: ${file.name}. Supported formats: MP3, WAV, M4A, AAC, OGG`
+      }
+    } else {
+      // On desktop, check both MIME type and extension
+      if (!hasValidMimeType && !hasValidExtension) {
+        return `Invalid file type: ${file.name}. Supported formats: MP3, WAV, M4A, AAC, OGG`
+      }
     }
     
     const maxSize = 50 * 1024 * 1024 // 50MB

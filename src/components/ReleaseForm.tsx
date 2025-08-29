@@ -247,7 +247,7 @@ export default function ReleaseForm({
               type="file"
               id="files"
               multiple
-              accept="audio/*"
+              accept=".mp3,.wav,.m4a,.aac,.ogg,audio/*"
               onChange={onFileUpload}
               disabled={disabled}
               style={{

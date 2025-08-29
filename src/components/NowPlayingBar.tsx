@@ -85,7 +85,7 @@ export default function NowPlayingBar({ isHeaderVisible }: NowPlayingBarProps) {
             }}
             title="Previous track"
           >
-            ⏮
+            {'<<'}
           </button>
 
           {/* Play/pause button */}
@@ -104,7 +104,7 @@ export default function NowPlayingBar({ isHeaderVisible }: NowPlayingBarProps) {
             }}
             title={isGloballyPlaying ? 'Pause' : 'Play'}
           >
-            {isGloballyPlaying ? '⏸' : '▶'}
+            {isGloballyPlaying ? '||' : '>'}
           </button>
 
           {/* Next button */}
@@ -124,7 +124,7 @@ export default function NowPlayingBar({ isHeaderVisible }: NowPlayingBarProps) {
             }}
             title="Next track"
           >
-            ⏭
+            {'>>'}
           </button>
           
           {/* Track title - clickable to release */}

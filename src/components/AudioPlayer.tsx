@@ -380,7 +380,7 @@ export default function AudioPlayer({
             }}
             title="Previous track"
           >
-            ⏮
+            {'<<'}
           </button>
         )}
 
@@ -401,7 +401,7 @@ export default function AudioPlayer({
             transition: 'all 0.1s ease'
           }}
         >
-          {isLoading ? '...' : isPlaying ? '⏸' : '▶'}
+          {isLoading ? '...' : isPlaying ? '||' : '>'}
         </button>
 
         {/* Next Button */}
@@ -420,7 +420,7 @@ export default function AudioPlayer({
             }}
             title="Next track"
           >
-            ⏭
+            {'>>'}
           </button>
         )}
 
