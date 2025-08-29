@@ -69,7 +69,7 @@ export default function Header() {
         right: '0',
         zIndex: 200,
         transition: isHydrated ? 'top 0.3s ease-in-out' : 'none',
-        borderBottom: '2px solid #000',
+        borderBottom: '1px solid #ccc',
         padding: '10px 0',
         backgroundColor: '#ffffff'
       }}>

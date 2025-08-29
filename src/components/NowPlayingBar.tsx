@@ -63,16 +63,66 @@ export default function NowPlayingBar({ isHeaderVisible }: NowPlayingBarProps) {
       <div style={{
         maxWidth: '800px',
         margin: '0 auto',
-        padding: '0 20px',
+        padding: '4px 20px',
         fontFamily: 'Courier New, monospace',
         fontSize: '11px'
       }}>
-        {/* First line: Controls and track info */}
+        {/* First line: Track info */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '6px',
-          marginBottom: '3px'
+          gap: '4px',
+          fontSize: '14px',
+          lineHeight: '1.2',
+          marginBottom: '8px'
+        }}>
+          {/* Track title - clickable to release */}
+          <Link 
+            href={`/release/${activeTrack.releaseId}`}
+            style={{
+              fontWeight: 'bold', 
+              color: '#0000EE',
+              textDecoration: 'underline',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              maxWidth: '350px',
+              fontSize: '14px'
+            }}
+            title={activeTrack.title.replace(/^\d+\.\s*/, '')}
+          >
+            {activeTrack.title.replace(/^\d+\.\s*/, '')}
+          </Link>
+          
+          {/* Separator */}
+          <span style={{ 
+            color: '#666',
+            margin: '0 2px',
+            fontSize: '14px'
+          }}>by</span>
+          
+          {/* Artist link */}
+          <Link 
+            href={`/user/${activeTrack.artist}`}
+            style={{
+              color: '#0000EE',
+              textDecoration: 'underline',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              fontSize: '14px'
+            }}
+            title={activeTrack.artist}
+          >
+            {activeTrack.artist}
+          </Link>
+        </div>
+
+        {/* Second line: Controls and progress bar */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px'
         }}>
           {/* Previous button */}
           <button
@@ -96,10 +146,7 @@ export default function NowPlayingBar({ isHeaderVisible }: NowPlayingBarProps) {
 
           {/* Play/pause button */}
           <button
-            onClick={(e) => {
-              console.log('🔴 Play/pause button clicked directly')
-              togglePlayPause()
-            }}
+            onClick={togglePlayPause}
             style={{
               background: 'none',
               border: 'none',
@@ -136,67 +183,53 @@ export default function NowPlayingBar({ isHeaderVisible }: NowPlayingBarProps) {
             {'>>'}
           </button>
           
-          {/* Track title - clickable to release */}
-          <Link 
-            href={`/release/${activeTrack.releaseId}`}
-            style={{
-              fontWeight: 'bold', 
-              color: '#0000EE',
-              textDecoration: 'underline',
-              marginLeft: '8px'
-            }}
-          >
-            {activeTrack.title.replace(/^\d+\.\s*/, '')}
-          </Link>
-          
-          {/* Separator */}
-          <span style={{ color: '#666' }}>-</span>
-          
-          {/* Artist link */}
-          <Link 
-            href={`/user/${activeTrack.artist}`}
-            style={{
-              color: '#0000EE',
-              textDecoration: 'underline'
-            }}
-          >
-            {activeTrack.artist}
-          </Link>
-        </div>
-
-        {/* Second line: Progress bar and time */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
           {/* Progress Bar */}
           <div 
             onClick={handleProgressClick}
+            className="subtle-dither"
             style={{
-              height: '6px',
-              backgroundColor: '#e0e0e0',
+              height: '16px',
+              backgroundColor: '#f5f5f5',
               border: '1px solid #ccc',
+              cursor: 'pointer',
               position: 'relative',
               overflow: 'hidden',
-              cursor: 'pointer',
-              flex: 1
+              borderRadius: '2px',
+              flex: 1,
+              marginLeft: '8px'
             }}
           >
-            <div style={{
-              height: '100%',
-              width: `${progressPercentage}%`,
-              backgroundColor: '#666',
-              transition: 'width 0.1s ease',
-              pointerEvents: 'none'
-            }} />
+            <div
+              className="elegant-dither"
+              style={{
+                height: '100%',
+                width: `${progressPercentage}%`,
+                backgroundColor: '#666',
+                transition: 'width 0.1s ease',
+                pointerEvents: 'none'
+              }}
+            />
+            
+            {/* Vertical tick marks */}
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundImage: 'repeating-linear-gradient(90deg, transparent, transparent 8px, rgba(0,0,0,0.1) 8px, rgba(0,0,0,0.1) 9px)',
+                pointerEvents: 'none'
+              }}
+            />
           </div>
           
           {/* Time display */}
           <span style={{ 
             color: '#666', 
             fontSize: '10px',
-            whiteSpace: 'nowrap'
+            whiteSpace: 'nowrap',
+            marginLeft: '8px'
           }}>
             {formatTime(currentTime)} / {formatTime(duration)}
           </span>
