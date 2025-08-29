@@ -73,6 +73,10 @@ export default function LoginPage() {
       <p>
         Don&apos;t have an account? <Link href="/register">Register here</Link>
       </p>
+
+      <p>
+        <Link href="/forgot-password">Forgot your password?</Link>
+      </p>
       
       <p>
         <Link href="/">← Back to home</Link>
