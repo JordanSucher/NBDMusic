@@ -37,6 +37,11 @@ export default function NowPlayingBar({ isHeaderVisible }: NowPlayingBarProps) {
   }
 
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    console.log('🎯 Progress bar clicked - target:', e.target, 'currentTarget:', e.currentTarget)
+    e.preventDefault()
+    e.stopPropagation()
+    e.nativeEvent.stopImmediatePropagation()
+    
     if (!duration) return
     
     const progressBar = e.currentTarget
@@ -45,6 +50,7 @@ export default function NowPlayingBar({ isHeaderVisible }: NowPlayingBarProps) {
     const percentage = clickX / rect.width
     const newTime = percentage * duration
     
+    console.log('🎯 Progress bar seeking to', newTime)
     seekToTime(newTime)
   }
 
@@ -90,7 +96,10 @@ export default function NowPlayingBar({ isHeaderVisible }: NowPlayingBarProps) {
 
           {/* Play/pause button */}
           <button
-            onClick={togglePlayPause}
+            onClick={(e) => {
+              console.log('🔴 Play/pause button clicked directly')
+              togglePlayPause()
+            }}
             style={{
               background: 'none',
               border: 'none',
@@ -178,7 +187,8 @@ export default function NowPlayingBar({ isHeaderVisible }: NowPlayingBarProps) {
               height: '100%',
               width: `${progressPercentage}%`,
               backgroundColor: '#666',
-              transition: 'width 0.1s ease'
+              transition: 'width 0.1s ease',
+              pointerEvents: 'none'
             }} />
           </div>
           

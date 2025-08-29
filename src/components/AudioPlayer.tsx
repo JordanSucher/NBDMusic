@@ -46,6 +46,8 @@ export default function AudioPlayer({
   const [duration, setDuration] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [listenTracked, setListenTracked] = useState(false) // Track if we've recorded a listen for this track
+  const [isSeeking, setIsSeeking] = useState(false) // Track if we're currently seeking
+  const handlersRef = useRef<{ handlePlay?: () => void, handlePause?: () => void }>({})
 
   const audioContext = useAudioContext()
 
@@ -182,20 +184,40 @@ export default function AudioPlayer({
     }
 
     const handlePlay = () => {
+      console.log('🎵 PLAY EVENT TRIGGERED - isSeeking:', isSeeking, 'isPlaying:', isPlaying)
+      // Don't trigger play state changes if we're seeking
+      if (isSeeking) {
+        console.log('Ignoring play event during seeking')
+        return
+      }
+      console.log('🎵 Setting isPlaying to true')
       setIsPlaying(true)
       // Only update global state if this is the active player
       if (audioContext.isActivePlayer(playerIdRef.current)) {
+        console.log('🎵 Setting global playing state to true')
         audioContext.setPlaying(true)
       }
     }
 
     const handlePause = () => {
+      console.log('⏸️ PAUSE EVENT TRIGGERED - isSeeking:', isSeeking, 'isPlaying:', isPlaying)
+      // Don't trigger pause state changes if we're seeking (unless it was intentional)
+      if (isSeeking) {
+        console.log('Ignoring pause event during seeking')
+        return
+      }
+      console.log('⏸️ Setting isPlaying to false')
       setIsPlaying(false)
       // Only update global state if this is the active player
       if (audioContext.isActivePlayer(playerIdRef.current)) {
+        console.log('⏸️ Setting global playing state to false')
         audioContext.setPlaying(false)
       }
     }
+
+    // Store handlers in ref for access outside useEffect
+    handlersRef.current.handlePlay = handlePlay
+    handlersRef.current.handlePause = handlePause
 
     audio.addEventListener('ended', handleEnded)
     audio.addEventListener('timeupdate', handleTimeUpdate)
@@ -234,6 +256,7 @@ export default function AudioPlayer({
   }, [src, isFirstLoad])
 
   const togglePlayPause = () => {
+    console.log('🔄 togglePlayPause called - current isPlaying:', isPlaying)
     const audio = audioRef.current
     if (!audio) return
 
@@ -241,8 +264,10 @@ export default function AudioPlayer({
     setHasUserInteracted(true)
 
     if (isPlaying) {
+      console.log('🔄 Pausing audio')
       audio.pause()
     } else {
+      console.log('🔄 Starting playback')
       // Set this as the active player FIRST
       const trackInfo = {
         src,
@@ -260,9 +285,10 @@ export default function AudioPlayer({
       
       // Then start playing
       audio.play().then(() => {
+        console.log('🔄 Audio.play() succeeded')
         setIsPlaying(true)
       }).catch(error => {
-        console.log("Play prevented:", error)
+        console.log("🔄 Play prevented:", error)
       })
     }
   }
@@ -277,7 +303,8 @@ export default function AudioPlayer({
     const percentage = clickX / rect.width
     const newTime = percentage * duration
     
-    audio.currentTime = newTime
+    // Use the same protected seeking logic as the now playing bar
+    seekToTime(newTime)
   }
 
   const handleNext = () => {
@@ -305,7 +332,46 @@ export default function AudioPlayer({
   const seekToTime = (time: number) => {
     const audio = audioRef.current
     if (audio) {
-      audio.currentTime = time
+      // Check the actual audio element state, not React state
+      const wasActuallyPlaying = !audio.paused && !audio.ended
+      console.log('🎯 seekToTime - React isPlaying:', isPlaying, 'audio.paused:', audio.paused, 'wasActuallyPlaying:', wasActuallyPlaying, 'seeking to:', time)
+      
+      if (!wasActuallyPlaying) {
+        // If audio wasn't actually playing, temporarily disable play ability during the seek
+        const originalPlay = audio.play
+        let isBlocking = true
+        
+        audio.play = () => {
+          if (isBlocking) {
+            console.log('🚫 Blocked audio.play() call during seek')
+            return Promise.resolve()
+          } else {
+            return originalPlay.call(audio)
+          }
+        }
+        
+        audio.currentTime = time
+        
+        // Restore play method immediately after seek, but keep blocking for just a tiny bit
+        setTimeout(() => {
+          isBlocking = false
+          audio.play = originalPlay
+          
+          // Ensure state is synchronized - if audio is paused, React state should reflect that
+          if (audio.paused) {
+            setIsPlaying(false)
+            if (audioContext.isActivePlayer(playerIdRef.current)) {
+              audioContext.setPlaying(false)
+            }
+          }
+          
+          console.log('✅ Restored audio.play() method and synchronized state')
+        }, 10) // Much shorter delay
+      } else {
+        // If audio was actually playing, just seek normally
+        audio.currentTime = time
+      }
+      
       setHasUserInteracted(true)
     }
   }

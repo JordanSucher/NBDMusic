@@ -91,6 +91,8 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setPlaying = useCallback((isPlaying: boolean) => {
+    console.log('🎮 AudioContext setPlaying called with:', isPlaying);
+    console.trace('🎮 AudioContext setPlaying call stack');
     setIsGloballyPlaying(isPlaying);
   }, []);
 
@@ -113,6 +115,8 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const togglePlayPause = useCallback(() => {
+    console.log('🎮 AudioContext togglePlayPause called');
+    console.trace('🎮 AudioContext togglePlayPause call stack');
     controlCallbacks.current.togglePlayPause?.();
   }, []);
 
