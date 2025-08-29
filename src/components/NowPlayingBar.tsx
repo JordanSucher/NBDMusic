@@ -18,6 +18,22 @@ export default function NowPlayingBar() {
     seekToTime
   } = useAudioContext()
 
+  // Keyboard controls
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Only trigger if no input/textarea is focused and we have an active track
+      if (activeTrack && 
+          e.code === 'Space' && 
+          !['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) {
+        e.preventDefault()
+        togglePlayPause()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyPress)
+    return () => document.removeEventListener('keydown', handleKeyPress)
+  }, [activeTrack, togglePlayPause])
+
   // Don't render if no track is loaded
   if (!activeTrack) {
     return null
@@ -137,7 +153,8 @@ export default function NowPlayingBar() {
               fontFamily: 'Courier New, monospace',
               padding: '0',
               margin: '0',
-              lineHeight: '1'
+              lineHeight: '1',
+              outline: 'none'
             }}
             title="Previous track"
           >
@@ -156,7 +173,8 @@ export default function NowPlayingBar() {
               fontFamily: 'Courier New, monospace',
               padding: '0',
               margin: '0 2px',
-              lineHeight: '1'
+              lineHeight: '1',
+              outline: 'none'
             }}
             title={isGloballyPlaying ? 'Pause' : 'Play'}
           >
@@ -176,7 +194,8 @@ export default function NowPlayingBar() {
               fontFamily: 'Courier New, monospace',
               padding: '0',
               margin: '0',
-              lineHeight: '1'
+              lineHeight: '1',
+              outline: 'none'
             }}
             title="Next track"
           >
