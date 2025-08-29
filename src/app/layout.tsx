@@ -33,7 +33,7 @@ export default function RootLayout({
       >
         <Providers>
           <Header />
-          <main>
+          <main style={{ marginTop: '120px' }}> {/* Header + now playing bar height (now playing bar always visible) */}
             {children}
           </main>
           <Footer />

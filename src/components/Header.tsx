@@ -2,11 +2,17 @@
 
 import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
+import NowPlayingBar from "./NowPlayingBar"
 
 export default function Header() {
   const { data: session } = useSession()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true)
+  const [isHydrated, setIsHydrated] = useState(false)
+  const [headerHeight, setHeaderHeight] = useState(0)
+  const [lastScrollY, setLastScrollY] = useState(0)
+  const headerRef = useRef<HTMLElement>(null)
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen)
@@ -16,14 +22,58 @@ export default function Header() {
     setIsMobileMenuOpen(false)
   }
 
+  useEffect(() => {
+    setIsHydrated(true)
+    
+    // Calculate header height after hydration
+    if (headerRef.current) {
+      const height = headerRef.current.offsetHeight
+      setHeaderHeight(height)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!isHydrated) return
+
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY
+      
+      // Always show header at the top
+      if (currentScrollY < 10) {
+        setIsHeaderVisible(true)
+      } 
+      // Show header when scrolling up
+      else if (currentScrollY < lastScrollY) {
+        setIsHeaderVisible(true)
+      } 
+      // Hide header when scrolling down (but not immediately)
+      else if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        setIsHeaderVisible(false)
+      }
+      
+      setLastScrollY(currentScrollY)
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [lastScrollY, isHydrated])
+
   return (
-    <header style={{
-      borderBottom: '2px solid #000',
-      padding: '10px 0',
-      marginBottom: '20px',
-      backgroundColor: '#f5f5f5'
-    }}>
-      <div className="container" style={{
+    <>
+    <header 
+      ref={headerRef}
+      style={{
+        position: 'fixed',
+        top: !isHydrated || isHeaderVisible ? '0' : `-${headerHeight}px`,
+        left: '0',
+        right: '0',
+        zIndex: 200,
+        transition: isHydrated ? 'top 0.3s ease-in-out' : 'none',
+        borderBottom: '2px solid #000',
+        padding: '10px 0',
+        backgroundColor: '#ffffff'
+      }}>
+      <div style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
@@ -116,7 +166,7 @@ export default function Header() {
         <div 
           style={{
             borderTop: '2px solid #000',
-            backgroundColor: '#f5f5f5',
+            backgroundColor: '#ffffff',
             padding: '15px 20px',
             display: 'none'
           }}
@@ -255,5 +305,16 @@ export default function Header() {
         }
       `}</style>
     </header>
+    <div style={{
+      position: 'fixed',
+      top: !isHydrated || isHeaderVisible ? `${headerHeight}px` : '0', // Always visible, positioned right after header
+      left: '0',
+      right: '0',
+      zIndex: 200,
+      transition: isHydrated ? 'top 0.3s ease-in-out' : 'none'
+    }}>
+      <NowPlayingBar isHeaderVisible={isHeaderVisible} />
+    </div>
+    </>
   )
 }

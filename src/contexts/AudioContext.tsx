@@ -1,7 +1,8 @@
 // src/contexts/AudioContext.tsx
 'use client';
 
-import { createContext, useContext, useRef, useState, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useState, ReactNode, useCallback, useRef, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 
 interface ActiveTrack {
   src: string;
@@ -16,13 +17,23 @@ interface AudioContextType {
   activeTrack: ActiveTrack | null;
   isGloballyPlaying: boolean;
   currentTrackId: string | null;
-  registerPlayer: (playerId: string, onStop: () => void) => void;
-  unregisterPlayer: (playerId: string) => void;
-  requestPlay: (playerId: string, track: ActiveTrack) => boolean;
+  activePlayerId: string | null;
+  currentTime: number;
+  duration: number;
+  hasNextTrack: boolean;
+  hasPrevTrack: boolean;
+  setActivePlayer: (playerId: string, track: ActiveTrack) => void;
+  isActivePlayer: (playerId: string) => boolean;
   setCurrentTrackId: (trackId: string | null) => void;
-  notifyStop: (playerId: string) => void;
-  notifyPlay: (playerId: string) => void;
-  notifyPause: (playerId: string) => void;
+  setPlaying: (isPlaying: boolean) => void;
+  updateProgress: (currentTime: number, duration: number) => void;
+  setTrackControls: (hasNext: boolean, hasPrev: boolean, onNext?: () => void, onPrev?: () => void) => void;
+  setPlayerToggleCallback: (togglePlayPause: () => void, restartTrack: () => void, seekToTime: (time: number) => void) => void;
+  seekToTime: (time: number) => void;
+  togglePlayPause: () => void;
+  nextTrack: () => void;
+  prevTrack: () => void;
+  clearActivePlayer: () => void;
 }
 
 const AudioContext = createContext<AudioContextType | null>(null);
@@ -31,58 +42,96 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const [activeTrack, setActiveTrack] = useState<ActiveTrack | null>(null);
   const [isGloballyPlaying, setIsGloballyPlaying] = useState(false);
   const [currentTrackId, setCurrentTrackId] = useState<string | null>(null);
-  const playerCallbacks = useRef<Map<string, () => void>>(new Map());
+  const [activePlayerId, setActivePlayerId] = useState<string | null>(null);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [hasNextTrack, setHasNextTrack] = useState(false);
+  const [hasPrevTrack, setHasPrevTrack] = useState(false);
+  
+  const pathname = usePathname();
+  
+  // Store callbacks for player controls
+  const controlCallbacks = useRef<{
+    onNext?: () => void;
+    onPrev?: () => void;
+    togglePlayPause?: () => void;
+    restartTrack?: () => void;
+    seekToTime?: (time: number) => void;
+  }>({});
 
-  const registerPlayer = useCallback((playerId: string, onStop: () => void) => {
-    playerCallbacks.current.set(playerId, onStop);
+  const clearActivePlayer = useCallback(() => {
+    setActiveTrack(null);
+    setActivePlayerId(null);
+    setIsGloballyPlaying(false);
+    setCurrentTrackId(null);
+    setCurrentTime(0);
+    setDuration(0);
+    setHasNextTrack(false);
+    setHasPrevTrack(false);
+    controlCallbacks.current = {};
   }, []);
 
-  const unregisterPlayer = useCallback((playerId: string) => {
-    playerCallbacks.current.delete(playerId);
-    
-    // If this was the active player, clear the active track
-    if (activeTrack?.playerId === playerId) {
-      setActiveTrack(null);
-      setIsGloballyPlaying(false);
-    }
-  }, [activeTrack]);
+  // Clear active player when navigating to a new page
+  useEffect(() => {
+    clearActivePlayer();
+  }, [pathname, clearActivePlayer]);
 
-  const requestPlay = useCallback((playerId: string, track: ActiveTrack) => {
-    // Stop all other players
-    playerCallbacks.current.forEach((stopCallback, id) => {
-      if (id !== playerId) {
-        stopCallback();
-      }
-    });
-
-    // Set this as the active track
+  const setActivePlayer = useCallback((playerId: string, track: ActiveTrack) => {
+    setActivePlayerId(playerId);
     setActiveTrack(track);
     setIsGloballyPlaying(true);
-    
-    return true;
   }, []);
+
+  const isActivePlayer = useCallback((playerId: string) => {
+    return activePlayerId === playerId;
+  }, [activePlayerId]);
 
   const setCurrentTrackIdCallback = useCallback((trackId: string | null) => {
     setCurrentTrackId(trackId);
   }, []);
 
-  const notifyStop = useCallback((playerId: string) => {
-    if (activeTrack?.playerId === playerId) {
-      setIsGloballyPlaying(false);
-    }
-  }, [activeTrack]);
+  const setPlaying = useCallback((isPlaying: boolean) => {
+    setIsGloballyPlaying(isPlaying);
+  }, []);
 
-  const notifyPlay = useCallback((playerId: string) => {
-    if (activeTrack?.playerId === playerId) {
-      setIsGloballyPlaying(true);
-    }
-  }, [activeTrack]);
+  const updateProgress = useCallback((currentTime: number, duration: number) => {
+    setCurrentTime(currentTime);
+    setDuration(duration);
+  }, []);
 
-  const notifyPause = useCallback((playerId: string) => {
-    if (activeTrack?.playerId === playerId) {
-      setIsGloballyPlaying(false);
+  const setTrackControls = useCallback((hasNext: boolean, hasPrev: boolean, onNext?: () => void, onPrev?: () => void) => {
+    setHasNextTrack(hasNext);
+    setHasPrevTrack(hasPrev);
+    controlCallbacks.current.onNext = onNext;
+    controlCallbacks.current.onPrev = onPrev;
+  }, []);
+
+  const setPlayerToggleCallback = useCallback((togglePlayPause: () => void, restartTrack: () => void, seekToTime: (time: number) => void) => {
+    controlCallbacks.current.togglePlayPause = togglePlayPause;
+    controlCallbacks.current.restartTrack = restartTrack;
+    controlCallbacks.current.seekToTime = seekToTime;
+  }, []);
+
+  const togglePlayPause = useCallback(() => {
+    controlCallbacks.current.togglePlayPause?.();
+  }, []);
+
+  const seekToTime = useCallback((time: number) => {
+    controlCallbacks.current.seekToTime?.(time);
+  }, []);
+
+  const nextTrack = useCallback(() => {
+    controlCallbacks.current.onNext?.();
+  }, []);
+
+  const prevTrack = useCallback(() => {
+    // If more than 10 seconds in, restart current track
+    if (currentTime > 10) {
+      controlCallbacks.current.restartTrack?.();
+    } else {
+      controlCallbacks.current.onPrev?.();
     }
-  }, [activeTrack]);
+  }, [currentTime]);
 
   return (
     <AudioContext.Provider
@@ -90,13 +139,23 @@ export function AudioProvider({ children }: { children: ReactNode }) {
         activeTrack,
         isGloballyPlaying,
         currentTrackId,
-        registerPlayer,
-        unregisterPlayer,
-        requestPlay,
+        activePlayerId,
+        currentTime,
+        duration,
+        hasNextTrack,
+        hasPrevTrack,
+        setActivePlayer,
+        isActivePlayer,
         setCurrentTrackId: setCurrentTrackIdCallback,
-        notifyStop,
-        notifyPlay,
-        notifyPause,
+        setPlaying,
+        updateProgress,
+        setTrackControls,
+        setPlayerToggleCallback,
+        seekToTime,
+        togglePlayPause,
+        nextTrack,
+        prevTrack,
+        clearActivePlayer,
       }}
     >
       {children}

@@ -82,23 +82,27 @@ export default function AudioPlayer({
     return currentTime >= threshold
   }
 
+  // Register control callbacks when this player becomes active
   useEffect(() => {
-    const playerId = playerIdRef.current
-
-    // Register this player with the global context
-    audioContext.registerPlayer(playerId, () => {
-      // This callback is called when another player starts playing
-      const audio = audioRef.current
-      if (audio && !audio.paused) {
-        audio.pause()
-        setIsPlaying(false)
-      }
-    })
-
-    return () => {
-      audioContext.unregisterPlayer(playerId)
+    if (audioContext.isActivePlayer(playerIdRef.current)) {
+      audioContext.setPlayerToggleCallback(togglePlayPause, restartTrack, seekToTime);
+      audioContext.setTrackControls(hasNextTrack, hasPrevTrack, onNextTrack, onPrevTrack);
     }
-  }, [audioContext])
+  }, [audioContext, hasNextTrack, hasPrevTrack, onNextTrack, onPrevTrack]);
+
+  // Don't clear active player on unmount - let the audio context handle it naturally
+
+  // Stop this player if another player becomes active
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+    
+    // Only stop if this player is playing AND there's a different active player
+    if (isPlaying && audioContext.activePlayerId && audioContext.activePlayerId !== playerIdRef.current) {
+      audio.pause()
+      setIsPlaying(false)
+    }
+  }, [audioContext.activePlayerId, isPlaying])
 
   useEffect(() => {
     const audio = audioRef.current
@@ -106,7 +110,12 @@ export default function AudioPlayer({
 
     const handleEnded = () => {
       setIsPlaying(false)
-      audioContext.notifyStop(playerIdRef.current)
+      // Only update global state if this is the active player
+      if (audioContext.isActivePlayer(playerIdRef.current)) {
+        audioContext.setPlaying(false)
+        // Clear the active player when the track ends naturally
+        audioContext.clearActivePlayer()
+      }
       if (onTrackEnd) {
         onTrackEnd()
       }
@@ -115,6 +124,11 @@ export default function AudioPlayer({
     const handleTimeUpdate = () => {
       const newCurrentTime = audio.currentTime
       setCurrentTime(newCurrentTime)
+      
+      // Update global progress if this is the active player
+      if (audioContext.isActivePlayer(playerIdRef.current)) {
+        audioContext.updateProgress(newCurrentTime, audio.duration)
+      }
       
       // Check if we should track a listen
       if (shouldTrackListen(newCurrentTime, audio.duration)) {
@@ -125,6 +139,11 @@ export default function AudioPlayer({
 
     const handleDurationChange = () => {
       setDuration(audio.duration)
+      
+      // Update global duration if this is the active player
+      if (audioContext.isActivePlayer(playerIdRef.current)) {
+        audioContext.updateProgress(audio.currentTime, audio.duration)
+      }
     }
 
     const handleLoadStart = () => {
@@ -138,9 +157,7 @@ export default function AudioPlayer({
       // 1. This is not the first load (track changed due to auto-advance)
       // 2. User has interacted with the player before
       // 3. autoPlay is enabled
-      // 4. This player is allowed to play (no other player is active)
       if (!isFirstLoad && hasUserInteracted && autoPlay) {
-        // Request permission to play from global context
         const trackInfo = {
           src,
           title,
@@ -150,26 +167,34 @@ export default function AudioPlayer({
           playerId: playerIdRef.current
         }
         
-        if (audioContext.requestPlay(playerIdRef.current, trackInfo)) {
-          audioContext.setCurrentTrackId(trackId || null)
-          audio.play().then(() => {
-            setIsPlaying(true)
-            audioContext.notifyPlay(playerIdRef.current)
-          }).catch(error => {
-            console.log("Auto-play prevented by browser:", error)
-          })
-        }
+        // Set this as the active player
+        audioContext.setActivePlayer(playerIdRef.current, trackInfo)
+        audioContext.setCurrentTrackId(trackId || null)
+        audioContext.setPlayerToggleCallback(togglePlayPause, restartTrack, seekToTime)
+        audioContext.setTrackControls(hasNextTrack, hasPrevTrack, onNextTrack, onPrevTrack)
+        
+        audio.play().then(() => {
+          setIsPlaying(true)
+        }).catch(error => {
+          console.log("Auto-play prevented by browser:", error)
+        })
       }
     }
 
     const handlePlay = () => {
       setIsPlaying(true)
-      audioContext.notifyPlay(playerIdRef.current)
+      // Only update global state if this is the active player
+      if (audioContext.isActivePlayer(playerIdRef.current)) {
+        audioContext.setPlaying(true)
+      }
     }
 
     const handlePause = () => {
       setIsPlaying(false)
-      audioContext.notifyPause(playerIdRef.current)
+      // Only update global state if this is the active player
+      if (audioContext.isActivePlayer(playerIdRef.current)) {
+        audioContext.setPlaying(false)
+      }
     }
 
     audio.addEventListener('ended', handleEnded)
@@ -218,7 +243,7 @@ export default function AudioPlayer({
     if (isPlaying) {
       audio.pause()
     } else {
-      // Request permission to play from global context
+      // Set this as the active player FIRST
       const trackInfo = {
         src,
         title,
@@ -228,12 +253,17 @@ export default function AudioPlayer({
         playerId: playerIdRef.current
       }
       
-      if (audioContext.requestPlay(playerIdRef.current, trackInfo)) {
-        audioContext.setCurrentTrackId(trackId || null)
-        audio.play().catch(error => {
-          console.log("Play prevented:", error)
-        })
-      }
+      audioContext.setActivePlayer(playerIdRef.current, trackInfo)
+      audioContext.setCurrentTrackId(trackId || null)
+      audioContext.setPlayerToggleCallback(togglePlayPause, restartTrack, seekToTime)
+      audioContext.setTrackControls(hasNextTrack, hasPrevTrack, onNextTrack, onPrevTrack)
+      
+      // Then start playing
+      audio.play().then(() => {
+        setIsPlaying(true)
+      }).catch(error => {
+        console.log("Play prevented:", error)
+      })
     }
   }
 
@@ -261,6 +291,22 @@ export default function AudioPlayer({
     if (onPrevTrack && hasPrevTrack) {
       setHasUserInteracted(true)
       onPrevTrack()
+    }
+  }
+
+  const restartTrack = () => {
+    const audio = audioRef.current
+    if (audio) {
+      audio.currentTime = 0
+      setHasUserInteracted(true)
+    }
+  }
+
+  const seekToTime = (time: number) => {
+    const audio = audioRef.current
+    if (audio) {
+      audio.currentTime = time
+      setHasUserInteracted(true)
     }
   }
 
