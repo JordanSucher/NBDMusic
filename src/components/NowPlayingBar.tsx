@@ -4,11 +4,7 @@ import Link from "next/link"
 import { useState, useEffect } from "react"
 import { useAudioContext } from "@/contexts/AudioContext"
 
-interface NowPlayingBarProps {
-  isHeaderVisible: boolean;
-}
-
-export default function NowPlayingBar({ isHeaderVisible }: NowPlayingBarProps) {
+export default function NowPlayingBar() {
   const { 
     activeTrack, 
     isGloballyPlaying,
@@ -56,14 +52,18 @@ export default function NowPlayingBar({ isHeaderVisible }: NowPlayingBarProps) {
 
   return (
     <div style={{
-      borderBottom: '1px solid #000',
-      padding: '8px 0',
+      position: 'fixed',
+      bottom: '0',
+      left: '0',
+      right: '0',
+      zIndex: 200,
+      borderTop: '1px solid #ccc',
       backgroundColor: '#ffffff'
     }}>
       <div style={{
         maxWidth: '800px',
         margin: '0 auto',
-        padding: '4px 20px',
+        padding: '12px 20px',
         fontFamily: 'Courier New, monospace',
         fontSize: '11px'
       }}>

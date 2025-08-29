@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "@/components/providers"
 import Header from "@/components/Header"
 import Footer from "@/components/Footer"
+import NowPlayingBar from "@/components/NowPlayingBar"
 import "./globals.css";
 import "../styles/dithered.css";
 
@@ -33,10 +34,11 @@ export default function RootLayout({
       >
         <Providers>
           <Header />
-          <main style={{ marginTop: '120px' }}> {/* Header + now playing bar height (now playing bar always visible) */}
+          <main style={{ marginTop: '80px', paddingBottom: '80px' }}> {/* Header height at top, now playing bar height at bottom */}
             {children}
+            <Footer />
           </main>
-          <Footer />
+          <NowPlayingBar />
         </Providers>
       </body>
     </html>

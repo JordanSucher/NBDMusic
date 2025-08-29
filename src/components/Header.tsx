@@ -3,7 +3,6 @@
 import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
 import { useState, useEffect, useRef } from "react"
-import NowPlayingBar from "./NowPlayingBar"
 
 export default function Header() {
   const { data: session } = useSession()
@@ -59,7 +58,6 @@ export default function Header() {
   }, [lastScrollY, isHydrated])
 
   return (
-    <>
     <header 
       ref={headerRef}
       style={{
@@ -305,16 +303,5 @@ export default function Header() {
         }
       `}</style>
     </header>
-    <div style={{
-      position: 'fixed',
-      top: !isHydrated || isHeaderVisible ? `${headerHeight}px` : '0', // Always visible, positioned right after header
-      left: '0',
-      right: '0',
-      zIndex: 200,
-      transition: isHydrated ? 'top 0.3s ease-in-out' : 'none'
-    }}>
-      <NowPlayingBar isHeaderVisible={isHeaderVisible} />
-    </div>
-    </>
   )
 }

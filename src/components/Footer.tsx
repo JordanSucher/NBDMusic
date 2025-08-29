@@ -119,8 +119,7 @@ export default function Footer() {
 
   return (
     <footer style={{ 
-      marginTop: '40px', 
-      borderTop: '1px solid #ccc', 
+      marginTop: '10px', 
       paddingTop: '20px'
     }}>
       <div style={{
