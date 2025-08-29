@@ -47,6 +47,7 @@ export default function AudioPlayer({
   const [isLoading, setIsLoading] = useState(true)
   const [listenTracked, setListenTracked] = useState(false) // Track if we've recorded a listen for this track
   const [isSeeking, setIsSeeking] = useState(false) // Track if we're currently seeking
+  const isSeekingRef = useRef(false) // Ref version for event handlers
   const handlersRef = useRef<{ handlePlay?: () => void, handlePause?: () => void }>({})
 
   const audioContext = useAudioContext()
@@ -154,6 +155,12 @@ export default function AudioPlayer({
 
     const handleCanPlay = () => {
       setIsLoading(false)
+      
+      // Don't auto-play if we're currently seeking
+      if (isSeekingRef.current) {
+        console.log('🚫 Skipping auto-play during seek')
+        return
+      }
       
       // Only auto-play if:
       // 1. This is not the first load (track changed due to auto-advance)
@@ -303,6 +310,8 @@ export default function AudioPlayer({
     const percentage = clickX / rect.width
     const newTime = percentage * duration
     
+    console.log('🎯 AudioPlayer progress bar clicked - seeking to:', newTime, 'isPlaying:', isPlaying, 'audio.paused:', audio.paused)
+    
     // Use the same protected seeking logic as the now playing bar
     seekToTime(newTime)
   }
@@ -336,6 +345,9 @@ export default function AudioPlayer({
       const wasActuallyPlaying = !audio.paused && !audio.ended
       console.log('🎯 seekToTime - React isPlaying:', isPlaying, 'audio.paused:', audio.paused, 'wasActuallyPlaying:', wasActuallyPlaying, 'seeking to:', time)
       
+      // Set seeking flag to prevent auto-play
+      isSeekingRef.current = true
+      
       if (!wasActuallyPlaying) {
         // If audio wasn't actually playing, temporarily disable play ability during the seek
         const originalPlay = audio.play
@@ -352,10 +364,11 @@ export default function AudioPlayer({
         
         audio.currentTime = time
         
-        // Restore play method immediately after seek, but keep blocking for just a tiny bit
+        // Restore play method and clear seeking flag
         setTimeout(() => {
           isBlocking = false
           audio.play = originalPlay
+          isSeekingRef.current = false // Clear seeking flag
           
           // Ensure state is synchronized - if audio is paused, React state should reflect that
           if (audio.paused) {
@@ -370,6 +383,10 @@ export default function AudioPlayer({
       } else {
         // If audio was actually playing, just seek normally
         audio.currentTime = time
+        // Clear seeking flag after a short delay
+        setTimeout(() => {
+          isSeekingRef.current = false
+        }, 10)
       }
       
       setHasUserInteracted(true)
