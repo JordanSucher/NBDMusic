@@ -15,9 +15,24 @@ export default function PWAInstallPrompt() {
     const handler = (e: Event) => {
       e.preventDefault()
       
-      // Only show on mobile devices
-      const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-                       (navigator.maxTouchPoints && navigator.maxTouchPoints > 0 && window.innerWidth <= 768)
+      // More strict mobile detection
+      const isMobileUserAgent = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      const isTouchDevice = navigator.maxTouchPoints > 0
+      const isSmallScreen = window.innerWidth <= 768
+      const isDesktop = /Windows|Mac|Linux/i.test(navigator.platform) && !isMobileUserAgent
+      
+      // Only show if it's clearly a mobile device, not desktop
+      const isMobile = isMobileUserAgent && !isDesktop
+      
+      console.log('PWA Install Check:', {
+        isMobileUserAgent,
+        isTouchDevice,
+        isSmallScreen,
+        isDesktop,
+        isMobile,
+        userAgent: navigator.userAgent,
+        platform: navigator.platform
+      })
       
       if (isMobile) {
         setDeferredPrompt(e as BeforeInstallPromptEvent)
