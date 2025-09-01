@@ -4,6 +4,7 @@ import { Providers } from "@/components/providers"
 import Header from "@/components/Header"
 import Footer from "@/components/Footer"
 import NowPlayingBar from "@/components/NowPlayingBar"
+import PWAInstallPrompt from "@/components/PWAInstallPrompt"
 import "./globals.css";
 import "../styles/dithered.css";
 
@@ -18,8 +19,20 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "nbd",
+  title: "NBD",
   description: "Release the music!!",
+  manifest: "/manifest.json",
+  themeColor: "#000000",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "NBD"
+  },
+  icons: [
+    { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
+    { url: "/icon-512x512.png", sizes: "512x512", type: "image/png" }
+  ]
 };
 
 export default function RootLayout({
@@ -29,6 +42,25 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                      console.log('SW registered: ', registration);
+                    })
+                    .catch(function(registrationError) {
+                      console.log('SW registration failed: ', registrationError);
+                    });
+                });
+              }
+            `
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased fine-grain`}
       >
@@ -39,6 +71,7 @@ export default function RootLayout({
             <Footer />
           </main>
           <NowPlayingBar />
+          <PWAInstallPrompt />
         </Providers>
       </body>
     </html>
