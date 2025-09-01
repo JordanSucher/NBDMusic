@@ -335,7 +335,10 @@ export default function AudioPlayer({
     
     console.log('📱 AudioPlayer progress bar touched - seeking to:', newTime, 'isPlaying:', isPlaying, 'audio.paused:', audio.paused)
     
-    seekToTime(newTime)
+    // Add a small delay to ensure touch events are fully processed
+    setTimeout(() => {
+      seekToTime(newTime)
+    }, 10)
   }
 
   const handleNext = () => {
@@ -367,48 +370,55 @@ export default function AudioPlayer({
       const wasActuallyPlaying = !audio.paused && !audio.ended
       console.log('🎯 seekToTime - React isPlaying:', isPlaying, 'audio.paused:', audio.paused, 'wasActuallyPlaying:', wasActuallyPlaying, 'seeking to:', time)
       
-      // Set seeking flag to prevent auto-play
+      // Set seeking flag FIRST to prevent any auto-play
       isSeekingRef.current = true
+      setIsSeeking(true)
+      
+      // Store original event handlers to block play events during seeking
+      const originalPlay = audio.play
+      const playEventBlocked = () => {
+        console.log('🚫 Blocked play event during seek')
+        return Promise.resolve()
+      }
+      
+      // Block play method immediately
+      audio.play = playEventBlocked
       
       if (!wasActuallyPlaying) {
-        // If audio wasn't actually playing, temporarily disable play ability during the seek
-        const originalPlay = audio.play
-        let isBlocking = true
+        console.log('🎯 Seeking while paused - blocking play for longer')
         
-        audio.play = () => {
-          if (isBlocking) {
-            console.log('🚫 Blocked audio.play() call during seek')
-            return Promise.resolve()
-          } else {
-            return originalPlay.call(audio)
-          }
-        }
-        
+        // Set the current time
         audio.currentTime = time
         
-        // Restore play method and clear seeking flag
+        // Keep blocking for longer when audio was paused
         setTimeout(() => {
-          isBlocking = false
           audio.play = originalPlay
-          isSeekingRef.current = false // Clear seeking flag
+          isSeekingRef.current = false
+          setIsSeeking(false)
           
-          // Ensure state is synchronized - if audio is paused, React state should reflect that
-          if (audio.paused) {
+          // Force pause state to be maintained
+          if (!wasActuallyPlaying) {
             setIsPlaying(false)
             if (audioContext.isActivePlayer(playerIdRef.current)) {
               audioContext.setPlaying(false)
             }
           }
           
-          console.log('✅ Restored audio.play() method and synchronized state')
-        }, 10) // Much shorter delay
+          console.log('✅ Restored play method after seek (was paused)')
+        }, 100) // Longer delay for paused state
       } else {
-        // If audio was actually playing, just seek normally
+        console.log('🎯 Seeking while playing - shorter block')
+        
+        // Set the current time
         audio.currentTime = time
-        // Clear seeking flag after a short delay
+        
+        // Shorter delay when audio was playing
         setTimeout(() => {
+          audio.play = originalPlay
           isSeekingRef.current = false
-        }, 10)
+          setIsSeeking(false)
+          console.log('✅ Restored play method after seek (was playing)')
+        }, 50)
       }
       
       setHasUserInteracted(true)

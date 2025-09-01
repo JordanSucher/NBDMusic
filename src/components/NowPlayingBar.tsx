@@ -84,7 +84,11 @@ export default function NowPlayingBar() {
     const newTime = percentage * duration
     
     console.log('📱 Progress bar seeking to', newTime)
-    seekToTime(newTime)
+    
+    // Add a small delay to ensure touch events are fully processed
+    setTimeout(() => {
+      seekToTime(newTime)
+    }, 10)
   }
 
   return (
