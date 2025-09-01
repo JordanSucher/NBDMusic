@@ -180,6 +180,32 @@ export default function ReleasePage() {
     })
   }
 
+  const parseTextWithLinks = (text: string) => {
+    const urlRegex = /(https?:\/\/[^\s]+)/g
+    const parts = text.split(urlRegex)
+    
+    return parts.map((part, index) => {
+      if (urlRegex.test(part)) {
+        return (
+          <a
+            key={index}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: '#0000ff',
+              textDecoration: 'underline',
+              wordBreak: 'break-all'
+            }}
+          >
+            {part}
+          </a>
+        )
+      }
+      return part
+    })
+  }
+
   if (loading) {
     return (
       <div className="container">
@@ -298,7 +324,12 @@ export default function ReleasePage() {
             )}
 
             {/* Release info */}
-            <div style={{ flex: 1 }}>
+            <div style={{ 
+              flex: 1,
+              minWidth: 0,
+              wordBreak: 'break-word',
+              overflowWrap: 'break-word'
+            }}>
               <h1 
               className="release-page-title"
               style={{ 
@@ -413,9 +444,13 @@ export default function ReleasePage() {
       {release.description && (
         <div 
         className="mt-[20px]! bg-[#fff]! border-[2px]! border-[#000]! p-[10px]! font-[12px]! text-[#666]! mb-[20px]!"
+        style={{
+          wordBreak: 'break-word',
+          overflowWrap: 'break-word'
+        }}
         >
           <p>
-            {release.description}
+            {parseTextWithLinks(release.description)}
           </p>
         </div>
       )}
