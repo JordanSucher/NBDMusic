@@ -69,22 +69,22 @@ export default function PWAInstallPrompt() {
         }
       }}
       style={{
-        position: 'fixed !important' as any,
-        top: '0 !important' as any,
-        left: '0 !important' as any,
-        right: '0 !important' as any,
-        bottom: '0 !important' as any,
-        width: '100vw !important' as any,
-        height: '100vh !important' as any,
-        backgroundColor: 'rgba(0, 0, 0, 0.8) !important' as any,
-        display: 'flex !important' as any,
-        alignItems: 'center !important' as any,
-        justifyContent: 'center !important' as any,
-        zIndex: '9999 !important' as any,
-        padding: '20px !important' as any,
-        boxSizing: 'border-box !important' as any,
-        margin: '0 !important' as any
-      }}>
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100vw',
+        height: '100vh',
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 9999,
+        padding: '20px',
+        boxSizing: 'border-box',
+        margin: 0
+      } as React.CSSProperties}>
       <div style={{
         backgroundColor: '#fff',
         border: '3px solid #000',
