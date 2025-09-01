@@ -4,7 +4,7 @@ import { db } from "@/lib/db"
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, username, password } = await request.json()
+    const { email, username, password, displayName, bio, url } = await request.json()
 
     // Validate input
     if (!email || !username || !password) {
@@ -47,6 +47,9 @@ export async function POST(request: NextRequest) {
         email,
         username,
         password: hashedPassword,
+        name: displayName || null,
+        bio: bio || null,
+        url: url || null,
       },
     })
 
