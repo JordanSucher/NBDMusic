@@ -14,22 +14,37 @@ export default function PWAInstallPrompt() {
   useEffect(() => {
     const handler = (e: Event) => {
       e.preventDefault()
-      // NEVER show on desktop - just store the event but don't show UI
       setDeferredPrompt(e as BeforeInstallPromptEvent)
-      // Don't set showInstallButton to true - disable completely for now
+      
+      // Only show if DEFINITELY mobile - very strict check
+      const userAgent = navigator.userAgent
+      const isAndroidMobile = /Android.*Mobile/i.test(userAgent)
+      const isiPhone = /iPhone/i.test(userAgent)
+      const isiPad = /iPad/i.test(userAgent)
+      
+      const isDefinitelyMobile = isAndroidMobile || isiPhone || isiPad
+      
+      console.log('PWA Check:', {
+        userAgent,
+        isAndroidMobile,
+        isiPhone,
+        isiPad,
+        isDefinitelyMobile
+      })
+      
+      if (isDefinitelyMobile) {
+        setShowInstallButton(true)
+      }
     }
 
-    // Disable the entire feature for now
-    // window.addEventListener('beforeinstallprompt', handler)
+    window.addEventListener('beforeinstallprompt', handler)
 
     // Check if already installed
     if (window.matchMedia('(display-mode: standalone)').matches) {
       setShowInstallButton(false)
     }
 
-    return () => {
-      // window.removeEventListener('beforeinstallprompt', handler)
-    }
+    return () => window.removeEventListener('beforeinstallprompt', handler)
   }, [])
 
   const handleInstallClick = async () => {
