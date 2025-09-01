@@ -14,8 +14,15 @@ export default function PWAInstallPrompt() {
   useEffect(() => {
     const handler = (e: Event) => {
       e.preventDefault()
-      setDeferredPrompt(e as BeforeInstallPromptEvent)
-      setShowInstallButton(true)
+      
+      // Only show on mobile devices
+      const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                       (navigator.maxTouchPoints && navigator.maxTouchPoints > 0 && window.innerWidth <= 768)
+      
+      if (isMobile) {
+        setDeferredPrompt(e as BeforeInstallPromptEvent)
+        setShowInstallButton(true)
+      }
     }
 
     window.addEventListener('beforeinstallprompt', handler)
@@ -46,57 +53,102 @@ export default function PWAInstallPrompt() {
   return (
     <div style={{
       position: 'fixed',
-      bottom: '90px', // Above the now playing bar
-      left: '20px',
-      right: '20px',
-      backgroundColor: '#fff',
-      border: '2px solid #000',
-      padding: '15px',
-      zIndex: 1000,
-      fontFamily: 'Courier New, monospace',
-      fontSize: '12px'
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 2000,
+      padding: '20px'
     }}>
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        gap: '15px'
+      <div style={{
+        backgroundColor: '#fff',
+        border: '3px solid #000',
+        borderRadius: '8px',
+        padding: '30px',
+        maxWidth: '400px',
+        width: '100%',
+        textAlign: 'center',
+        fontFamily: 'Courier New, monospace',
+        boxShadow: '0 10px 25px rgba(0,0,0,0.3)'
       }}>
-        <div>
-          <strong>Install NBD</strong>
-          <br />
-          Add to home screen for easier access
+        <div style={{
+          fontSize: '48px',
+          marginBottom: '20px'
+        }}>
+          📱
         </div>
-        <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+        
+        <h2 style={{
+          fontSize: '24px',
+          fontWeight: 'bold',
+          marginBottom: '15px',
+          color: '#000'
+        }}>
+          Install NBD
+        </h2>
+        
+        <p style={{
+          fontSize: '16px',
+          marginBottom: '30px',
+          color: '#333',
+          lineHeight: '1.4'
+        }}>
+          Add NBD to your home screen for quick access to your music!
+        </p>
+        
+        <div style={{ 
+          display: 'flex', 
+          gap: '15px', 
+          justifyContent: 'center',
+          flexWrap: 'wrap'
+        }}>
           <button
             onClick={handleInstallClick}
             style={{
               backgroundColor: '#4444ff',
               color: 'white',
-              border: '2px outset #4444ff',
-              padding: '6px 12px',
-              fontSize: '12px',
+              border: '3px outset #4444ff',
+              padding: '12px 24px',
+              fontSize: '16px',
               cursor: 'pointer',
-              fontFamily: 'Courier New, monospace'
+              fontFamily: 'Courier New, monospace',
+              fontWeight: 'bold',
+              borderRadius: '4px',
+              minWidth: '120px'
             }}
           >
-            Install
+            📲 Install
           </button>
           <button
             onClick={() => setShowInstallButton(false)}
             style={{
               backgroundColor: '#ddd',
               color: '#000',
-              border: '2px outset #ddd',
-              padding: '6px 12px',
-              fontSize: '12px',
+              border: '3px outset #ddd',
+              padding: '12px 24px',
+              fontSize: '16px',
               cursor: 'pointer',
-              fontFamily: 'Courier New, monospace'
+              fontFamily: 'Courier New, monospace',
+              borderRadius: '4px',
+              minWidth: '120px'
             }}
           >
-            ✕
+            Maybe Later
           </button>
         </div>
+        
+        <p style={{
+          fontSize: '12px',
+          color: '#666',
+          marginTop: '20px',
+          lineHeight: '1.3'
+        }}>
+          Works offline • Fast loading • Native app experience
+        </p>
       </div>
     </div>
   )
