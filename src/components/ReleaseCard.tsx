@@ -160,6 +160,60 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
     }))
   }
 
+  const parseTextWithLinks = (text: string) => {
+    const urlRegex = /(https?:\/\/[^\s]+)/g
+    const parts = text.split(urlRegex)
+    
+    return parts.map((part, index) => {
+      if (urlRegex.test(part)) {
+        return (
+          <a
+            key={index}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: '#0000ff',
+              textDecoration: 'underline',
+              wordBreak: 'break-all'
+            }}
+          >
+            {part}
+          </a>
+        )
+      }
+      return part
+    })
+  }
+
+  const getTruncatedDescription = (text: string, maxLength: number) => {
+    if (text.length <= maxLength) return text
+    
+    const urlRegex = /(https?:\/\/[^\s]+)/g
+    let truncated = text.slice(0, maxLength)
+    let needsEllipsis = true
+    
+    // Check if we cut off in the middle of a URL
+    const lastUrlMatch = [...text.matchAll(urlRegex)].reverse().find(match => {
+      const urlStart = match.index!
+      const urlEnd = urlStart + match[0].length
+      return urlStart < maxLength && urlEnd > maxLength
+    })
+    
+    if (lastUrlMatch) {
+      // If we cut a URL, include the complete URL instead
+      const urlEnd = lastUrlMatch.index! + lastUrlMatch[0].length
+      truncated = text.slice(0, urlEnd)
+      
+      // If we've included the complete text by rounding up, no ellipsis needed
+      if (urlEnd >= text.length) {
+        needsEllipsis = false
+      }
+    }
+    
+    return truncated + (needsEllipsis ? '...' : '')
+  }
+
   return (
     <div className="song-card">
       {/* Release Header with Artwork */}
@@ -215,7 +269,12 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
         )}
 
         {/* Release Info */}
-        <div style={{ flex: 1 }}>
+        <div style={{ 
+          flex: 1,
+          minWidth: 0,
+          wordBreak: 'break-word',
+          overflowWrap: 'break-word'
+        }}>
           <div className="song-title">
             <Link 
               href={`/release/${release.id}`}
@@ -281,11 +340,15 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
             color: '#555'
           }}>
             <div
-              style={{ marginBottom: '5px' }}
+              style={{ 
+                marginBottom: '5px',
+                wordBreak: 'break-word',
+                overflowWrap: 'break-word'
+              }}
             >
-              {isDescriptionExpanded 
-                ? release.description 
-                : `${release.description.slice(0, 120)}${release.description.length > 120 ? '...' : ''}`
+{isDescriptionExpanded 
+                ? parseTextWithLinks(release.description)
+                : parseTextWithLinks(getTruncatedDescription(release.description, 120))
               }
             </div>
             {release.description.length > 120 && (
