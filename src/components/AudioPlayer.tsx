@@ -317,6 +317,9 @@ export default function AudioPlayer({
   }
 
   const handleProgressTouch = (e: React.TouchEvent<HTMLDivElement>) => {
+    // Only handle touchend to avoid multiple calls during drag
+    if (e.type !== 'touchend') return
+    
     const audio = audioRef.current
     const progressBar = progressRef.current
     if (!audio || !progressBar || !duration) return
@@ -325,7 +328,7 @@ export default function AudioPlayer({
     e.preventDefault()
     
     const rect = progressBar.getBoundingClientRect()
-    const touch = e.touches[0] || e.changedTouches[0]
+    const touch = e.changedTouches[0] // Use changedTouches for touchend
     const touchX = touch.clientX - rect.left
     const percentage = Math.max(0, Math.min(1, touchX / rect.width)) // Clamp between 0 and 1
     const newTime = percentage * duration
@@ -541,7 +544,6 @@ export default function AudioPlayer({
       <div 
         ref={progressRef}
         onClick={handleProgressClick}
-        onTouchStart={handleProgressTouch}
         onTouchEnd={handleProgressTouch}
         className="subtle-dither"
         style={{
