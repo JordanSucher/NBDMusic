@@ -15,23 +15,24 @@ export default function PWAInstallPrompt() {
     const handler = (e: Event) => {
       e.preventDefault()
       
-      // More strict mobile detection
-      const isMobileUserAgent = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-      const isTouchDevice = navigator.maxTouchPoints > 0
-      const isSmallScreen = window.innerWidth <= 768
-      const isDesktop = /Windows|Mac|Linux/i.test(navigator.platform) && !isMobileUserAgent
+      // Very strict mobile detection - only show on actual mobile devices
+      const isChromeMobile = /Android.*Chrome|iPhone.*CriOS|iPad.*CriOS/i.test(navigator.userAgent)
+      const isSafariMobile = /iPhone|iPad.*Safari/i.test(navigator.userAgent)
+      const isAndroid = /Android/i.test(navigator.userAgent)
+      const isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent)
+      const isDesktopChrome = /Chrome/i.test(navigator.userAgent) && !/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
       
-      // Only show if it's clearly a mobile device, not desktop
-      const isMobile = isMobileUserAgent && !isDesktop
+      // Only show if it's mobile Chrome/Safari, explicitly exclude desktop Chrome
+      const isMobile = (isAndroid || isiOS) && !isDesktopChrome
       
       console.log('PWA Install Check:', {
-        isMobileUserAgent,
-        isTouchDevice,
-        isSmallScreen,
-        isDesktop,
+        isChromeMobile,
+        isSafariMobile,
+        isAndroid,
+        isiOS,
+        isDesktopChrome,
         isMobile,
-        userAgent: navigator.userAgent,
-        platform: navigator.platform
+        userAgent: navigator.userAgent
       })
       
       if (isMobile) {
@@ -72,12 +73,15 @@ export default function PWAInstallPrompt() {
       left: 0,
       right: 0,
       bottom: 0,
+      width: '100vw',
+      height: '100vh',
       backgroundColor: 'rgba(0, 0, 0, 0.8)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      zIndex: 2000,
-      padding: '20px'
+      zIndex: 9999,
+      padding: '20px',
+      boxSizing: 'border-box'
     }}>
       <div style={{
         backgroundColor: '#fff',
