@@ -15,27 +15,21 @@ export default function PWAInstallPrompt() {
     const handler = (e: Event) => {
       e.preventDefault()
       
-      // Very strict mobile detection - only show on actual mobile devices
-      const isChromeMobile = /Android.*Chrome|iPhone.*CriOS|iPad.*CriOS/i.test(navigator.userAgent)
-      const isSafariMobile = /iPhone|iPad.*Safari/i.test(navigator.userAgent)
-      const isAndroid = /Android/i.test(navigator.userAgent)
-      const isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent)
-      const isDesktopChrome = /Chrome/i.test(navigator.userAgent) && !/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
-      
-      // Only show if it's mobile Chrome/Safari, explicitly exclude desktop Chrome
-      const isMobile = (isAndroid || isiOS) && !isDesktopChrome
+      // Simple check - if it contains desktop indicators, don't show
+      const userAgent = navigator.userAgent.toLowerCase()
+      const isDesktop = userAgent.includes('windows') || 
+                       userAgent.includes('mac os') || 
+                       userAgent.includes('linux') ||
+                       (userAgent.includes('chrome') && !userAgent.includes('mobile') && !userAgent.includes('android'))
       
       console.log('PWA Install Check:', {
-        isChromeMobile,
-        isSafariMobile,
-        isAndroid,
-        isiOS,
-        isDesktopChrome,
-        isMobile,
-        userAgent: navigator.userAgent
+        userAgent: navigator.userAgent,
+        isDesktop,
+        shouldShow: !isDesktop
       })
       
-      if (isMobile) {
+      // Only show if NOT desktop
+      if (!isDesktop) {
         setDeferredPrompt(e as BeforeInstallPromptEvent)
         setShowInstallButton(true)
       }
@@ -67,22 +61,30 @@ export default function PWAInstallPrompt() {
   if (!showInstallButton) return null
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      width: '100vw',
-      height: '100vh',
-      backgroundColor: 'rgba(0, 0, 0, 0.8)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 9999,
-      padding: '20px',
-      boxSizing: 'border-box'
-    }}>
+    <div 
+      onClick={(e) => {
+        // Close if clicking background
+        if (e.target === e.currentTarget) {
+          setShowInstallButton(false)
+        }
+      }}
+      style={{
+        position: 'fixed !important' as any,
+        top: '0 !important' as any,
+        left: '0 !important' as any,
+        right: '0 !important' as any,
+        bottom: '0 !important' as any,
+        width: '100vw !important' as any,
+        height: '100vh !important' as any,
+        backgroundColor: 'rgba(0, 0, 0, 0.8) !important' as any,
+        display: 'flex !important' as any,
+        alignItems: 'center !important' as any,
+        justifyContent: 'center !important' as any,
+        zIndex: '9999 !important' as any,
+        padding: '20px !important' as any,
+        boxSizing: 'border-box !important' as any,
+        margin: '0 !important' as any
+      }}>
       <div style={{
         backgroundColor: '#fff',
         border: '3px solid #000',
