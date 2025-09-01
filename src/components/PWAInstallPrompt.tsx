@@ -170,7 +170,7 @@ export default function PWAInstallPrompt() {
           marginTop: '20px',
           lineHeight: '1.3'
         }}>
-          Works offline • Fast loading • Native app experience
+          Fast loading • Native app experience
         </p>
       </div>
     </div>
