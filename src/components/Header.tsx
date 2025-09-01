@@ -163,6 +163,7 @@ export default function Header() {
       {isMobileMenuOpen && (
         <div 
           style={{
+            marginTop: '6px',
             borderTop: '2px solid #000',
             backgroundColor: '#ffffff',
             padding: '15px 20px',
