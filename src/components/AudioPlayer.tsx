@@ -316,6 +316,25 @@ export default function AudioPlayer({
     seekToTime(newTime)
   }
 
+  const handleProgressTouch = (e: React.TouchEvent<HTMLDivElement>) => {
+    const audio = audioRef.current
+    const progressBar = progressRef.current
+    if (!audio || !progressBar || !duration) return
+
+    // Prevent scrolling and other touch behaviors
+    e.preventDefault()
+    
+    const rect = progressBar.getBoundingClientRect()
+    const touch = e.touches[0] || e.changedTouches[0]
+    const touchX = touch.clientX - rect.left
+    const percentage = Math.max(0, Math.min(1, touchX / rect.width)) // Clamp between 0 and 1
+    const newTime = percentage * duration
+    
+    console.log('📱 AudioPlayer progress bar touched - seeking to:', newTime, 'isPlaying:', isPlaying, 'audio.paused:', audio.paused)
+    
+    seekToTime(newTime)
+  }
+
   const handleNext = () => {
     if (onNextTrack && hasNextTrack) {
       setHasUserInteracted(true)
@@ -522,6 +541,8 @@ export default function AudioPlayer({
       <div 
         ref={progressRef}
         onClick={handleProgressClick}
+        onTouchStart={handleProgressTouch}
+        onTouchEnd={handleProgressTouch}
         className="subtle-dither"
         style={{
           height: '16px',

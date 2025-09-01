@@ -66,6 +66,24 @@ export default function NowPlayingBar() {
     seekToTime(newTime)
   }
 
+  const handleProgressTouch = (e: React.TouchEvent<HTMLDivElement>) => {
+    console.log('📱 Progress bar touched - target:', e.target, 'currentTarget:', e.currentTarget)
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (!duration) return
+    
+    const progressBar = e.currentTarget
+    const rect = progressBar.getBoundingClientRect()
+    const touch = e.touches[0] || e.changedTouches[0]
+    const touchX = touch.clientX - rect.left
+    const percentage = Math.max(0, Math.min(1, touchX / rect.width)) // Clamp between 0 and 1
+    const newTime = percentage * duration
+    
+    console.log('📱 Progress bar seeking to', newTime)
+    seekToTime(newTime)
+  }
+
   return (
     <div style={{
       position: 'fixed',
@@ -205,6 +223,8 @@ export default function NowPlayingBar() {
           {/* Progress Bar */}
           <div 
             onClick={handleProgressClick}
+            onTouchStart={handleProgressTouch}
+            onTouchEnd={handleProgressTouch}
             className="subtle-dither"
             style={{
               height: '16px',
