@@ -3,6 +3,7 @@
 
 import { createContext, useContext, useState, ReactNode, useCallback, useRef, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+import { persistentAudioPlayer } from '@/lib/PersistentAudioPlayer';
 
 interface ActiveTrack {
   src: string;
@@ -22,7 +23,7 @@ interface AudioContextType {
   duration: number;
   hasNextTrack: boolean;
   hasPrevTrack: boolean;
-  setActivePlayer: (playerId: string, track: ActiveTrack) => void;
+  setActivePlayer: (playerId: string, track: ActiveTrack, forceSwitch?: boolean) => void;
   isActivePlayer: (playerId: string) => boolean;
   setCurrentTrackId: (trackId: string | null) => void;
   setPlaying: (isPlaying: boolean) => void;
@@ -71,16 +72,79 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     controlCallbacks.current = {};
   }, []);
 
-  // Clear active player when navigating to a new page
-  useEffect(() => {
-    clearActivePlayer();
-  }, [pathname, clearActivePlayer]);
+  // Note: We intentionally don't clear the active player on navigation
+  // to allow music playback to continue across pages
 
-  const setActivePlayer = useCallback((playerId: string, track: ActiveTrack) => {
+  // Initialize persistent audio player
+  useEffect(() => {
+    persistentAudioPlayer.initialize()
+    
+    persistentAudioPlayer.setListeners({
+      onPlay: () => {
+        console.log('🎵 Persistent player: play event')
+        setIsGloballyPlaying(true)
+      },
+      onPause: () => {
+        console.log('⏸️ Persistent player: pause event')
+        setIsGloballyPlaying(false)
+      },
+      onTimeUpdate: (currentTime, duration) => {
+        setCurrentTime(currentTime)
+        setDuration(duration)
+      },
+      onEnded: () => {
+        console.log('⏹️ Persistent player: ended')
+        setIsGloballyPlaying(false)
+        // Auto-advance to next track if available
+        controlCallbacks.current.onNext?.()
+      },
+      onLoadStart: () => {
+        console.log('📀 Persistent player: loading...')
+      },
+      onCanPlay: () => {
+        console.log('✅ Persistent player: ready to play')
+      }
+    })
+
+    return () => {
+      // Don't destroy on unmount - we want it to persist
+      // persistentAudioPlayer.destroy()
+    }
+  }, [])
+
+  const setActivePlayer = useCallback((playerId: string, track: ActiveTrack, forceSwitch: boolean = false) => {
+    console.log('🎮 Setting active player:', playerId, track)
+    console.log('🎮 Current active track:', activeTrack)
+    
+    // If the same track is already playing, just update the playerId 
+    // to maintain continuity when the same track appears on different pages
+    if (activeTrack && activeTrack.src === track.src) {
+      console.log('🎮 Same track, updating player ID from', activePlayerId, 'to', playerId)
+      setActivePlayerId(playerId)
+      setActiveTrack({ ...track, playerId }) // Update with new playerId
+      // Don't call setSource again - it would restart the track
+      return
+    }
+    
+    // Don't switch to a different track if audio is currently playing
+    // unless it's explicitly requested by user or within the same release
+    if (activeTrack && isGloballyPlaying && activeTrack.src !== track.src && !forceSwitch) {
+      // Allow track switches within the same release
+      if (activeTrack.releaseId === track.releaseId) {
+        console.log('🎮 Allowing track switch within same release:', activeTrack.releaseId)
+      } else {
+        console.log('🎮 Preventing track switch while playing. Current:', activeTrack.src, 'Requested:', track.src)
+        return
+      }
+    }
+    
+    console.log('🎮 Setting new active track')
     setActivePlayerId(playerId);
     setActiveTrack(track);
-    setIsGloballyPlaying(true);
-  }, []);
+    
+    // Set the source on the persistent audio player
+    persistentAudioPlayer.setSource(track.src)
+  }, [activeTrack, activePlayerId, isGloballyPlaying]);
 
   const isActivePlayer = useCallback((playerId: string) => {
     return activePlayerId === playerId;
@@ -116,19 +180,26 @@ export function AudioProvider({ children }: { children: ReactNode }) {
 
   const togglePlayPause = useCallback(() => {
     console.log('🎮 AudioContext togglePlayPause called');
-    console.trace('🎮 AudioContext togglePlayPause call stack');
-    controlCallbacks.current.togglePlayPause?.();
+    
+    if (persistentAudioPlayer.isPaused()) {
+      persistentAudioPlayer.play()
+    } else {
+      persistentAudioPlayer.pause()
+    }
   }, []);
 
   const seekToTime = useCallback((time: number) => {
-    controlCallbacks.current.seekToTime?.(time);
+    console.log('🎯 AudioContext seeking to:', time)
+    persistentAudioPlayer.setCurrentTime(time)
   }, []);
 
   const nextTrack = useCallback(() => {
+    console.log('🎮 AudioContext nextTrack called - callback exists:', !!controlCallbacks.current.onNext)
     controlCallbacks.current.onNext?.();
   }, []);
 
   const prevTrack = useCallback(() => {
+    console.log('🎮 AudioContext prevTrack called - currentTime:', currentTime, 'callback exists:', !!controlCallbacks.current.onPrev)
     // If more than 10 seconds in, restart current track
     if (currentTime > 10) {
       controlCallbacks.current.restartTrack?.();

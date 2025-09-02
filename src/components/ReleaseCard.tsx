@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useLayoutEffect, useRef } from "react"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
 import AudioPlayer from "./AudioPlayer"
 import FollowButton from "./FollowButton"
 import { useAudioContext } from "@/contexts/AudioContext"
+import { persistentAudioPlayer } from "@/lib/PersistentAudioPlayer"
 
 interface Track {
   id: string
@@ -62,10 +63,28 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
     fetchTagCounts()
   }, [])
 
-  // Force re-render when current track changes
+  // Sync local currentTrack state with global track when it changes
   useEffect(() => {
-    // This useEffect will trigger re-renders when currentTrackId changes
-  }, [audioContext.currentTrackId])
+    if (audioContext.currentTrackId) {
+      // Sort tracks and find the index of the currently playing track in this release
+      const tracks = [...release.tracks].sort((a, b) => a.trackNumber - b.trackNumber)
+      const trackIndex = tracks.findIndex(track => track.id === audioContext.currentTrackId)
+      if (trackIndex !== -1) {
+        setCurrentTrack(trackIndex)
+      }
+    }
+  }, [audioContext.currentTrackId, audioContext.activeTrack, release.tracks, release.id])
+
+  // Sync immediately on mount before browser paint to avoid flash
+  useLayoutEffect(() => {
+    if (audioContext.currentTrackId) {
+      const tracks = [...release.tracks].sort((a, b) => a.trackNumber - b.trackNumber)
+      const trackIndex = tracks.findIndex(track => track.id === audioContext.currentTrackId)
+      if (trackIndex !== -1) {
+        setCurrentTrack(trackIndex)
+      }
+    }
+  }, [audioContext.currentTrackId, release.tracks])
 
   const isScheduledRelease = (releaseDate: string | null) => {
     if (!releaseDate) return false
@@ -121,6 +140,15 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
   }
 
   const sortedTracks = [...release.tracks].sort((a, b) => a.trackNumber - b.trackNumber)
+  
+  // Compute the actual current track index based on global state
+  const actualCurrentTrack = (() => {
+    if (audioContext.currentTrackId) {
+      const trackIndex = sortedTracks.findIndex(track => track.id === audioContext.currentTrackId)
+      return trackIndex !== -1 ? trackIndex : 0  // Default to first track if none from this release are playing
+    }
+    return 0  // Default to first track if no global track
+  })()
 
   // Check if current user owns this release
   const isOwner = session?.user && 
@@ -142,14 +170,64 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
   }
 
   const handleNextTrack = () => {
-    if (currentTrack < sortedTracks.length - 1) {
-      setCurrentTrack(currentTrack + 1)
+    if (actualCurrentTrack < sortedTracks.length - 1) {
+      const nextTrackIndex = actualCurrentTrack + 1
+      const nextTrack = sortedTracks[nextTrackIndex]
+      const wasPlaying = audioContext.isGloballyPlaying
+      
+      console.log('🔄 handleNextTrack - moving to track:', nextTrackIndex, nextTrack.title)
+      
+      // Update audio context with next track
+      const playerId = `player-${release.id}-${nextTrack.id}`
+      const trackInfo = {
+        src: nextTrack.fileUrl,
+        title: `${nextTrack.trackNumber}. ${nextTrack.title}`,
+        artist: release.user.username,
+        releaseId: release.id,
+        trackIndex: nextTrackIndex,
+        playerId
+      }
+      
+      audioContext.setActivePlayer(playerId, trackInfo, true)
+      audioContext.setCurrentTrackId(nextTrack.id)
+      
+      // Continue playing if it was playing before
+      if (wasPlaying) {
+        persistentAudioPlayer.play().catch(error => {
+          console.log('🎮 Auto-play after next track failed:', error)
+        })
+      }
     }
   }
 
   const handlePrevTrack = () => {
-    if (currentTrack > 0) {
-      setCurrentTrack(currentTrack - 1)
+    if (actualCurrentTrack > 0) {
+      const prevTrackIndex = actualCurrentTrack - 1
+      const prevTrack = sortedTracks[prevTrackIndex]
+      const wasPlaying = audioContext.isGloballyPlaying
+      
+      console.log('🔄 handlePrevTrack - moving to track:', prevTrackIndex, prevTrack.title)
+      
+      // Update audio context with previous track
+      const playerId = `player-${release.id}-${prevTrack.id}`
+      const trackInfo = {
+        src: prevTrack.fileUrl,
+        title: `${prevTrack.trackNumber}. ${prevTrack.title}`,
+        artist: release.user.username,
+        releaseId: release.id,
+        trackIndex: prevTrackIndex,
+        playerId
+      }
+      
+      audioContext.setActivePlayer(playerId, trackInfo, true)
+      audioContext.setCurrentTrackId(prevTrack.id)
+      
+      // Continue playing if it was playing before
+      if (wasPlaying) {
+        persistentAudioPlayer.play().catch(error => {
+          console.log('🎮 Auto-play after prev track failed:', error)
+        })
+      }
     }
   }
 
@@ -414,17 +492,17 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
           <div data-release-id={release.id}>
             <AudioPlayer 
               key={playerKey}
-              src={sortedTracks[currentTrack].fileUrl} 
-              title={`${sortedTracks[currentTrack].trackNumber}. ${sortedTracks[currentTrack].title}`}
+              src={sortedTracks[actualCurrentTrack].fileUrl} 
+              title={`${sortedTracks[actualCurrentTrack].trackNumber}. ${sortedTracks[actualCurrentTrack].title}`}
               artist={release.user.username}
-              trackId={sortedTracks[currentTrack].id}
-              listenCount={sortedTracks[currentTrack]._count.listens}
+              trackId={sortedTracks[actualCurrentTrack].id}
+              listenCount={sortedTracks[actualCurrentTrack]._count.listens}
               onTrackEnd={handleTrackEnd}
               onNextTrack={handleNextTrack}
               onPrevTrack={handlePrevTrack}
-              hasNextTrack={currentTrack < sortedTracks.length - 1}
-              hasPrevTrack={currentTrack > 0}
-              currentTrackIndex={currentTrack}
+              hasNextTrack={actualCurrentTrack < sortedTracks.length - 1}
+              hasPrevTrack={actualCurrentTrack > 0}
+              currentTrackIndex={actualCurrentTrack}
               totalTracks={sortedTracks.length}
               autoPlay={true}
               releaseId={release.id}
@@ -441,16 +519,36 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
                 <div key={track.id}>
                   <div 
                     onClick={() => {
+                      const wasPlaying = audioContext.isGloballyPlaying
+                      
+                      // Keep the same active player ID, just update its track info
+                      const currentActivePlayerId = audioContext.activePlayerId
+                      
+                      // Use existing player ID if available, otherwise create one for this release
+                      const playerId = currentActivePlayerId || `player-${release.id}-${track.id}`
+                      
+                      // Create track info for the new track
+                      const trackInfo = {
+                        src: track.fileUrl,
+                        title: `${track.trackNumber}. ${track.title}`,
+                        artist: release.user.username,
+                        releaseId: release.id,
+                        trackIndex: index,
+                        playerId: playerId
+                      }
+                      
+                      console.log('🎮 Track clicked:', track.title, 'wasPlaying:', wasPlaying, 'playerId:', playerId)
+                      
+                      // Update the active player with new track (force switch for user clicks)
+                      audioContext.setActivePlayer(playerId, trackInfo, true)
                       audioContext.setCurrentTrackId(track.id)
-                      setCurrentTrack(index)
-                      // Always trigger play when clicking a track
+                      
+                      // Start playing the new track (whether or not something was playing before)
                       setTimeout(() => {
-                        // Find and click the play button for this release's audio player
-                        const playButton = document.querySelector(`[data-release-id="${release.id}"] .play-pause-btn`)
-                        if (playButton) {
-                          (playButton as HTMLElement).click()
-                        }
-                      }, 0)
+                        persistentAudioPlayer.play().catch(error => {
+                          console.log('Track switch play failed:', error)
+                        })
+                      }, 100)
                     }}
                     style={{
                       padding: '4px 8px',

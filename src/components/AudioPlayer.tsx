@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from "react"
 import { useAudioContext } from "@/contexts/AudioContext"
+import { persistentAudioPlayer } from "@/lib/PersistentAudioPlayer"
 import DitheredBackground from "./DitheredBackground"
 
 interface AudioPlayerProps {
@@ -35,22 +36,17 @@ export default function AudioPlayer({
   autoPlay = false,
   releaseId = "unknown"
 }: AudioPlayerProps) {
-  const audioRef = useRef<HTMLAudioElement>(null)
   const progressRef = useRef<HTMLDivElement>(null)
-  const playerIdRef = useRef<string>(`player-${Math.random().toString(36).substr(2, 9)}`)
+  // Create consistent player ID based on trackId or src to maintain identity across pages
+  const playerIdRef = useRef<string>(`player-${trackId || src.split('/').pop()?.split('.')[0] || 'unknown'}`)
   
-  const [isFirstLoad, setIsFirstLoad] = useState(true)
   const [hasUserInteracted, setHasUserInteracted] = useState(false)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [currentTime, setCurrentTime] = useState(0)
-  const [duration, setDuration] = useState(0)
-  const [isLoading, setIsLoading] = useState(true)
   const [listenTracked, setListenTracked] = useState(false) // Track if we've recorded a listen for this track
-  const [isSeeking, setIsSeeking] = useState(false) // Track if we're currently seeking
-  const isSeekingRef = useRef(false) // Ref version for event handlers
-  const handlersRef = useRef<{ handlePlay?: () => void, handlePause?: () => void }>({})
 
   const audioContext = useAudioContext()
+
+  // Check if this player is the active one
+  const isActive = audioContext.isActivePlayer(playerIdRef.current)
 
   // Function to track a listen
   const trackListen = async () => {
@@ -93,80 +89,86 @@ export default function AudioPlayer({
     }
   }, [audioContext, hasNextTrack, hasPrevTrack, onNextTrack, onPrevTrack]);
 
+  // Check if this player should be active based on the current track
+  useEffect(() => {
+    const currentActiveTrack = audioContext.activeTrack
+    
+    // Don't try to take over if the persistent player is already playing something different
+    if (!persistentAudioPlayer.isPaused() && persistentAudioPlayer.getCurrentTime() > 0) {
+      const currentSrc = persistentAudioPlayer.getCurrentSource()
+      if (currentSrc && currentSrc !== src) {
+        console.log('🎮 Persistent player is playing different track, not taking over')
+        return // Don't interfere with ongoing playback of a different track
+      }
+    }
+    
+    if (currentActiveTrack && currentActiveTrack.src === src) {
+      // Only take over if we're not already the active player
+      if (!audioContext.isActivePlayer(playerIdRef.current)) {
+        console.log('🎮 Registering matching track as active player:', playerIdRef.current, src)
+        // Update the active player ID to this component since it's the same track
+        const trackInfo = {
+          src,
+          title,
+          artist,
+          releaseId,
+          trackIndex: currentTrackIndex || 0,
+          playerId: playerIdRef.current
+        }
+        audioContext.setActivePlayer(playerIdRef.current, trackInfo)
+        // Always set the track ID for matching track registration
+        audioContext.setCurrentTrackId(trackId || null)
+      }
+      
+      // Always update callbacks for the active player showing this track
+      audioContext.setPlayerToggleCallback(togglePlayPause, restartTrack, seekToTime)
+      audioContext.setTrackControls(hasNextTrack, hasPrevTrack, onNextTrack, onPrevTrack)
+    }
+  }, [src, title, artist, releaseId, currentTrackIndex, trackId, hasNextTrack, hasPrevTrack, onNextTrack, onPrevTrack])
+
   // Don't clear active player on unmount - let the audio context handle it naturally
 
-  // Stop this player if another player becomes active
+  // Track listen when playing via persistent player
   useEffect(() => {
-    const audio = audioRef.current
-    if (!audio) return
+    if (!isActive || !audioContext.isGloballyPlaying) return
     
-    // Only stop if this player is playing AND there's a different active player
-    if (isPlaying && audioContext.activePlayerId && audioContext.activePlayerId !== playerIdRef.current) {
-      audio.pause()
-      setIsPlaying(false)
+    const currentTime = audioContext.currentTime
+    const duration = audioContext.duration
+    
+    // Check if we should track a listen
+    if (shouldTrackListen(currentTime, duration)) {
+      setListenTracked(true) // Set this immediately to prevent duplicates
+      trackListen()
     }
-  }, [audioContext.activePlayerId, isPlaying])
+  }, [audioContext.currentTime, audioContext.duration, audioContext.isGloballyPlaying, isActive, listenTracked])
 
+  // Reset listen tracking when track changes
   useEffect(() => {
-    const audio = audioRef.current
-    if (!audio) return
+    setListenTracked(false)
+  }, [src])
 
-    const handleEnded = () => {
-      setIsPlaying(false)
-      // Only update global state if this is the active player
-      if (audioContext.isActivePlayer(playerIdRef.current)) {
-        audioContext.setPlaying(false)
-        // Clear the active player when the track ends naturally
-        audioContext.clearActivePlayer()
-      }
-      if (onTrackEnd) {
-        onTrackEnd()
-      }
-    }
-
-    const handleTimeUpdate = () => {
-      const newCurrentTime = audio.currentTime
-      setCurrentTime(newCurrentTime)
+  // Handle src changes - update persistent player if this is the active player
+  useEffect(() => {
+    if (isActive) {
+      console.log('🎮 Active player src changed, updating persistent player:', src)
       
-      // Update global progress if this is the active player
-      if (audioContext.isActivePlayer(playerIdRef.current)) {
-        audioContext.updateProgress(newCurrentTime, audio.duration)
+      // Don't interfere if persistent player is already playing something different
+      if (!persistentAudioPlayer.isPaused() && persistentAudioPlayer.getCurrentTime() > 0) {
+        const currentSrc = persistentAudioPlayer.getCurrentSource()
+        if (currentSrc && currentSrc !== src) {
+          console.log('🎮 Persistent player busy with different track, not updating')
+          return
+        }
       }
       
-      // Check if we should track a listen
-      if (shouldTrackListen(newCurrentTime, audio.duration)) {
-        setListenTracked(true) // Set this immediately to prevent duplicates
-        trackListen()
-      }
-    }
-
-    const handleDurationChange = () => {
-      setDuration(audio.duration)
+      const wasPlaying = audioContext.isGloballyPlaying
+      const currentSrc = audioContext.activeTrack?.src
       
-      // Update global duration if this is the active player
-      if (audioContext.isActivePlayer(playerIdRef.current)) {
-        audioContext.updateProgress(audio.currentTime, audio.duration)
-      }
-    }
-
-    const handleLoadStart = () => {
-      setIsLoading(true)
-    }
-
-    const handleCanPlay = () => {
-      setIsLoading(false)
-      
-      // Don't auto-play if we're currently seeking
-      if (isSeekingRef.current) {
-        console.log('🚫 Skipping auto-play during seek')
-        return
-      }
-      
-      // Only auto-play if:
-      // 1. This is not the first load (track changed due to auto-advance)
-      // 2. User has interacted with the player before
-      // 3. autoPlay is enabled
-      if (!isFirstLoad && hasUserInteracted && autoPlay) {
+      // Only update if the source is actually different
+      if (currentSrc !== src) {
+        console.log('🎮 Source changed from', currentSrc, 'to', src)
+        
+        // Update the audio context with new track info
         const trackInfo = {
           src,
           title,
@@ -176,105 +178,37 @@ export default function AudioPlayer({
           playerId: playerIdRef.current
         }
         
-        // Set this as the active player
         audioContext.setActivePlayer(playerIdRef.current, trackInfo)
         audioContext.setCurrentTrackId(trackId || null)
-        audioContext.setPlayerToggleCallback(togglePlayPause, restartTrack, seekToTime)
-        audioContext.setTrackControls(hasNextTrack, hasPrevTrack, onNextTrack, onPrevTrack)
         
-        audio.play().then(() => {
-          setIsPlaying(true)
-        }).catch(error => {
-          console.log("Auto-play prevented by browser:", error)
-        })
+        // AudioContext.setActivePlayer() handles setSource() call
+        // Don't call persistentAudioPlayer.setSource(src) here to avoid restart
+        
+        // Continue playing if it was playing before
+        if (wasPlaying) {
+          console.log('🎮 Continuing playback after track change')
+          persistentAudioPlayer.play().catch(error => {
+            console.log('🎮 Auto-play after track change failed:', error)
+          })
+        }
+      } else {
+        console.log('🎮 Source unchanged, skipping update')
       }
     }
-
-    const handlePlay = () => {
-      console.log('🎵 PLAY EVENT TRIGGERED - isSeeking:', isSeeking, 'isPlaying:', isPlaying)
-      // Don't trigger play state changes if we're seeking
-      if (isSeeking) {
-        console.log('Ignoring play event during seeking')
-        return
-      }
-      console.log('🎵 Setting isPlaying to true')
-      setIsPlaying(true)
-      // Only update global state if this is the active player
-      if (audioContext.isActivePlayer(playerIdRef.current)) {
-        console.log('🎵 Setting global playing state to true')
-        audioContext.setPlaying(true)
-      }
-    }
-
-    const handlePause = () => {
-      console.log('⏸️ PAUSE EVENT TRIGGERED - isSeeking:', isSeeking, 'isPlaying:', isPlaying)
-      // Don't trigger pause state changes if we're seeking (unless it was intentional)
-      if (isSeeking) {
-        console.log('Ignoring pause event during seeking')
-        return
-      }
-      console.log('⏸️ Setting isPlaying to false')
-      setIsPlaying(false)
-      // Only update global state if this is the active player
-      if (audioContext.isActivePlayer(playerIdRef.current)) {
-        console.log('⏸️ Setting global playing state to false')
-        audioContext.setPlaying(false)
-      }
-    }
-
-    // Store handlers in ref for access outside useEffect
-    handlersRef.current.handlePlay = handlePlay
-    handlersRef.current.handlePause = handlePause
-
-    audio.addEventListener('ended', handleEnded)
-    audio.addEventListener('timeupdate', handleTimeUpdate)
-    audio.addEventListener('durationchange', handleDurationChange)
-    audio.addEventListener('loadstart', handleLoadStart)
-    audio.addEventListener('canplay', handleCanPlay)
-    audio.addEventListener('play', handlePlay)
-    audio.addEventListener('pause', handlePause)
-    
-    return () => {
-      audio.removeEventListener('ended', handleEnded)
-      audio.removeEventListener('timeupdate', handleTimeUpdate)
-      audio.removeEventListener('durationchange', handleDurationChange)
-      audio.removeEventListener('loadstart', handleLoadStart)
-      audio.removeEventListener('canplay', handleCanPlay)
-      audio.removeEventListener('play', handlePlay)
-      audio.removeEventListener('pause', handlePause)
-    }
-  }, [onTrackEnd, autoPlay, isFirstLoad, audioContext, src, title, artist, releaseId, currentTrackIndex, hasUserInteracted])
-
-  // Handle src changes
-  useEffect(() => {
-    const audio = audioRef.current
-    if (!audio) return
-
-    audio.load()
-    setCurrentTime(0)
-    setDuration(0)
-    setIsPlaying(false)
-    setListenTracked(false) // Reset listen tracking for new track
-    
-    // Mark that we've loaded the first track
-    if (isFirstLoad) {
-      setIsFirstLoad(false)
-    }
-  }, [src, isFirstLoad])
+  }, [src, isActive, title, artist, releaseId, currentTrackIndex, trackId])
 
   const togglePlayPause = () => {
-    console.log('🔄 togglePlayPause called - current isPlaying:', isPlaying)
-    const audio = audioRef.current
-    if (!audio) return
+    const isCurrentlyPlaying = isActive && audioContext.isGloballyPlaying
+    console.log('🔄 togglePlayPause called - isActive:', isActive, 'isGloballyPlaying:', audioContext.isGloballyPlaying)
 
     // Mark that user has interacted with the player
     setHasUserInteracted(true)
 
-    if (isPlaying) {
-      console.log('🔄 Pausing audio')
-      audio.pause()
+    if (isCurrentlyPlaying) {
+      console.log('🔄 Pausing audio via persistent player')
+      persistentAudioPlayer.pause()
     } else {
-      console.log('🔄 Starting playback')
+      console.log('🔄 Starting playback via persistent player')
       // Set this as the active player FIRST
       const trackInfo = {
         src,
@@ -285,32 +219,38 @@ export default function AudioPlayer({
         playerId: playerIdRef.current
       }
       
-      audioContext.setActivePlayer(playerIdRef.current, trackInfo)
+      audioContext.setActivePlayer(playerIdRef.current, trackInfo, true)
+      // Always set the track ID when user clicks play (intentional action)
       audioContext.setCurrentTrackId(trackId || null)
       audioContext.setPlayerToggleCallback(togglePlayPause, restartTrack, seekToTime)
       audioContext.setTrackControls(hasNextTrack, hasPrevTrack, onNextTrack, onPrevTrack)
       
-      // Then start playing
-      audio.play().then(() => {
-        console.log('🔄 Audio.play() succeeded')
-        setIsPlaying(true)
-      }).catch(error => {
-        console.log("🔄 Play prevented:", error)
+      // Then start playing via persistent player
+      persistentAudioPlayer.play().catch(error => {
+        console.log("🔄 Persistent play prevented:", error)
       })
     }
   }
 
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const audio = audioRef.current
     const progressBar = progressRef.current
-    if (!audio || !progressBar || !duration) return
+    if (!progressBar) return
+
+    // If this player is not active, switch to this track instead of seeking
+    if (!isActive) {
+      console.log('🎯 Switching to inactive player:', playerIdRef.current)
+      togglePlayPause() // This will set this player as active and start playing
+      return
+    }
+
+    if (!displayDuration) return
 
     const rect = progressBar.getBoundingClientRect()
     const clickX = e.clientX - rect.left
     const percentage = clickX / rect.width
-    const newTime = percentage * duration
+    const newTime = percentage * displayDuration
     
-    console.log('🎯 AudioPlayer progress bar clicked - seeking to:', newTime, 'isPlaying:', isPlaying, 'audio.paused:', audio.paused)
+    console.log('🎯 AudioPlayer progress bar clicked - seeking to:', newTime, 'displayDuration:', displayDuration)
     
     // Use the same protected seeking logic as the now playing bar
     seekToTime(newTime)
@@ -320,20 +260,28 @@ export default function AudioPlayer({
     // Only handle touchend to avoid multiple calls during drag
     if (e.type !== 'touchend') return
     
-    const audio = audioRef.current
     const progressBar = progressRef.current
-    if (!audio || !progressBar || !duration) return
+    if (!progressBar) return
 
     // Prevent scrolling and other touch behaviors
     e.preventDefault()
+    
+    // If this player is not active, switch to this track instead of seeking
+    if (!isActive) {
+      console.log('📱 Switching to inactive player via touch:', playerIdRef.current)
+      togglePlayPause() // This will set this player as active and start playing
+      return
+    }
+
+    if (!displayDuration) return
     
     const rect = progressBar.getBoundingClientRect()
     const touch = e.changedTouches[0] // Use changedTouches for touchend
     const touchX = touch.clientX - rect.left
     const percentage = Math.max(0, Math.min(1, touchX / rect.width)) // Clamp between 0 and 1
-    const newTime = percentage * duration
+    const newTime = percentage * displayDuration
     
-    console.log('📱 AudioPlayer progress bar touched - seeking to:', newTime, 'isPlaying:', isPlaying, 'audio.paused:', audio.paused)
+    console.log('📱 AudioPlayer progress bar touched - seeking to:', newTime, 'displayDuration:', displayDuration)
     
     // Add a small delay to ensure touch events are fully processed
     setTimeout(() => {
@@ -342,87 +290,43 @@ export default function AudioPlayer({
   }
 
   const handleNext = () => {
-    if (onNextTrack && hasNextTrack) {
+    console.log('🔄 Next button clicked - isActive:', isActive, 'hasNextTrack:', hasNextTrack, 'onNextTrack:', !!onNextTrack)
+    
+    if (isActive) {
+      // Use global next track if this is the active player
+      audioContext.nextTrack?.()
+    } else if (onNextTrack && hasNextTrack) {
+      // Fallback to local callback for inactive players
       setHasUserInteracted(true)
       onNextTrack()
     }
   }
 
   const handlePrev = () => {
-    if (onPrevTrack && hasPrevTrack) {
+    console.log('🔄 Prev button clicked - isActive:', isActive, 'hasPrevTrack:', hasPrevTrack, 'onPrevTrack:', !!onPrevTrack)
+    
+    if (isActive) {
+      // Use global prev track if this is the active player
+      audioContext.prevTrack?.()
+    } else if (onPrevTrack && hasPrevTrack) {
+      // Fallback to local callback for inactive players
       setHasUserInteracted(true)
       onPrevTrack()
     }
   }
 
   const restartTrack = () => {
-    const audio = audioRef.current
-    if (audio) {
-      audio.currentTime = 0
-      setHasUserInteracted(true)
-    }
+    console.log('🔄 Restarting track via persistent player')
+    persistentAudioPlayer.setCurrentTime(0)
+    setHasUserInteracted(true)
   }
 
   const seekToTime = (time: number) => {
-    const audio = audioRef.current
-    if (audio) {
-      // Check the actual audio element state, not React state
-      const wasActuallyPlaying = !audio.paused && !audio.ended
-      console.log('🎯 seekToTime - React isPlaying:', isPlaying, 'audio.paused:', audio.paused, 'wasActuallyPlaying:', wasActuallyPlaying, 'seeking to:', time)
-      
-      // Set seeking flag FIRST to prevent any auto-play
-      isSeekingRef.current = true
-      setIsSeeking(true)
-      
-      // Store original event handlers to block play events during seeking
-      const originalPlay = audio.play
-      const playEventBlocked = () => {
-        console.log('🚫 Blocked play event during seek')
-        return Promise.resolve()
-      }
-      
-      // Block play method immediately
-      audio.play = playEventBlocked
-      
-      if (!wasActuallyPlaying) {
-        console.log('🎯 Seeking while paused - blocking play for longer')
-        
-        // Set the current time
-        audio.currentTime = time
-        
-        // Keep blocking for longer when audio was paused
-        setTimeout(() => {
-          audio.play = originalPlay
-          isSeekingRef.current = false
-          setIsSeeking(false)
-          
-          // Force pause state to be maintained
-          if (!wasActuallyPlaying) {
-            setIsPlaying(false)
-            if (audioContext.isActivePlayer(playerIdRef.current)) {
-              audioContext.setPlaying(false)
-            }
-          }
-          
-          console.log('✅ Restored play method after seek (was paused)')
-        }, 100) // Longer delay for paused state
-      } else {
-        console.log('🎯 Seeking while playing - shorter block')
-        
-        // Set the current time
-        audio.currentTime = time
-        
-        // Shorter delay when audio was playing
-        setTimeout(() => {
-          audio.play = originalPlay
-          isSeekingRef.current = false
-          setIsSeeking(false)
-          console.log('✅ Restored play method after seek (was playing)')
-        }, 50)
-      }
-      
-      setHasUserInteracted(true)
-    }
+    console.log('🎯 seekToTime via persistent player - seeking to:', time)
+    
+    // Use persistent player for seeking
+    persistentAudioPlayer.setCurrentTime(time)
+    setHasUserInteracted(true)
   }
 
   const formatTime = (time: number) => {
@@ -432,7 +336,10 @@ export default function AudioPlayer({
     return `${minutes}:${seconds.toString().padStart(2, '0')}`
   }
 
-  const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0
+  // Use global audio context progress when this is the active player
+  const displayCurrentTime = isActive ? audioContext.currentTime : 0
+  const displayDuration = isActive ? audioContext.duration : 0
+  const progressPercentage = displayDuration > 0 ? (displayCurrentTime / displayDuration) * 100 : 0
 
   return (
     <div className="subtle-dither" style={{ 
@@ -444,11 +351,6 @@ export default function AudioPlayer({
       boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
     }}>
 
-      {/* Hidden audio element */}
-      <audio ref={audioRef} preload="metadata">
-        <source src={src} />
-        Your browser does not support the audio element.
-      </audio>
 
       {/* Track Info */}
       <div style={{ 
@@ -503,20 +405,19 @@ export default function AudioPlayer({
         <button
           className="play-pause-btn elegant-dither"
           onClick={togglePlayPause}
-          disabled={isLoading}
           style={{
             padding: '6px 12px',
             fontSize: '14px',
-            backgroundColor: isLoading ? '#f0f0f0' : '#e8e8e8',
-            color: isLoading ? '#999' : '#000',
+            backgroundColor: '#e8e8e8',
+            color: '#000',
             border: '1px solid #bbb',
-            cursor: isLoading ? 'not-allowed' : 'pointer',
+            cursor: 'pointer',
             fontFamily: 'Courier New, monospace',
             minWidth: '60px',
             transition: 'all 0.1s ease'
           }}
         >
-          {isLoading ? '...' : isPlaying ? '||' : '>'}
+          {isActive && audioContext.isGloballyPlaying ? '||' : '>'}
         </button>
 
         {/* Next Button */}
@@ -546,7 +447,7 @@ export default function AudioPlayer({
           marginLeft: 'auto',
           fontFamily: 'Courier New, monospace'
         }}>
-          {formatTime(currentTime)} / {formatTime(duration)}
+          {formatTime(displayCurrentTime)} / {formatTime(displayDuration)}
         </div>
       </div>
 

@@ -5,6 +5,7 @@ import Header from "@/components/Header"
 import Footer from "@/components/Footer"
 import NowPlayingBar from "@/components/NowPlayingBar"
 import PWAInstallPrompt from "@/components/PWAInstallPrompt"
+import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration"
 import "./globals.css";
 import "../styles/dithered.css";
 
@@ -42,25 +43,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js')
-                    .then(function(registration) {
-                      console.log('SW registered: ', registration);
-                    })
-                    .catch(function(registrationError) {
-                      console.log('SW registration failed: ', registrationError);
-                    });
-                });
-              }
-            `
-          }}
-        />
-      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased fine-grain`}
       >
@@ -72,6 +54,7 @@ export default function RootLayout({
           </main>
           <NowPlayingBar />
           <PWAInstallPrompt />
+          <ServiceWorkerRegistration />
         </Providers>
       </body>
     </html>
