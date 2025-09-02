@@ -16,7 +16,7 @@ class PersistentAudioPlayer {
     if (this.isInitialized || typeof window === 'undefined') return
 
     this.audio = new Audio()
-    this.audio.preload = 'metadata'
+    this.audio.preload = 'none' // Only load when explicitly requested
     
     // Set up event listeners
     this.audio.addEventListener('play', () => this.listeners.onPlay?.())
@@ -35,8 +35,17 @@ class PersistentAudioPlayer {
 
   setSource(src: string) {
     if (!this.audio) return
-    if (this.audio.src === src) return // Don't reload same source
     
+    // Normalize URLs for comparison (remove trailing slashes, etc.)
+    const normalizedCurrentSrc = this.audio.src ? new URL(this.audio.src).href : ''
+    const normalizedNewSrc = new URL(src, window.location.origin).href
+    
+    if (normalizedCurrentSrc === normalizedNewSrc) {
+      console.log('🎮 PersistentAudioPlayer: Skipping setSource - same URL:', src)
+      return // Don't reload same source
+    }
+    
+    console.log('🎮 PersistentAudioPlayer: Setting new source:', src, 'was:', this.audio.src)
     this.audio.src = src
     this.audio.load()
   }

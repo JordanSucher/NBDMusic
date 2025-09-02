@@ -103,8 +103,8 @@ export default function AudioPlayer({
     }
     
     if (currentActiveTrack && currentActiveTrack.src === src) {
-      // Only take over if we're not already the active player
-      if (!audioContext.isActivePlayer(playerIdRef.current)) {
+      // Only take over if we're not already the active player AND the playerId is different
+      if (!audioContext.isActivePlayer(playerIdRef.current) && audioContext.activePlayerId !== playerIdRef.current) {
         console.log('🎮 Registering matching track as active player:', playerIdRef.current, src)
         // Update the active player ID to this component since it's the same track
         const trackInfo = {
