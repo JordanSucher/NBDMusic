@@ -9,6 +9,18 @@ export default function NowPlayingBar() {
   const [showQueue, setShowQueue] = useState(false)
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
   const [dropTarget, setDropTarget] = useState<{ index: number, position: 'before' | 'after' } | null>(null)
+
+  // Keyboard shortcut to close queue modal
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (showQueue && e.key === 'Escape') {
+        setShowQueue(false)
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyPress)
+    return () => document.removeEventListener('keydown', handleKeyPress)
+  }, [showQueue])
   
   // Use queue-based audio for everything
   const activeTrack = queueAudio.currentTrack ? {

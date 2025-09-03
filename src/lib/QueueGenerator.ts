@@ -2,6 +2,44 @@
 
 import { PlaybackQueue, QueueTrack, QueueGenerator } from '@/types/queue'
 
+interface ApiTrack {
+  id: string
+  title: string
+  trackNumber: number
+  fileUrl: string
+  duration: number | null
+  _count: {
+    listens: number
+  }
+}
+
+interface ApiRelease {
+  id: string
+  title: string
+  user: {
+    username: string
+  }
+  tracks: ApiTrack[]
+}
+
+interface ApiTrackWithRelease {
+  id: string
+  title: string
+  trackNumber: number
+  fileUrl: string
+  duration: number | null
+  _count: {
+    listens: number
+  }
+  release: {
+    id: string
+    title: string
+    user: {
+      username: string
+    }
+  }
+}
+
 class QueueGeneratorImpl implements QueueGenerator {
   
   async generateFromRelease(releaseId: string): Promise<PlaybackQueue> {
@@ -10,11 +48,11 @@ class QueueGeneratorImpl implements QueueGenerator {
       if (!response.ok) throw new Error('Failed to fetch release')
       
       const data = await response.json()
-      const release = data.release
+      const release: ApiRelease = data.release
       
       const tracks: QueueTrack[] = release.tracks
-        .sort((a: any, b: any) => a.trackNumber - b.trackNumber)
-        .map((track: any) => ({
+        .sort((a: ApiTrack, b: ApiTrack) => a.trackNumber - b.trackNumber)
+        .map((track: ApiTrack) => ({
           id: track.id,
           title: track.title,
           artist: release.user.username,
@@ -53,9 +91,9 @@ class QueueGeneratorImpl implements QueueGenerator {
       if (!response.ok) throw new Error('Failed to fetch all tracks')
       
       const data = await response.json()
-      const allTracks = data.tracks
+      const allTracks: ApiTrackWithRelease[] = data.tracks
       
-      const tracks: QueueTrack[] = allTracks.map((track: any) => ({
+      const tracks: QueueTrack[] = allTracks.map((track: ApiTrackWithRelease) => ({
         id: track.id,
         title: track.title,
         artist: track.release.user.username,
