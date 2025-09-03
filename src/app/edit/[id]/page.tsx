@@ -178,12 +178,21 @@ export default function EditReleasePage() {
     const files = Array.from(e.target.files || [])
     if (files.length === 0) return
     
-    const maxTrackNumber = tracks.length > 0 ? Math.max(...tracks.map(t => t.trackNumber)) : 0
+    // Find the next available track numbers, filling gaps first
+    const existingTrackNumbers = tracks.filter(t => !t.toDelete).map(t => t.trackNumber).sort((a, b) => a - b)
+    const getNextTrackNumber = (startIndex: number) => {
+      let trackNumber = startIndex + 1
+      while (existingTrackNumbers.includes(trackNumber)) {
+        trackNumber++
+      }
+      existingTrackNumbers.push(trackNumber) // Reserve this number for subsequent files
+      return trackNumber
+    }
     
     const newTracks: TrackUpdate[] = files.map((file, index) => ({
       file,
       title: cleanFileName(file.name),
-      trackNumber: maxTrackNumber + index + 1,
+      trackNumber: getNextTrackNumber(index),
       lyrics: "",
       isNew: true,
       toDelete: false
