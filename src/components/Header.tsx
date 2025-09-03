@@ -3,9 +3,11 @@
 import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
 import { useState, useEffect, useRef } from "react"
+import { useQueueAudioContext } from "@/contexts/QueueAudioContext"
 
 export default function Header() {
   const { data: session } = useSession()
+  const queueAudio = useQueueAudioContext()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isHeaderVisible, setIsHeaderVisible] = useState(true)
   const [isHydrated, setIsHydrated] = useState(false)
@@ -131,6 +133,32 @@ export default function Header() {
         >
           <Link href="/browse">Browse</Link>
           
+          {/* Shuffle All Link */}
+          <span
+            onClick={() => queueAudio.playShuffleAll()}
+            style={{
+              color: '#0000ff',
+              textDecoration: 'underline',
+              fontSize: '14px',
+              fontFamily: 'Courier New, monospace',
+              cursor: 'pointer',
+              display: 'inline',
+              marginRight: '20px',
+              padding: 0
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'black'
+              e.currentTarget.style.backgroundColor = '#ffff00'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = '#0000ff'
+              e.currentTarget.style.backgroundColor = 'transparent'
+            }}
+            title="Shuffle all songs"
+          >
+            🎲 Shuffle
+          </span>
+          
           {session?.user ? (
             <>
               <Link href="/upload">Upload</Link>
@@ -193,6 +221,27 @@ export default function Header() {
             >
               Browse
             </Link>
+            
+            {/* Shuffle All Button - Mobile */}
+            <button
+              onClick={() => {
+                queueAudio.playShuffleAll();
+                closeMobileMenu();
+              }}
+              style={{
+                padding: '8px 12px',
+                border: '1px solid #000',
+                backgroundColor: '#fff',
+                color: '#000',
+                textAlign: 'center',
+                cursor: 'pointer',
+                fontFamily: 'Courier New, monospace',
+                fontSize: '14px'
+              }}
+              title="Shuffle all songs"
+            >
+              🎲 Shuffle All Songs
+            </button>
             
             {session?.user ? (
               <>

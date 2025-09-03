@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import ReleaseCard from "@/components/ReleaseCard"
 import ArtistCard from "@/components/ArtistCard"
+import { useQueueAudioContext } from "@/contexts/QueueAudioContext"
 
 interface Track {
   id: string
@@ -71,6 +72,7 @@ function BrowseContent() {
   const { data: session } = useSession()
   const searchParams = useSearchParams()
   const router = useRouter()
+  const queueAudio = useQueueAudioContext()
   const [releases, setReleases] = useState<Release[]>([])
   const [artists, setArtists] = useState<Artist[]>([])
   const [viewMode, setViewMode] = useState<'releases' | 'artists'>('releases')
@@ -313,6 +315,7 @@ function BrowseContent() {
   return (
     <div className="container">
       <h1>Browse Music</h1>
+      
 
       {/* Search and Filter */}
       <div className="mb-20">

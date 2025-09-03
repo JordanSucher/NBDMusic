@@ -6,7 +6,6 @@ import { useParams } from "next/navigation"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
 import ReleaseCard from "@/components/ReleaseCard"
-import { useAudioContext } from "@/contexts/AudioContext"
 
 // Using the same Release interface as ReleaseCard expects
 interface Release {
@@ -45,7 +44,6 @@ export default function ReleasePage() {
   const { data: session } = useSession()
   const params = useParams()
   const releaseId = params.id as string
-  const audioContext = useAudioContext()
   
   const [release, setRelease] = useState<Release | null>(null)
   const [loading, setLoading] = useState(true)

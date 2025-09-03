@@ -2,14 +2,14 @@
 'use client';
 
 import { SessionProvider } from "next-auth/react";
-import { AudioProvider } from "@/contexts/AudioContext";
+import { QueueAudioProvider } from "@/contexts/QueueAudioContext";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
-      <AudioProvider>
+      <QueueAudioProvider>
         {children}
-      </AudioProvider>
+      </QueueAudioProvider>
     </SessionProvider>
   );
 }
