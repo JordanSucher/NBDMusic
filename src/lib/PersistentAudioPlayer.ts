@@ -30,6 +30,35 @@ class PersistentAudioPlayer {
       }
     })
 
+    // Mobile-specific handling for navigation interruptions
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    
+    if (isMobile) {
+      // Store playback state before potential interruption
+      let wasPlayingBeforeHidden = false
+      
+      const handleVisibilityChange = () => {
+        if (this.audio) {
+          if (document.visibilityState === 'hidden') {
+            wasPlayingBeforeHidden = !this.audio.paused
+            console.log('🎮 Mobile: Page hidden, was playing:', wasPlayingBeforeHidden)
+          } else if (document.visibilityState === 'visible' && wasPlayingBeforeHidden) {
+            console.log('🎮 Mobile: Page visible, attempting to resume playback')
+            // Small delay to ensure page is fully loaded
+            setTimeout(() => {
+              if (this.audio && this.audio.paused && wasPlayingBeforeHidden) {
+                this.play().catch(error => {
+                  console.log('🎮 Mobile: Could not resume playback after visibility change:', error)
+                })
+              }
+            }, 100)
+          }
+        }
+      }
+      
+      document.addEventListener('visibilitychange', handleVisibilityChange)
+    }
+
     this.isInitialized = true
   }
 
