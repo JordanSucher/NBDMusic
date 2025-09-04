@@ -636,7 +636,10 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
                                 artist: release.user.username,
                                 fileUrl: track.fileUrl,
                                 trackNumber: track.trackNumber,
-                                releaseId: release.id
+                                releaseId: release.id,
+                                duration: track.duration,
+                                releaseTitle: release.title,
+                                listenCount: track._count?.listens || 0
                               }
                               queueAudio.addTrackToEnd(queueTrack)
                               setOpenMenuId(null)
