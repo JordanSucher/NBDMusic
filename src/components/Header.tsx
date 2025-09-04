@@ -103,8 +103,34 @@ export default function Header() {
           </span>
         </div>
 
-        {/* Mobile Menu Button */}
-        <button
+        {/* Mobile Shuffle and Menu Buttons */}
+        <div className="mobile-controls" style={{ display: 'none', alignItems: 'center', gap: '20px' }}>
+          <span
+            onClick={() => queueAudio.playShuffleAll()}
+            style={{
+              color: '#0000ff',
+              textDecoration: 'none',
+              fontSize: '30px',
+              fontFamily: 'Courier New, monospace',
+              cursor: 'pointer',
+              display: 'inline',
+              padding: 0,
+              transform: 'translateY(3px)'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'black'
+              e.currentTarget.style.backgroundColor = '#ffff00'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = '#0000ff'
+              e.currentTarget.style.backgroundColor = 'transparent'
+            }}
+            title="Shuffle all songs"
+          >
+            🎲
+          </span>
+          
+          <button
           onClick={toggleMobileMenu}
           style={{
             display: 'none',
@@ -120,6 +146,7 @@ export default function Header() {
         >
           {isMobileMenuOpen ? '✕' : '☰'}
         </button>
+        </div>
 
         {/* Desktop Navigation */}
         <nav 
@@ -131,20 +158,19 @@ export default function Header() {
           }}
           className="desktop-nav"
         >
-          <Link href="/browse">Browse</Link>
-          
           {/* Shuffle All Link */}
           <span
             onClick={() => queueAudio.playShuffleAll()}
             style={{
               color: '#0000ff',
-              textDecoration: 'underline',
-              fontSize: '14px',
+              textDecoration: 'none',
+              fontSize: '26px',
               fontFamily: 'Courier New, monospace',
               cursor: 'pointer',
               display: 'inline',
               marginRight: '20px',
-              padding: 0
+              padding: 0,
+              transform: 'translateY(3px)'
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.color = 'black'
@@ -156,8 +182,10 @@ export default function Header() {
             }}
             title="Shuffle all songs"
           >
-            🎲 Shuffle
+            🎲
           </span>
+          
+          <Link href="/browse">Browse</Link>
           
           {session?.user ? (
             <>
@@ -222,26 +250,6 @@ export default function Header() {
               Browse
             </Link>
             
-            {/* Shuffle All Button - Mobile */}
-            <button
-              onClick={() => {
-                queueAudio.playShuffleAll();
-                closeMobileMenu();
-              }}
-              style={{
-                padding: '8px 12px',
-                border: '1px solid #000',
-                backgroundColor: '#fff',
-                color: '#000',
-                textAlign: 'center',
-                cursor: 'pointer',
-                fontFamily: 'Courier New, monospace',
-                fontSize: '14px'
-              }}
-              title="Shuffle all songs"
-            >
-              🎲 Shuffle All Songs
-            </button>
             
             {session?.user ? (
               <>
@@ -329,6 +337,10 @@ export default function Header() {
 
       <style jsx>{`
         @media (max-width: 768px) {
+          .mobile-controls {
+            display: flex !important;
+          }
+          
           .mobile-menu-btn {
             display: block !important;
           }
@@ -343,6 +355,10 @@ export default function Header() {
         }
         
         @media (min-width: 769px) {
+          .mobile-controls {
+            display: none !important;
+          }
+          
           .mobile-menu-btn {
             display: none !important;
           }

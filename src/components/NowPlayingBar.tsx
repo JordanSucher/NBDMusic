@@ -52,18 +52,64 @@ export default function NowPlayingBar() {
   // Keyboard controls
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      // Only trigger if no input/textarea is focused and we have an active track
-      if (activeTrack && 
-          e.code === 'Space' && 
-          !['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) {
-        e.preventDefault()
-        togglePlayPause()
+      // Don't trigger if user is typing in an input field
+      const isInputFocused = ['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)
+      
+      if (!activeTrack || isInputFocused) return
+
+      switch (e.code) {
+        case 'Space':
+          e.preventDefault()
+          togglePlayPause()
+          break
+        case 'ArrowLeft':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault()
+            prevTrack()
+          }
+          break
+        case 'ArrowRight':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault()
+            nextTrack()
+          }
+          break
+        // Additional shortcuts
+        case 'KeyJ':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault()
+            prevTrack()
+          }
+          break
+        case 'KeyK':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault()
+            nextTrack()
+          }
+          break
+        // Media keys (these might not work on all systems)
+        case 'MediaPlayPause':
+          e.preventDefault()
+          togglePlayPause()
+          break
+        case 'MediaNextTrack':
+          e.preventDefault()
+          nextTrack()
+          break
+        case 'MediaPreviousTrack':
+          e.preventDefault()
+          prevTrack()
+          break
+        case 'MediaStop':
+          e.preventDefault()
+          queueAudio.clearQueue()
+          break
       }
     }
 
     document.addEventListener('keydown', handleKeyPress)
     return () => document.removeEventListener('keydown', handleKeyPress)
-  }, [activeTrack, togglePlayPause])
+  }, [activeTrack, togglePlayPause, nextTrack, prevTrack, queueAudio])
 
   // Don't render if no track is loaded
   if (!activeTrack) {
@@ -195,11 +241,18 @@ export default function NowPlayingBar() {
             {queueAudio.currentQueue?.originalSource?.type === 'shuffle_all' && (
               <span
                 style={{
-                  fontSize: '12px'
+                  fontSize: '10px',
+                  padding: '2px 6px',
+                  backgroundColor: '#e6f3ff',
+                  border: '1px solid #b3d9ff',
+                  borderRadius: '3px',
+                  color: '#0066cc',
+                  fontWeight: 'bold',
+                  textTransform: 'uppercase'
                 }}
                 title="Shuffle All mode"
               >
-                🎲
+                shuffle
               </span>
             )}
             
@@ -222,9 +275,9 @@ export default function NowPlayingBar() {
                   e.currentTarget.style.color = '#0000ff'
                   e.currentTarget.style.backgroundColor = 'transparent'
                 }}
-                title={`View queue (${queueAudio.currentQueue.tracks.length} tracks)`}
+                title={`View queue (${queueAudio.currentQueue.tracks.length - queueAudio.currentQueue.currentIndex - 1} remaining)`}
               >
-                Queue ({queueAudio.currentQueue.tracks.length})
+                Queue ({queueAudio.currentQueue.tracks.length - queueAudio.currentQueue.currentIndex - 1})
               </span>
             )}
           </div>
@@ -399,7 +452,7 @@ export default function NowPlayingBar() {
                 fontWeight: 'bold',
                 lineHeight: '1.2'
               }}>
-                Current Queue ({queueAudio.currentQueue.tracks.length} tracks)
+                Queue ({queueAudio.currentQueue.tracks.length - queueAudio.currentQueue.currentIndex - 1} remaining)
               </h3>
               <button
                 onClick={() => setShowQueue(false)}
@@ -431,7 +484,7 @@ export default function NowPlayingBar() {
                 color: '#666'
               }}>
                 {queueAudio.currentQueue.originalSource.type === 'shuffle_all' && (
-                  <span>🎲 Shuffled from all tracks</span>
+                  <span>Shuffled from all tracks</span>
                 )}
                 {queueAudio.currentQueue.originalSource.type === 'release' && (
                   <span>🎵 Playing from release</span>
@@ -447,6 +500,7 @@ export default function NowPlayingBar() {
             }}>
               {queueAudio.currentQueue.tracks.map((track, index) => {
                 const isCurrentTrack = index === queueAudio.currentQueue?.currentIndex
+                const isAlreadyPlayed = index < (queueAudio.currentQueue?.currentIndex || 0)
                 const canRemove = queueAudio.currentQueue!.tracks.length > 1
                 const isDragging = draggedIndex === index
                 const showDropBefore = dropTarget?.index === index && dropTarget?.position === 'before'
@@ -544,13 +598,14 @@ export default function NowPlayingBar() {
                         borderBottom: '1px solid #eee',
                         backgroundColor: 
                           isDragging ? '#f0f0f0' : 
-                          isCurrentTrack ? '#e6f3ff' : 'transparent',
+                          isCurrentTrack ? '#e6f3ff' : 
+                          isAlreadyPlayed ? '#f8f8f8' : 'transparent',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '6px',
                         fontSize: '11px',
                         cursor: isDragging ? 'grabbing' : 'grab',
-                        opacity: isDragging ? 0.5 : 1,
+                        opacity: isDragging ? 0.5 : (isAlreadyPlayed ? 0.6 : 1),
                         transition: 'background-color 0.2s ease, opacity 0.2s ease'
                       }}
                     >
@@ -590,17 +645,20 @@ export default function NowPlayingBar() {
                     >
                       {/* Current track indicator / spacer */}
                       <span style={{
-                        color: isCurrentTrack ? '#0066cc' : 'transparent',
+                        color: isCurrentTrack ? '#0066cc' : (isAlreadyPlayed ? '#999' : 'transparent'),
                         fontSize: '14px',
                         minWidth: '20px'
                       }}>
-                        {isCurrentTrack ? (queueAudio.isGloballyPlaying ? '▶' : '⏸') : '•'}
+                        {isCurrentTrack 
+                          ? (queueAudio.isGloballyPlaying ? '▶' : '⏸') 
+                          : (isAlreadyPlayed ? '✓' : '•')
+                        }
                       </span>
 
                       {/* Track title */}
                       <span style={{
                         fontWeight: isCurrentTrack ? 'bold' : 'normal',
-                        color: isCurrentTrack ? '#0066cc' : '#000',
+                        color: isCurrentTrack ? '#0066cc' : (isAlreadyPlayed ? '#999' : '#000'),
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
@@ -613,7 +671,7 @@ export default function NowPlayingBar() {
 
                       {/* Artist */}
                       <span style={{
-                        color: '#666',
+                        color: isAlreadyPlayed ? '#aaa' : '#666',
                         fontSize: '11px',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',

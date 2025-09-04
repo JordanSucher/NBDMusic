@@ -34,6 +34,9 @@ export function QueueAudioProvider({ children }: { children: ReactNode }) {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   
+  // Use ref to avoid stale closure issues with event handlers
+  const currentQueueRef = useRef<PlaybackQueue | null>(null);
+  
   const pathname = usePathname();
   
   // Store callbacks for player controls
@@ -65,8 +68,13 @@ export function QueueAudioProvider({ children }: { children: ReactNode }) {
       },
       onEnded: () => {
         console.log('⏹️ Queue: track ended, trying next')
-        setIsGloballyPlaying(false)
-        nextTrack()
+        const didAdvance = nextTrack()
+        console.log('⏹️ Queue: nextTrack returned:', didAdvance)
+        if (!didAdvance) {
+          // Only set playing to false if we couldn't advance to next track
+          console.log('⏹️ Queue: Could not advance, stopping playback')
+          setIsGloballyPlaying(false)
+        }
       },
       onLoadStart: () => {
         console.log('📀 Queue: loading...')
@@ -89,6 +97,7 @@ export function QueueAudioProvider({ children }: { children: ReactNode }) {
   const setCurrentQueueCallback = useCallback((queue: PlaybackQueue): void => {
     console.log('🎮 Setting new queue:', queue.originalSource?.name, 'tracks:', queue.tracks.length)
     setCurrentQueue(queue);
+    currentQueueRef.current = queue; // Keep ref in sync
     
     // Start playing the current track
     const track = queue.tracks[queue.currentIndex];
@@ -101,47 +110,66 @@ export function QueueAudioProvider({ children }: { children: ReactNode }) {
   const clearQueue = useCallback((): void => {
     console.log('🎮 Clearing queue')
     setCurrentQueue(null);
+    currentQueueRef.current = null; // Keep ref in sync
     persistentAudioPlayer.pause();
   }, []);
 
-  const goToTrack = useCallback((index: number): void => {
-    if (!currentQueue || index < 0 || index >= currentQueue.tracks.length) return;
+  const goToTrack = useCallback((index: number, shouldAutoPlay?: boolean): void => {
+    const queue = currentQueueRef.current; // Use ref to avoid stale closure
+    if (!queue || index < 0 || index >= queue.tracks.length) {
+      console.log('🎮 goToTrack: Invalid queue or index', { hasQueue: !!queue, index, length: queue?.tracks.length })
+      return;
+    }
     
-    const wasPlaying = isGloballyPlaying;
-    const newQueue = { ...currentQueue, currentIndex: index };
+    const wasPlaying = shouldAutoPlay !== undefined ? shouldAutoPlay : isGloballyPlaying;
+    const newQueue = { ...queue, currentIndex: index };
     const track = newQueue.tracks[index];
     
-    console.log('🎮 Going to track:', index, track.title)
+    console.log('🎮 Going to track:', index, track.title, 'wasPlaying:', wasPlaying, 'shouldAutoPlay:', shouldAutoPlay)
     setCurrentQueue(newQueue);
+    currentQueueRef.current = newQueue; // Keep ref in sync
     persistentAudioPlayer.setSource(track.fileUrl);
     
     if (wasPlaying) {
+      console.log('🎮 Attempting to auto-play next track')
       persistentAudioPlayer.play().catch(error => {
         console.log('🎮 Auto-play after track change failed:', error)
       });
+    } else {
+      console.log('🎮 Not auto-playing - wasPlaying:', wasPlaying)
     }
-  }, [currentQueue, isGloballyPlaying]);
+  }, [isGloballyPlaying]);
 
   const nextTrack = useCallback((): boolean => {
-    if (!currentQueue) return false;
-    
-    let nextIndex = currentQueue.currentIndex + 1;
-    
-    // Handle repeat modes
-    if (currentQueue.repeatMode === 'track') {
-      nextIndex = currentQueue.currentIndex; // Stay on same track
-    } else if (nextIndex >= currentQueue.tracks.length) {
-      if (currentQueue.repeatMode === 'queue') {
-        nextIndex = 0; // Loop back to start
-      } else {
-        console.log('🎮 End of queue reached')
-        return false; // End of queue
-      }
+    const queue = currentQueueRef.current; // Use ref to avoid stale closure
+    if (!queue) {
+      console.log('🎮 nextTrack: No current queue')
+      return false;
     }
     
-    goToTrack(nextIndex);
+    console.log('🎮 nextTrack: Current index:', queue.currentIndex, 'of', queue.tracks.length, 'repeat:', queue.repeatMode)
+    
+    let nextIndex = queue.currentIndex + 1;
+    
+    // Handle repeat modes
+    if (queue.repeatMode === 'track') {
+      nextIndex = queue.currentIndex; // Stay on same track
+      console.log('🎮 nextTrack: Repeat track mode, staying at', nextIndex)
+    } else if (nextIndex >= queue.tracks.length) {
+      if (queue.repeatMode === 'queue') {
+        nextIndex = 0; // Loop back to start
+        console.log('🎮 nextTrack: End of queue, looping to start')
+      } else {
+        console.log('🎮 nextTrack: End of queue reached, no repeat')
+        return false; // End of queue
+      }
+    } else {
+      console.log('🎮 nextTrack: Advancing to index', nextIndex)
+    }
+    
+    goToTrack(nextIndex, true); // Force auto-play when advancing to next track
     return true;
-  }, [currentQueue, goToTrack]);
+  }, [goToTrack]);
 
   const prevTrack = useCallback((): boolean => {
     if (!currentQueue) return false;
@@ -163,7 +191,7 @@ export function QueueAudioProvider({ children }: { children: ReactNode }) {
       }
     }
     
-    goToTrack(prevIndex);
+    goToTrack(prevIndex, true); // Force auto-play when going to previous track
     return true;
   }, [currentQueue, currentTime, goToTrack]);
 
