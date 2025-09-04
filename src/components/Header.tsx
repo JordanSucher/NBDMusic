@@ -177,14 +177,10 @@ export default function Header() {
             onClick={() => queueAudio.playShuffleAll()}
             style={{
               color: '#0000ff',
-              textDecoration: 'none',
-              fontSize: '26px',
-              fontFamily: 'Courier New, monospace',
+              textDecoration: 'underline',
               cursor: 'pointer',
-              display: 'inline',
               marginRight: '20px',
-              padding: 0,
-              transform: 'translateY(3px)'
+              fontFamily: 'Courier New, monospace'
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.color = 'black'
@@ -196,7 +192,7 @@ export default function Header() {
             }}
             title="Shuffle all songs"
           >
-            🎲
+            shuffle
           </span>
           
           <Link href="/browse">Browse</Link>

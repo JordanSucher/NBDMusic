@@ -11,8 +11,11 @@ export default function CursorEyes({ size = 'normal', headerMode = false }: Curs
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
   const [isVisible, setIsVisible] = useState(true)
   const [isBlinking, setIsBlinking] = useState(false)
+  const [isHydrated, setIsHydrated] = useState(false)
 
   useEffect(() => {
+    setIsHydrated(true)
+    
     const handleMouseMove = (e: MouseEvent) => {
       setMousePos({ x: e.clientX, y: e.clientY })
     }
@@ -43,7 +46,7 @@ export default function CursorEyes({ size = 'normal', headerMode = false }: Curs
     return () => clearInterval(blinkInterval)
   }, [])
 
-  if (!isVisible) return null
+  if (!isVisible || !isHydrated) return null
 
   const eyeSize = size === 'small' ? 18 : 38
   const pupilSize = size === 'small' ? 5 : 11
@@ -54,9 +57,9 @@ export default function CursorEyes({ size = 'normal', headerMode = false }: Curs
   const Eye = ({ x, y }: { x: number, y: number }) => {
     // Calculate eye center based on positioning mode
     const eyeCenterX = headerMode 
-      ? (typeof window !== 'undefined' && window.innerWidth <= 800) 
+      ? (window.innerWidth <= 800) 
         ? 20 + x + eyeSize / 2 
-        : (typeof window !== 'undefined' ? (window.innerWidth - 800) / 2 : 0) + 20 + x + eyeSize / 2
+        : (window.innerWidth - 800) / 2 + 20 + x + eyeSize / 2
       : x + eyeSize / 2
 
     const eyeCenterY = headerMode 
