@@ -4,6 +4,7 @@ import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
 import { useState, useEffect, useRef } from "react"
 import { useQueueAudioContext } from "@/contexts/QueueAudioContext"
+import CursorEyes from "@/components/BouncingNBD"
 
 export default function Header() {
   const { data: session } = useSession()
@@ -81,9 +82,10 @@ export default function Header() {
         margin: '0 auto',
         padding: '0 20px'
       }}>
-        {/* Logo/Site Name */}
+        {/* Logo/Site Name with Eyes */}
         <div
-        className="flex flex-col">
+        className="flex flex-col"
+        style={{ position: 'relative' }}>
           <Link 
             href="/" 
             style={{ 
@@ -102,6 +104,7 @@ export default function Header() {
           className="text-xs">
             release the music!
           </span>
+          <CursorEyes size="small" headerMode={true} />
         </div>
 
         {/* Mobile Shuffle and Menu Buttons */}
