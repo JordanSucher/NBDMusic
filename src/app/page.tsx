@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
 import ReleaseCard from "@/components/ReleaseCard"
+import { useQueueAudioContext } from "@/contexts/QueueAudioContext"
 
 interface Track {
   id: string
@@ -41,6 +42,7 @@ interface Release {
 
 export default function HomePage() {
   const { data: session, status } = useSession()
+  const queueAudio = useQueueAudioContext()
   const [recentReleases, setRecentReleases] = useState<Release[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -85,6 +87,27 @@ export default function HomePage() {
                 <li><Link href="/upload">Upload a new release</Link></li>
                 <li><Link href="/browse">Discover new music</Link></li>
                 <li><Link href="/profile">Manage your releases</Link></li>
+                <li>
+                  <span
+                    onClick={() => queueAudio.playShuffleAll()}
+                    style={{
+                      color: '#0000ff',
+                      textDecoration: 'underline',
+                      cursor: 'pointer',
+                      fontFamily: 'Courier New, monospace'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = 'black'
+                      e.currentTarget.style.backgroundColor = '#ffff00'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = '#0000ff'
+                      e.currentTarget.style.backgroundColor = 'transparent'
+                    }}
+                  >
+                    Shuffle all songs
+                  </span>
+                </li>
               </ul>
             </div>
           </div>

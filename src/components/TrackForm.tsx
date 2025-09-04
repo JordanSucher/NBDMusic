@@ -55,6 +55,11 @@ export default function TrackForm({
             onClick={() => onMoveUp?.(index)}
             disabled={!canMoveUp || disabled}
             className="track-move-btn move-up"
+            style={{
+              fontSize: '11px',
+              padding: '2px 4px',
+              cursor: (!canMoveUp || disabled) ? 'not-allowed' : 'pointer'
+            }}
           >
             ↑
           </button>
@@ -63,6 +68,11 @@ export default function TrackForm({
             onClick={() => onMoveDown?.(index)}
             disabled={!canMoveDown || disabled}
             className="track-move-btn move-down"
+            style={{
+              fontSize: '11px',
+              padding: '2px 4px',
+              cursor: (!canMoveDown || disabled) ? 'not-allowed' : 'pointer'
+            }}
           >
             ↓
           </button>
@@ -111,9 +121,7 @@ export default function TrackForm({
             style={{ 
               fontSize: '11px', 
               padding: '2px 4px',
-              backgroundColor: '#ff6666',
-              color: 'white',
-              border: '1px solid #000',
+              color: disabled ? '#999' : '#cc0000',
               cursor: disabled ? 'not-allowed' : 'pointer'
             }}
           >
@@ -127,9 +135,7 @@ export default function TrackForm({
             style={{
               fontSize: '11px',
               padding: '2px 4px',
-              backgroundColor: track.toDelete ? '#44ff44' : '#ff6666',
-              color: 'white',
-              border: '1px solid #000',
+              color: disabled ? '#999' : (track.toDelete ? '#00aa00' : '#cc0000'),
               cursor: disabled ? 'not-allowed' : 'pointer'
             }}
           >

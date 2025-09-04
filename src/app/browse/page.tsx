@@ -330,9 +330,7 @@ function BrowseContent() {
               style={{
                 padding: '6px 12px',
                 fontSize: '12px',
-                backgroundColor: viewMode === 'releases' ? '#4444ff' : '#f0f0f0',
-                color: viewMode === 'releases' ? 'white' : '#333',
-                border: '1px solid #000',
+                color: viewMode === 'releases' ? '#0066cc' : '#333',
                 cursor: 'pointer',
                 fontFamily: 'Courier New, monospace',
                 fontWeight: viewMode === 'releases' ? 'bold' : 'normal'
@@ -345,9 +343,7 @@ function BrowseContent() {
               style={{
                 padding: '6px 12px',
                 fontSize: '12px',
-                backgroundColor: viewMode === 'artists' ? '#4444ff' : '#f0f0f0',
-                color: viewMode === 'artists' ? 'white' : '#333',
-                border: '1px solid #000',
+                color: viewMode === 'artists' ? '#0066cc' : '#333',
                 cursor: 'pointer',
                 fontFamily: 'Courier New, monospace',
                 fontWeight: viewMode === 'artists' ? 'bold' : 'normal'
@@ -368,9 +364,7 @@ function BrowseContent() {
                 style={{
                   padding: '4px 10px',
                   fontSize: '11px',
-                  backgroundColor: artistSortMode === 'latest' ? '#4444ff' : '#f0f0f0',
-                  color: artistSortMode === 'latest' ? 'white' : '#333',
-                  border: '1px solid #999',
+                  color: artistSortMode === 'latest' ? '#0066cc' : '#333',
                   cursor: 'pointer',
                   fontFamily: 'Courier New, monospace',
                   fontWeight: artistSortMode === 'latest' ? 'bold' : 'normal'
@@ -383,9 +377,7 @@ function BrowseContent() {
                 style={{
                   padding: '4px 10px',
                   fontSize: '11px',
-                  backgroundColor: artistSortMode === 'alphabetical' ? '#4444ff' : '#f0f0f0',
-                  color: artistSortMode === 'alphabetical' ? 'white' : '#333',
-                  border: '1px solid #999',
+                  color: artistSortMode === 'alphabetical' ? '#0066cc' : '#333',
                   cursor: 'pointer',
                   fontFamily: 'Courier New, monospace',
                   fontWeight: artistSortMode === 'alphabetical' ? 'bold' : 'normal'
@@ -597,7 +589,12 @@ function BrowseContent() {
             {" "}
             <button 
               onClick={clearAllFilters}
-              style={{ fontSize: '12px', padding: '2px 4px' }}
+              style={{ 
+                fontSize: '12px', 
+                padding: '2px 4px',
+                fontFamily: 'Courier New, monospace',
+                cursor: 'pointer'
+              }}
             >
               Clear all filters
             </button>
@@ -681,14 +678,12 @@ function BrowseContent() {
                 style={{
                   padding: '6px 12px',
                   fontSize: '12px',
-                  backgroundColor: pagination.hasPrevPage ? '#4444ff' : '#ccc',
-                  color: 'white',
-                  border: '1px solid #000',
+                  color: pagination.hasPrevPage ? '#0066cc' : '#999',
                   cursor: pagination.hasPrevPage ? 'pointer' : 'not-allowed',
                   fontFamily: 'Courier New, monospace'
                 }}
               >
-                ←
+                &lt;
               </button>
               
               {/* Page Numbers */}
@@ -699,9 +694,7 @@ function BrowseContent() {
                   style={{
                     padding: '6px 12px',
                     fontSize: '12px',
-                    backgroundColor: pageNum === currentPage ? '#ffff00' : '#f0f0f0',
-                    color: pageNum === currentPage ? '#000' : '#333',
-                    border: pageNum === currentPage ? '2px solid #000' : '1px solid #ccc',
+                    color: pageNum === currentPage ? '#0066cc' : '#333',
                     cursor: 'pointer',
                     fontFamily: 'Courier New, monospace',
                     fontWeight: pageNum === currentPage ? 'bold' : 'normal'
@@ -717,14 +710,12 @@ function BrowseContent() {
                 style={{
                   padding: '6px 12px',
                   fontSize: '12px',
-                  backgroundColor: pagination.hasNextPage ? '#4444ff' : '#ccc',
-                  color: 'white',
-                  border: '1px solid #000',
+                  color: pagination.hasNextPage ? '#0066cc' : '#999',
                   cursor: pagination.hasNextPage ? 'pointer' : 'not-allowed',
                   fontFamily: 'Courier New, monospace'
                 }}
               >
-                →
+                &gt;
               </button>
             </div>
           )}
@@ -755,14 +746,12 @@ function BrowseContent() {
                 style={{
                   padding: '6px 12px',
                   fontSize: '12px',
-                  backgroundColor: pagination.hasPrevPage ? '#4444ff' : '#ccc',
-                  color: 'white',
-                  border: '1px solid #000',
+                  color: pagination.hasPrevPage ? '#0066cc' : '#999',
                   cursor: pagination.hasPrevPage ? 'pointer' : 'not-allowed',
                   fontFamily: 'Courier New, monospace'
                 }}
               >
-                ←
+                &lt;
               </button>
               
               {/* Page Numbers */}
@@ -773,9 +762,7 @@ function BrowseContent() {
                   style={{
                     padding: '6px 12px',
                     fontSize: '12px',
-                    backgroundColor: pageNum === currentPage ? '#ffff00' : '#f0f0f0',
-                    color: pageNum === currentPage ? '#000' : '#333',
-                    border: pageNum === currentPage ? '2px solid #000' : '1px solid #ccc',
+                    color: pageNum === currentPage ? '#0066cc' : '#333',
                     cursor: 'pointer',
                     fontFamily: 'Courier New, monospace',
                     fontWeight: pageNum === currentPage ? 'bold' : 'normal'
@@ -791,14 +778,12 @@ function BrowseContent() {
                 style={{
                   padding: '6px 12px',
                   fontSize: '12px',
-                  backgroundColor: pagination.hasNextPage ? '#4444ff' : '#ccc',
-                  color: 'white',
-                  border: '1px solid #000',
+                  color: pagination.hasNextPage ? '#0066cc' : '#999',
                   cursor: pagination.hasNextPage ? 'pointer' : 'not-allowed',
                   fontFamily: 'Courier New, monospace'
                 }}
               >
-                →
+                &gt;
               </button>
             </div>
           )}

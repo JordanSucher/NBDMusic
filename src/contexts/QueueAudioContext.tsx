@@ -168,6 +168,12 @@ export function QueueAudioProvider({ children }: { children: ReactNode }) {
     }
     
     goToTrack(nextIndex, true); // Force auto-play when advancing to next track
+    
+    // Reset playback position when changing tracks (but not when repeating same track)
+    if (nextIndex !== queue.currentIndex) {
+      persistentAudioPlayer.setCurrentTime(0);
+    }
+    
     return true;
   }, [goToTrack]);
 
@@ -192,6 +198,10 @@ export function QueueAudioProvider({ children }: { children: ReactNode }) {
     }
     
     goToTrack(prevIndex, true); // Force auto-play when going to previous track
+    
+    // Reset playback position when changing tracks
+    persistentAudioPlayer.setCurrentTime(0);
+    
     return true;
   }, [currentQueue, currentTime, goToTrack]);
 
@@ -255,29 +265,39 @@ export function QueueAudioProvider({ children }: { children: ReactNode }) {
     if (!currentQueue) return;
     const newTracks = [...currentQueue.tracks];
     newTracks.splice(currentQueue.currentIndex + 1, 0, track);
-    setCurrentQueue({ ...currentQueue, tracks: newTracks });
+    const newQueue = { ...currentQueue, tracks: newTracks };
+    setCurrentQueue(newQueue);
+    currentQueueRef.current = newQueue; // Keep ref in sync
   }, [currentQueue]);
 
   const addTrackToEnd = useCallback((track: QueueTrack): void => {
     if (!currentQueue) return;
     const newTracks = [...currentQueue.tracks, track];
-    setCurrentQueue({ ...currentQueue, tracks: newTracks });
+    const newQueue = { ...currentQueue, tracks: newTracks };
+    setCurrentQueue(newQueue);
+    currentQueueRef.current = newQueue; // Keep ref in sync
   }, [currentQueue]);
 
   const removeTrack = useCallback((index: number): void => {
     if (!currentQueue || index < 0 || index >= currentQueue.tracks.length) return;
+    
+    // Prevent removing the currently playing track
+    if (index === currentQueue.currentIndex) {
+      console.log('🎮 Cannot remove currently playing track');
+      return;
+    }
+    
     const newTracks = currentQueue.tracks.filter((_, i) => i !== index);
     let newIndex = currentQueue.currentIndex;
     
     // Adjust current index if needed
     if (index < currentQueue.currentIndex) {
       newIndex--;
-    } else if (index === currentQueue.currentIndex && newTracks.length > 0) {
-      // If removing current track, stay at same index (will play next track)
-      newIndex = Math.min(newIndex, newTracks.length - 1);
     }
     
-    setCurrentQueue({ ...currentQueue, tracks: newTracks, currentIndex: newIndex });
+    const newQueue = { ...currentQueue, tracks: newTracks, currentIndex: newIndex };
+    setCurrentQueue(newQueue);
+    currentQueueRef.current = newQueue; // Keep ref in sync
   }, [currentQueue]);
 
   const moveTrack = useCallback((fromIndex: number, toIndex: number): void => {
@@ -298,7 +318,9 @@ export function QueueAudioProvider({ children }: { children: ReactNode }) {
       newCurrentIndex++;
     }
     
-    setCurrentQueue({ ...currentQueue, tracks: newTracks, currentIndex: newCurrentIndex });
+    const newQueue = { ...currentQueue, tracks: newTracks, currentIndex: newCurrentIndex };
+    setCurrentQueue(newQueue);
+    currentQueueRef.current = newQueue; // Keep ref in sync
   }, [currentQueue]);
 
   const shuffle = useCallback((): void => {
@@ -314,23 +336,29 @@ export function QueueAudioProvider({ children }: { children: ReactNode }) {
     }
     
     const newTracks = [currentTrack, ...otherTracks];
-    setCurrentQueue({ 
+    const newQueue = { 
       ...currentQueue, 
       tracks: newTracks, 
       currentIndex: 0,
       shuffled: true 
-    });
+    };
+    setCurrentQueue(newQueue);
+    currentQueueRef.current = newQueue; // Keep ref in sync
   }, [currentQueue]);
 
   const unshuffle = useCallback((): void => {
     if (!currentQueue || !currentQueue.shuffled) return;
     // For now, just mark as unshuffled - could implement original order restoration
-    setCurrentQueue({ ...currentQueue, shuffled: false });
+    const newQueue = { ...currentQueue, shuffled: false };
+    setCurrentQueue(newQueue);
+    currentQueueRef.current = newQueue; // Keep ref in sync
   }, [currentQueue]);
 
   const setRepeatMode = useCallback((mode: 'none' | 'queue' | 'track'): void => {
     if (!currentQueue) return;
-    setCurrentQueue({ ...currentQueue, repeatMode: mode });
+    const newQueue = { ...currentQueue, repeatMode: mode };
+    setCurrentQueue(newQueue);
+    currentQueueRef.current = newQueue; // Keep ref in sync
   }, [currentQueue]);
 
   // Derived values for compatibility

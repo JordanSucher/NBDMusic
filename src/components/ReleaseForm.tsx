@@ -149,9 +149,7 @@ export default function ReleaseForm({
                   style={{
                     fontSize: '12px',
                     padding: '4px 8px',
-                    backgroundColor: '#ff4444',
-                    color: 'white',
-                    border: '1px solid #000',
+                    color: disabled ? '#999' : '#cc0000',
                     cursor: disabled ? 'not-allowed' : 'pointer'
                   }}
                 >
@@ -163,7 +161,7 @@ export default function ReleaseForm({
         )}
         
         <label htmlFor="artwork">Upload Artwork (optional):</label>
-        <div style={{ position: 'relative' }}>
+        <div style={{ position: 'relative', width: '200px', display: 'block' }}>
           <input
             type="file"
             id="artwork"
@@ -173,9 +171,48 @@ export default function ReleaseForm({
             style={{
               position: 'absolute',
               opacity: 0,
-              width: '100%',
+              width: '200px',
               height: '100%',
-              cursor: disabled ? 'not-allowed' : 'pointer'
+              zIndex: 2,
+              left: 0,
+              top: 0,
+              fontFamily: 'inherit'
+            }}
+            onMouseEnter={(e) => {
+              if (!disabled) {
+                e.currentTarget.style.setProperty('cursor', 'pointer', 'important');
+                const button = e.currentTarget.nextElementSibling as HTMLButtonElement;
+                if (button) {
+                  button.style.setProperty('background-color', '#bbb', 'important');
+                }
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!disabled) {
+                const button = e.currentTarget.nextElementSibling as HTMLButtonElement;
+                if (button) {
+                  button.style.setProperty('background-color', '#ddd', 'important');
+                  button.style.setProperty('border', '2px outset #ccc', 'important');
+                }
+              }
+            }}
+            onMouseDown={(e) => {
+              if (!disabled) {
+                const button = e.currentTarget.nextElementSibling as HTMLButtonElement;
+                if (button) {
+                  button.style.setProperty('border', '2px inset #ccc', 'important');
+                  button.style.setProperty('background-color', '#aaa', 'important');
+                }
+              }
+            }}
+            onMouseUp={(e) => {
+              if (!disabled) {
+                const button = e.currentTarget.nextElementSibling as HTMLButtonElement;
+                if (button) {
+                  button.style.setProperty('border', '2px outset #ccc', 'important');
+                  button.style.setProperty('background-color', '#bbb', 'important');
+                }
+              }
             }}
           />
           <button
@@ -183,15 +220,13 @@ export default function ReleaseForm({
             disabled={disabled}
             style={{
               padding: '8px 16px',
-              border: '2px outset #ddd',
               fontFamily: 'Courier New, monospace',
               fontSize: '14px',
-              backgroundColor: '#f5f5f5',
-              color: '#000',
-              cursor: disabled ? 'not-allowed' : 'pointer',
               opacity: disabled ? 0.5 : 1,
               width: '200px',
-              textAlign: 'left'
+              textAlign: 'left',
+              pointerEvents: 'none',
+              cursor: 'pointer'
             }}
           >
             Choose File...
@@ -222,9 +257,7 @@ export default function ReleaseForm({
                   width: '200px',
                   fontSize: '12px',
                   padding: '4px 8px',
-                  backgroundColor: '#ff4444',
-                  color: 'white',
-                  border: '1px solid #000',
+                  color: disabled ? '#999' : '#cc0000',
                   cursor: disabled ? 'not-allowed' : 'pointer'
                 }}
               >
@@ -242,7 +275,7 @@ export default function ReleaseForm({
         <div className="mb-20">
           <h2>{isEdit ? 'Add More Tracks' : 'Audio Files'}</h2>
           <label htmlFor="files">Select audio files:</label>
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: 'relative', width: '200px', display: 'block' }}>
             <input
               type="file"
               id="files"
@@ -253,9 +286,48 @@ export default function ReleaseForm({
               style={{
                 position: 'absolute',
                 opacity: 0,
-                width: '100%',
+                width: '200px',
                 height: '100%',
-                cursor: disabled ? 'not-allowed' : 'pointer'
+                zIndex: 2,
+                left: 0,
+                top: 0,
+                fontFamily: 'inherit'
+              }}
+              onMouseEnter={(e) => {
+                if (!disabled) {
+                  e.currentTarget.style.setProperty('cursor', 'pointer', 'important');
+                  const button = e.currentTarget.nextElementSibling as HTMLButtonElement;
+                  if (button) {
+                    button.style.setProperty('background-color', '#bbb', 'important');
+                  }
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!disabled) {
+                  const button = e.currentTarget.nextElementSibling as HTMLButtonElement;
+                  if (button) {
+                    button.style.setProperty('background-color', '#ddd', 'important');
+                    button.style.setProperty('border', '2px outset #ccc', 'important');
+                  }
+                }
+              }}
+              onMouseDown={(e) => {
+                if (!disabled) {
+                  const button = e.currentTarget.nextElementSibling as HTMLButtonElement;
+                  if (button) {
+                    button.style.setProperty('border', '2px inset #ccc', 'important');
+                    button.style.setProperty('background-color', '#aaa', 'important');
+                  }
+                }
+              }}
+              onMouseUp={(e) => {
+                if (!disabled) {
+                  const button = e.currentTarget.nextElementSibling as HTMLButtonElement;
+                  if (button) {
+                    button.style.setProperty('border', '2px outset #ccc', 'important');
+                    button.style.setProperty('background-color', '#bbb', 'important');
+                  }
+                }
               }}
             />
             <button
@@ -263,15 +335,13 @@ export default function ReleaseForm({
               disabled={disabled}
               style={{
                 padding: '8px 16px',
-                border: '2px outset #ddd',
                 fontFamily: 'Courier New, monospace',
                 fontSize: '14px',
-                backgroundColor: '#f5f5f5',
-                color: '#000',
-                cursor: disabled ? 'not-allowed' : 'pointer',
                 opacity: disabled ? 0.5 : 1,
                 width: '200px',
-                textAlign: 'left'
+                textAlign: 'left',
+                pointerEvents: 'none',
+                cursor: 'pointer'
               }}
             >
               Choose Files...

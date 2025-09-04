@@ -125,12 +125,24 @@ export default function Footer() {
       <div style={{
         maxWidth: '800px',
         margin: '0 auto',
-        padding: '0 20px',
-        textAlign: 'left',
-        fontSize: '14px',
-        color: '#666'
+        padding: '0 20px'
       }}>
-        <p>{currentPhrase}.</p>
+        {/* Horizontal line */}
+        <hr style={{
+          border: 'none',
+          height: '1px',
+          backgroundColor: '#e0e0e0',
+          margin: '0 0 15px 0'
+        }} />
+        
+        {/* NBD phrase */}
+        <div style={{
+          textAlign: 'left',
+          fontSize: '14px',
+          color: '#666'
+        }}>
+          <p>{currentPhrase}.</p>
+        </div>
       </div>
     </footer>
   )

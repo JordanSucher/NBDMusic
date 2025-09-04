@@ -276,11 +276,8 @@ export default function AudioPlayer({
             onClick={handlePrev}
             disabled={!hasPrevTrack}
             style={{
-              padding: '4px 6px',
-              fontSize: '10px',
-              backgroundColor: hasPrevTrack ? '#ddd' : '#f0f0f0',
-              color: hasPrevTrack ? '#000' : '#999',
-              border: '2px outset #ddd',
+              padding: '6px 8px',
+              fontSize: '14px',
               cursor: hasPrevTrack ? 'pointer' : 'not-allowed',
               fontFamily: 'Courier New, monospace'
             }}
@@ -297,13 +294,9 @@ export default function AudioPlayer({
           style={{
             padding: '6px 12px',
             fontSize: '14px',
-            backgroundColor: '#e8e8e8',
-            color: '#000',
-            border: '1px solid #bbb',
             cursor: 'pointer',
             fontFamily: 'Courier New, monospace',
-            minWidth: '60px',
-            transition: 'all 0.1s ease'
+            minWidth: '60px'
           }}
         >
           {isActive && queueAudio.isGloballyPlaying ? '||' : '>'}
@@ -315,11 +308,8 @@ export default function AudioPlayer({
             onClick={handleNext}
             disabled={!hasNextTrack}
             style={{
-              padding: '4px 6px',
-              fontSize: '10px',
-              backgroundColor: hasNextTrack ? '#ddd' : '#f0f0f0',
-              color: hasNextTrack ? '#000' : '#999',
-              border: '2px outset #ddd',
+              padding: '6px 8px',
+              fontSize: '14px',
               cursor: hasNextTrack ? 'pointer' : 'not-allowed',
               fontFamily: 'Courier New, monospace'
             }}

@@ -297,11 +297,10 @@ export default function PublicUserProfilePage() {
               <button
                 onClick={handleEditClick}
                 style={{
-                  padding: '5px 10px',
-                  border: '2px solid #000',
-                  backgroundColor: '#fff',
+                  padding: '6px 12px',
+                  fontSize: '14px',
                   cursor: 'pointer',
-                  fontSize: '14px'
+                  fontFamily: 'Courier New, monospace'
                 }}
               >
                 Edit Profile
@@ -394,12 +393,11 @@ export default function PublicUserProfilePage() {
                 onClick={handleSaveEdit}
                 disabled={saveLoading || !!urlError}
                 style={{
-                  padding: '8px 16px',
-                  border: '2px solid #000',
-                  backgroundColor: (saveLoading || urlError) ? '#ccc' : '#000',
-                  color: '#fff',
+                  padding: '6px 12px',
+                  fontSize: '14px',
+                  color: (saveLoading || urlError) ? '#999' : '#0066cc',
                   cursor: (saveLoading || urlError) ? 'not-allowed' : 'pointer',
-                  fontSize: '14px'
+                  fontFamily: 'Courier New, monospace'
                 }}
               >
                 {saveLoading ? 'Saving...' : 'Save Changes'}
@@ -408,11 +406,10 @@ export default function PublicUserProfilePage() {
                 onClick={handleCancelEdit}
                 disabled={saveLoading}
                 style={{
-                  padding: '8px 16px',
-                  border: '2px solid #000',
-                  backgroundColor: '#fff',
+                  padding: '6px 12px',
+                  fontSize: '14px',
                   cursor: saveLoading ? 'not-allowed' : 'pointer',
-                  fontSize: '14px'
+                  fontFamily: 'Courier New, monospace'
                 }}
               >
                 Cancel

@@ -332,11 +332,10 @@ export default function ProfilePage() {
             <button
               onClick={handleEditProfile}
               style={{
-                padding: '5px 10px',
-                border: '2px solid #000',
-                backgroundColor: '#fff',
+                padding: '6px 12px',
+                fontSize: '14px',
                 cursor: 'pointer',
-                fontSize: '14px'
+                fontFamily: 'Courier New, monospace'
               }}
             >
               Edit Profile
@@ -422,12 +421,11 @@ export default function ProfilePage() {
                 onClick={handleSaveProfile}
                 disabled={profileSaveLoading || !!profileUrlError}
                 style={{
-                  padding: '8px 16px',
-                  border: '2px solid #000',
-                  backgroundColor: (profileSaveLoading || profileUrlError) ? '#ccc' : '#000',
-                  color: '#fff',
+                  padding: '6px 12px',
+                  fontSize: '14px',
+                  color: (profileSaveLoading || profileUrlError) ? '#999' : '#0066cc',
                   cursor: (profileSaveLoading || profileUrlError) ? 'not-allowed' : 'pointer',
-                  fontSize: '14px'
+                  fontFamily: 'Courier New, monospace'
                 }}
               >
                 {profileSaveLoading ? 'Saving...' : 'Save Changes'}
@@ -436,11 +434,10 @@ export default function ProfilePage() {
                 onClick={handleCancelProfileEdit}
                 disabled={profileSaveLoading}
                 style={{
-                  padding: '8px 16px',
-                  border: '2px solid #000',
-                  backgroundColor: '#fff',
+                  padding: '6px 12px',
+                  fontSize: '14px',
                   cursor: profileSaveLoading ? 'not-allowed' : 'pointer',
-                  fontSize: '14px'
+                  fontFamily: 'Courier New, monospace'
                 }}
               >
                 Cancel
@@ -553,19 +550,6 @@ export default function ProfilePage() {
         )}
       </div>
 
-      {/* Quick Actions */}
-      {releases.length > 0 && (
-        <div className="mb-20">
-          <h3>Quick Actions</h3>
-          <ul>
-            <li><Link href="/upload">Upload another release</Link></li>
-            <li><Link href="/browse">See how your releases look to others</Link></li>
-            <li>Share your profile: <Link href={`/user/${encodeURIComponent(session.user.name || session.user.email || '')}`}>
-              /user/{session.user.name || session.user.email}
-            </Link></li>
-          </ul>
-        </div>
-      )}
     </div>
   )
 }

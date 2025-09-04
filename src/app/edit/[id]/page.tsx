@@ -427,11 +427,9 @@ export default function EditReleasePage() {
             type="submit"
             disabled={saving}
             style={{
-              backgroundColor: saving ? '#ccc' : '#4444ff',
-              color: 'white',
+              color: saving ? '#999' : '#0066cc',
               fontSize: '14px',
               padding: '8px 16px',
-              border: '2px outset #4444ff',
               cursor: saving ? 'not-allowed' : 'pointer',
               fontFamily: 'Courier New, monospace'
             }}
@@ -443,11 +441,8 @@ export default function EditReleasePage() {
             type="button"
             onClick={() => router.push(createReleaseUrl(releaseId, releaseTitle, artistName))}
             style={{
-              backgroundColor: '#ddd',
-              color: '#000',
               fontSize: '14px',
               padding: '8px 16px',
-              border: '2px outset #ddd',
               cursor: 'pointer',
               fontFamily: 'Courier New, monospace'
             }}
@@ -473,12 +468,10 @@ export default function EditReleasePage() {
               onClick={handleDelete}
               disabled={deleting}
               style={{
-                backgroundColor: '#ff4444',
-                color: 'white',
+                color: deleting ? '#999' : '#cc0000',
                 fontSize: '12px',
                 padding: '6px 12px',
                 width: '200px',
-                border: '1px solid #000',
                 cursor: deleting ? 'not-allowed' : 'pointer',
                 fontFamily: 'Courier New, monospace'
               }}
@@ -497,12 +490,10 @@ export default function EditReleasePage() {
                   onClick={handleDelete}
                   disabled={deleting}
                   style={{
-                    backgroundColor: '#ff0000',
-                    color: 'white',
+                    color: deleting ? '#999' : '#cc0000',
                     fontSize: '11px',
                     padding: '4px 8px',
                     width: '200px',
-                    border: '1px solid #000',
                     cursor: deleting ? 'not-allowed' : 'pointer',
                     fontFamily: 'Courier New, monospace'
                   }}
@@ -514,12 +505,9 @@ export default function EditReleasePage() {
                   onClick={cancelDelete}
                   disabled={deleting}
                   style={{
-                    backgroundColor: '#ddd',
-                    color: '#000',
                     fontSize: '11px',
                     padding: '4px 8px',
                     width: '200px',
-                    border: '1px solid #000',
                     cursor: deleting ? 'not-allowed' : 'pointer',
                     fontFamily: 'Courier New, monospace'
                   }}

@@ -133,15 +133,25 @@ export default function Header() {
           
           <button
           onClick={toggleMobileMenu}
+          onTouchEnd={(e) => e.currentTarget.blur()}
           style={{
             display: 'none',
             background: 'none',
-            border: '2px solid #000',
+            border: '1px solid #ccc',
             padding: '5px 8px',
             fontSize: '16px',
             fontFamily: 'Courier New, monospace',
             cursor: 'pointer',
-            backgroundColor: '#ddd'
+            backgroundColor: isMobileMenuOpen ? '#e0e0e0' : '#f5f5f5',
+            transition: 'background-color 0.2s ease',
+            width: '32px',
+            textAlign: 'center'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#e0e0e0'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = isMobileMenuOpen ? '#e0e0e0' : '#f5f5f5'
           }}
           className="mobile-menu-btn"
         >
@@ -201,7 +211,17 @@ export default function Header() {
                   textDecoration: 'underline',
                   fontSize: '14px',
                   fontFamily: 'Courier New, monospace',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  padding: '0',
+                  margin: '0'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = 'black';
+                  e.currentTarget.style.backgroundColor = '#ffff00';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = '#0000ff';
+                  e.currentTarget.style.backgroundColor = 'transparent';
                 }}
               >
                 Logout

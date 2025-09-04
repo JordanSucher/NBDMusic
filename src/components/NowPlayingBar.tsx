@@ -295,14 +295,14 @@ export default function NowPlayingBar() {
             onClick={prevTrack}
             disabled={!hasPrevTrack}
             style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '8px',
-              color: hasPrevTrack ? '#000' : '#ccc',
+              background: 'none !important',
+              border: 'none !important',
+              fontSize: '8px !important',
+              color: hasPrevTrack ? '#000 !important' : '#ccc !important',
               cursor: hasPrevTrack ? 'pointer' : 'not-allowed',
-              fontFamily: 'Courier New, monospace',
-              padding: '0',
-              margin: '0',
+              fontFamily: 'Courier New, monospace !important',
+              padding: '0 !important',
+              margin: '0 !important',
               lineHeight: '1',
               outline: 'none'
             }}
@@ -315,14 +315,14 @@ export default function NowPlayingBar() {
           <button
             onClick={togglePlayPause}
             style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '8px',
-              color: '#000',
+              background: 'none !important',
+              border: 'none !important',
+              fontSize: '8px !important',
+              color: '#000 !important',
               cursor: 'pointer',
-              fontFamily: 'Courier New, monospace',
-              padding: '0',
-              margin: '0 2px',
+              fontFamily: 'Courier New, monospace !important',
+              padding: '0 !important',
+              margin: '0 2px !important',
               lineHeight: '1',
               outline: 'none'
             }}
@@ -336,14 +336,14 @@ export default function NowPlayingBar() {
             onClick={nextTrack}
             disabled={!hasNextTrack}
             style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '8px',
-              color: hasNextTrack ? '#000' : '#ccc',
+              background: 'none !important',
+              border: 'none !important',
+              fontSize: '8px !important',
+              color: hasNextTrack ? '#000 !important' : '#ccc !important',
               cursor: hasNextTrack ? 'pointer' : 'not-allowed',
-              fontFamily: 'Courier New, monospace',
-              padding: '0',
-              margin: '0',
+              fontFamily: 'Courier New, monospace !important',
+              padding: '0 !important',
+              margin: '0 !important',
               lineHeight: '1',
               outline: 'none'
             }}
@@ -502,13 +502,13 @@ export default function NowPlayingBar() {
               {queueAudio.currentQueue.tracks.map((track, index) => {
                 const isCurrentTrack = index === queueAudio.currentQueue?.currentIndex
                 const isAlreadyPlayed = index < (queueAudio.currentQueue?.currentIndex || 0)
-                const canRemove = queueAudio.currentQueue!.tracks.length > 1
+                const canRemove = queueAudio.currentQueue!.tracks.length > 1 && !isCurrentTrack
                 const isDragging = draggedIndex === index
                 const showDropBefore = dropTarget?.index === index && dropTarget?.position === 'before'
                 const showDropAfter = dropTarget?.index === index && dropTarget?.position === 'after'
                 
                 return (
-                  <div key={track.id} style={{ position: 'relative' }}>
+                  <div key={`${track.id}-${index}`} style={{ position: 'relative' }}>
                     {/* Drop indicator before */}
                     {showDropBefore && (
                       <div style={{
@@ -709,7 +709,7 @@ export default function NowPlayingBar() {
                         fontFamily: 'Courier New, monospace',
                         borderRadius: '2px'
                       }}
-                      title={canRemove ? "Remove from queue" : "Cannot remove last track"}
+                      title={canRemove ? "Remove from queue" : isCurrentTrack ? "Cannot remove currently playing track" : "Cannot remove last track"}
                     >
                       ✕
                     </button>
@@ -772,9 +772,7 @@ export default function NowPlayingBar() {
                     fontSize: '10px',
                     fontFamily: 'Courier New, monospace',
                     cursor: hasPrevTrack ? 'pointer' : 'not-allowed',
-                    backgroundColor: hasPrevTrack ? '#ddd' : '#eee',
-                    color: hasPrevTrack ? '#000' : '#999',
-                    border: '1px solid #ccc'
+                    color: hasPrevTrack ? '#000' : '#999'
                   }}
                   title="Previous track"
                 >
@@ -788,9 +786,8 @@ export default function NowPlayingBar() {
                     fontSize: '10px',
                     fontFamily: 'Courier New, monospace',
                     cursor: 'pointer',
-                    backgroundColor: '#4444ff',
-                    color: 'white',
-                    border: '1px solid #000'
+                    color: '#0066cc',
+                    fontWeight: 'bold'
                   }}
                   title={queueAudio.isGloballyPlaying ? 'Pause' : 'Play'}
                 >
@@ -805,9 +802,7 @@ export default function NowPlayingBar() {
                     fontSize: '10px',
                     fontFamily: 'Courier New, monospace',
                     cursor: hasNextTrack ? 'pointer' : 'not-allowed',
-                    backgroundColor: hasNextTrack ? '#ddd' : '#eee',
-                    color: hasNextTrack ? '#000' : '#999',
-                    border: '1px solid #ccc'
+                    color: hasNextTrack ? '#000' : '#999'
                   }}
                   title="Next track"
                 >

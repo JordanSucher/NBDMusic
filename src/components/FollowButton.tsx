@@ -122,9 +122,7 @@ export default function FollowButton({ username, onFollowChange, size = 'normal'
         style={{
           padding: size === 'small' ? '2px 6px' : '4px 12px',
           fontSize: size === 'small' ? '10px' : '12px',
-          backgroundColor: '#f0f0f0',
           color: '#999',
-          border: size === 'small' ? '1px outset #ddd' : '2px outset #ddd',
           cursor: 'not-allowed',
           fontFamily: 'Courier New, monospace'
         }}
@@ -160,9 +158,7 @@ export default function FollowButton({ username, onFollowChange, size = 'normal'
       style={{
         padding: size === 'small' ? '2px 6px' : '4px 12px',
         fontSize: size === 'small' ? '10px' : '12px',
-        backgroundColor: actionLoading ? '#f0f0f0' : isFollowing ? '#ff6666' : '#4444ff',
-        color: 'white',
-        border: `${size === 'small' ? '1px' : '2px'} outset ${actionLoading ? '#ddd' : isFollowing ? '#ff6666' : '#4444ff'}`,
+        color: actionLoading ? '#999' : isFollowing ? '#cc0000' : '#0066cc',
         cursor: actionLoading ? 'not-allowed' : 'pointer',
         fontFamily: 'Courier New, monospace',
         fontWeight: 'bold'

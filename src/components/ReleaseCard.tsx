@@ -58,11 +58,21 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
   const [playerKey, setPlayerKey] = useState(0)
   const [expandedLyrics, setExpandedLyrics] = useState<{[trackId: string]: boolean}>({})
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
 
 
   useEffect(() => {
     fetchTagCounts()
   }, [])
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setOpenMenuId(null)
+    if (openMenuId) {
+      document.addEventListener('click', handleClickOutside)
+      return () => document.removeEventListener('click', handleClickOutside)
+    }
+  }, [openMenuId])
 
   // Sync local currentTrack state with global queue when it changes
   useEffect(() => {
@@ -242,7 +252,18 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
   }
 
   return (
-    <div className="song-card">
+    <div 
+      className="song-card"
+      style={{
+        transition: 'all 0.2s ease'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.backgroundColor = '#f0f0f0'
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = '#fff'
+      }}
+    >
       {/* Release Header with Artwork */}
       <div style={{ display: 'flex', gap: '15px', marginBottom: '10px' }}>
         {/* Artwork */}
@@ -531,19 +552,148 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
                     )}
                   </span>
                   <div style={{ 
-                    color: '#666', 
-                    fontSize: '11px',
-                    flexShrink: 0,
-                    whiteSpace: 'nowrap',
-                    fontFamily: 'Courier New, monospace'
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    flexShrink: 0
                   }}>
-                    <span style={{ display: 'inline-block', width: '35px', textAlign: 'right' }}>
-                      {track.duration ? formatDuration(track.duration) : '--'}
-                    </span>
-                    {' • '}
-                    <span style={{ display: 'inline-block', width: '60px', textAlign: 'right' }}>
-                      {track._count.listens} plays
-                    </span>
+                    <div style={{ 
+                      color: '#666', 
+                      fontSize: '11px',
+                      whiteSpace: 'nowrap',
+                      fontFamily: 'Courier New, monospace'
+                    }}>
+                      <span style={{ display: 'inline-block', width: '35px', textAlign: 'right' }}>
+                        {track.duration ? formatDuration(track.duration) : '--'}
+                      </span>
+                      {' • '}
+                      <span style={{ display: 'inline-block', width: '60px', textAlign: 'right' }}>
+                        {track._count.listens} plays
+                      </span>
+                    </div>
+                    
+                    {/* Track Action Menu */}
+                    <div className="track-action-menu" style={{ position: 'relative' }}>
+                      <button
+                        className="track-menu-trigger"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setOpenMenuId(openMenuId === track.id ? null : track.id)
+                        }}
+                        style={{
+                          padding: '2px 6px',
+                          fontSize: '10px',
+                          backgroundColor: openMenuId === track.id ? '#b3d9ff' : '#e6f3ff',
+                          border: '1px solid #b3d9ff',
+                          borderRadius: '2px',
+                          cursor: 'pointer',
+                          fontFamily: 'Courier New, monospace',
+                          color: '#0066cc'
+                        }}
+                        onMouseEnter={(e) => {
+                          if (openMenuId !== track.id) {
+                            e.currentTarget.style.backgroundColor = '#b3d9ff'
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (openMenuId !== track.id) {
+                            e.currentTarget.style.backgroundColor = '#e6f3ff'
+                          }
+                        }}
+                        title="Track actions"
+                      >
+                        ⋯
+                      </button>
+
+                      {/* Dropdown Menu */}
+                      {openMenuId === track.id && (
+                        <div 
+                          className="track-menu-dropdown"
+                          onClick={(e) => e.stopPropagation()}
+                          style={{
+                            position: 'absolute',
+                            top: '100%',
+                            right: 0,
+                            backgroundColor: 'white',
+                            border: '1px solid #ccc',
+                            borderRadius: '3px',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                            zIndex: 1000,
+                            minWidth: '120px',
+                            padding: '4px 0',
+                            fontFamily: 'Courier New, monospace',
+                            fontSize: '11px'
+                          }}
+                        >
+                          {/* Add to Queue */}
+                          <button
+                            className="track-menu-item"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              const queueTrack = {
+                                id: track.id,
+                                title: track.title,
+                                artist: release.user.username,
+                                fileUrl: track.fileUrl,
+                                trackNumber: track.trackNumber,
+                                releaseId: release.id
+                              }
+                              queueAudio.addTrackToEnd(queueTrack)
+                              setOpenMenuId(null)
+                            }}
+                            style={{
+                              display: 'block',
+                              width: '100%',
+                              padding: '4px 8px',
+                              border: 'none',
+                              backgroundColor: 'transparent',
+                              textAlign: 'left',
+                              cursor: 'pointer',
+                              fontSize: '10px',
+                              fontFamily: 'Courier New, monospace'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = '#f5f5f5'
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'transparent'
+                            }}
+                          >
+                            + Add to Queue
+                          </button>
+
+                          {/* Copy Link */}
+                          <button
+                            className="track-menu-item"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              const trackUrl = `${window.location.protocol}//${window.location.host}${createReleaseUrl(release.id, release.title, release.user.username)}?track=${track.trackNumber}`
+                              navigator.clipboard.writeText(trackUrl)
+                              setOpenMenuId(null)
+                            }}
+                            style={{
+                              display: 'block',
+                              width: '100%',
+                              padding: '4px 8px',
+                              border: 'none',
+                              backgroundColor: 'transparent',
+                              textAlign: 'left',
+                              cursor: 'pointer',
+                              fontSize: '10px',
+                              fontFamily: 'Courier New, monospace'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = '#f5f5f5'
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'transparent'
+                            }}
+                          >
+                            📋 Copy Link
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   </div>
                   {track.lyrics && expandedLyrics[track.id] && (
@@ -574,34 +724,28 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
           paddingTop: '10px',
           borderTop: '1px solid #ccc'
         }}>
-          <Link 
-            href={`/edit/${release.id}`}
+          <button
+            onClick={() => window.location.href = `/edit/${release.id}`}
             style={{
-              display: 'inline-block',
-              backgroundColor: '#4444ff',
-              color: 'white',
-              fontSize: '12px',
-              padding: '4px 8px',
-              textDecoration: 'none',
+              fontSize: '14px',
+              padding: '6px 12px',
               marginRight: '8px',
-              border: '2px outset #4444ff',
               cursor: 'pointer',
               fontFamily: 'Courier New, monospace'
             }}
           >
             Edit Release
-          </Link>
+          </button>
           {onDelete && (
             <button
               onClick={handleDelete}
               disabled={isDeleting}
               style={{
-                backgroundColor: '#ff4444',
-                color: 'white',
-                fontSize: '12px',
-                padding: '4px 8px',
-                border: '2px outset #ff4444',
-                cursor: isDeleting ? 'not-allowed' : 'pointer'
+                color: isDeleting ? '#999' : '#cc0000',
+                fontSize: '14px',
+                padding: '6px 12px',
+                cursor: isDeleting ? 'not-allowed' : 'pointer',
+                fontFamily: 'Courier New, monospace'
               }}
             >
               {isDeleting ? "Deleting..." : "Delete Release"}
