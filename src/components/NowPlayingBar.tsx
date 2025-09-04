@@ -665,6 +665,7 @@ export default function NowPlayingBar() {
                         whiteSpace: 'nowrap',
                         flex: '1 1 0',
                         minWidth: 0,
+                        maxWidth: '250px',
                         marginRight: '12px'
                       }}>
                         {track.title}
@@ -677,8 +678,8 @@ export default function NowPlayingBar() {
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
-                        minWidth: '120px',
-                        flex: '0 0 120px'
+                        flex: '0 0 auto',
+                        maxWidth: '120px'
                       }}>
                         {track.artist}
                       </span>
