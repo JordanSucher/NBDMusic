@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
 
 type Props = {
-  params: { id: string; slug: string }
+  params: Promise<{ id: string; slug: string }>
   children: React.ReactNode
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id, slug } = await params
+  
   try {
     // Fetch release data for meta tags
-    const response = await fetch(`${process.env.BASE_URL || 'http://localhost:3000'}/api/releases/${params.id}`, {
+    const response = await fetch(`${process.env.BASE_URL || 'http://localhost:3000'}/api/releases/${id}`, {
       cache: 'no-store' // Ensure fresh data for meta tags
     })
 
@@ -45,7 +47,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           }
         ],
         siteName: 'NBD',
-        url: `${process.env.BASE_URL || 'http://localhost:3000'}/release/${params.id}/${params.slug}`
+        url: `${process.env.BASE_URL || 'http://localhost:3000'}/release/${id}/${slug}`
       },
       twitter: {
         card: 'summary_large_image',
