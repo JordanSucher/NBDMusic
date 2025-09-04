@@ -192,7 +192,7 @@ export default function Header() {
             }}
             title="Shuffle all songs"
           >
-            shuffle
+            Shuffle
           </span>
           
           <Link href="/browse">Browse</Link>
