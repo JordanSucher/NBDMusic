@@ -54,7 +54,7 @@ export default function RootLayout({
       >
         <Providers>
           <Header />
-          <main style={{ marginTop: '80px', paddingBottom: '80px' }}> {/* Header height at top, now playing bar height at bottom */}
+          <main style={{ marginTop: '60px', paddingBottom: '80px' }}> {/* Header height at top, now playing bar height at bottom */}
             {children}
             <Footer />
           </main>
