@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 type Props = {
   params: { id: string; slug: string }
+  children: React.ReactNode
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -78,10 +79,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default function ReleaseLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function ReleaseLayout({ children }: Props) {
   return children
 }

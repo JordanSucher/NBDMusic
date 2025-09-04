@@ -238,6 +238,7 @@ export default function Header() {
             <Link 
               href="/browse"
               onClick={closeMobileMenu}
+              onTouchEnd={(e) => e.currentTarget.blur()}
               style={{
                 padding: '8px 12px',
                 border: '1px solid #000',
@@ -256,6 +257,7 @@ export default function Header() {
                 <Link 
                   href="/upload"
                   onClick={closeMobileMenu}
+                  onTouchEnd={(e) => e.currentTarget.blur()}
                   style={{
                     padding: '8px 12px',
                     border: '1px solid #000',
@@ -270,6 +272,7 @@ export default function Header() {
                 <Link 
                   href="/profile"
                   onClick={closeMobileMenu}
+                  onTouchEnd={(e) => e.currentTarget.blur()}
                   style={{
                     padding: '8px 12px',
                     border: '1px solid #000',
@@ -286,6 +289,7 @@ export default function Header() {
                     signOut()
                     closeMobileMenu()
                   }}
+                  onTouchEnd={(e) => e.currentTarget.blur()}
                   style={{
                     padding: '8px 12px',
                     border: '1px solid #000',
@@ -304,6 +308,7 @@ export default function Header() {
                 <Link 
                   href="/login"
                   onClick={closeMobileMenu}
+                  onTouchEnd={(e) => e.currentTarget.blur()}
                   style={{
                     padding: '8px 12px',
                     border: '1px solid #000',
@@ -318,6 +323,7 @@ export default function Header() {
                 <Link 
                   href="/register"
                   onClick={closeMobileMenu}
+                  onTouchEnd={(e) => e.currentTarget.blur()}
                   style={{
                     padding: '8px 12px',
                     border: '1px solid #000',
