@@ -94,6 +94,7 @@ export default function Header() {
               fontFamily: 'Courier New, monospace'
             }}
             onClick={closeMobileMenu}
+            onTouchEnd={(e) => e.currentTarget.blur()}
           >
           nbd
           </Link>
