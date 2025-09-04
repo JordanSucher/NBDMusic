@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import { useQueueAudioContext } from "@/contexts/QueueAudioContext"
+import { createReleaseUrl } from "@/utils/slugify"
 
 export default function NowPlayingBar() {
   const queueAudio = useQueueAudioContext()
@@ -196,7 +197,7 @@ export default function NowPlayingBar() {
         }}>
           {/* Track title - clickable to release */}
           <Link 
-            href={`/release/${activeTrack.releaseId}`}
+            href={createReleaseUrl(activeTrack.releaseId, queueAudio.currentTrack?.title || '', queueAudio.currentTrack?.artist || '')}
             style={{
               fontWeight: 'bold', 
               color: '#0000EE',

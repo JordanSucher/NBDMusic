@@ -5,6 +5,7 @@ import AudioPlayer from "./AudioPlayer"
 import FollowButton from "./FollowButton"
 import { useQueueAudioContext } from "@/contexts/QueueAudioContext"
 import { persistentAudioPlayer } from "@/lib/PersistentAudioPlayer"
+import { createReleaseUrl } from "@/utils/slugify"
 
 interface Track {
   id: string
@@ -247,7 +248,7 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
         {/* Artwork */}
         {release.artworkUrl ? (
           <div style={{ flexShrink: 0 }}>
-            <Link href={`/release/${release.id}`}>
+            <Link href={createReleaseUrl(release.id, release.title, release.user.username)}>
               <img 
                 src={release.artworkUrl} 
                 alt={`${release.title} artwork`}
@@ -277,7 +278,7 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
             textAlign: 'center'
           }}>
             <Link 
-              href={`/release/${release.id}`}
+              href={createReleaseUrl(release.id, release.title, release.user.username)}
               style={{
                 width: '100%',
                 height: '100%',
@@ -303,7 +304,7 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
         }}>
           <div className="song-title">
             <Link 
-              href={`/release/${release.id}`}
+              href={createReleaseUrl(release.id, release.title, release.user.username)}
               style={{
                 textDecoration: 'none',
                 color: 'inherit'

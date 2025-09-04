@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import FollowButton from "./FollowButton"
+import { createReleaseUrl } from "@/utils/slugify"
 
 interface Artist {
   id: string
@@ -131,7 +132,7 @@ export default function ArtistCard({ artist }: ArtistCardProps) {
                 Latest Release:
               </div>
               <Link 
-                href={`/release/${artist.latestRelease.id}`}
+                href={createReleaseUrl(artist.latestRelease.id, artist.latestRelease.title, artist.username)}
                 style={{ 
                   textDecoration: 'none', 
                   color: 'inherit',

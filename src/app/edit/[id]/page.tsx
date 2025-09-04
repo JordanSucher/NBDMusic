@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react"
 import { useRouter, useParams } from "next/navigation"
 import Link from "next/link"
 import ReleaseForm from "@/components/ReleaseForm"
+import { createReleaseUrl } from "@/utils/slugify"
 
 interface TagWithCount {
   name: string
@@ -48,6 +49,7 @@ export default function EditReleasePage() {
   const [releaseDescription, setReleaseDescription] = useState("")
   const [releaseDate, setReleaseDate] = useState("")
   const [releaseType, setReleaseType] = useState("single")
+  const [artistName, setArtistName] = useState("")
   const [tags, setTags] = useState("")
   
   // Artwork
@@ -84,6 +86,7 @@ export default function EditReleasePage() {
           setReleaseType(release.releaseType)
           setCurrentArtworkUrl(release.artworkUrl)
           setReleaseDate(release.releaseDate ? formatDateForInput(new Date(release.releaseDate)) : "")
+          setArtistName(release.user.username)
           
           // Set existing tracks
           const existingTracks: TrackUpdate[] = release.tracks.map((track: Track) => ({
@@ -347,7 +350,8 @@ export default function EditReleasePage() {
       
       // Redirect back to release page
       setTimeout(() => {
-        router.push(`/release/${releaseId}`)
+        const releaseUrl = createReleaseUrl(releaseId, releaseTitle, artistName)
+        router.push(releaseUrl)
       }, 1500)
       
     } catch (error) {
@@ -437,7 +441,7 @@ export default function EditReleasePage() {
           
           <button 
             type="button"
-            onClick={() => router.push(`/release/${releaseId}`)}
+            onClick={() => router.push(createReleaseUrl(releaseId, releaseTitle, artistName))}
             style={{
               backgroundColor: '#ddd',
               color: '#000',

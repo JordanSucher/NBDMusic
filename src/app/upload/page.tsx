@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import ReleaseForm from "@/components/ReleaseForm"
+import { createReleaseUrl } from "@/utils/slugify"
 
 interface TagWithCount {
   name: string
@@ -404,7 +405,8 @@ export default function UploadPage() {
       
       // Redirect to the new release
       setTimeout(() => {
-        router.push(`/release/${result.releaseId}`)
+        const releaseUrl = createReleaseUrl(result.releaseId, releaseTitle, session?.user?.name || '')
+        router.push(releaseUrl)
       }, 2000)
       
     } catch (error) {
