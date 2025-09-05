@@ -266,8 +266,8 @@ export default function Header() {
                 backgroundColor: '#fff',
                 textDecoration: 'none',
                 color: '#000',
-                textAlign: 'center !important',
-                display: 'block !important',
+                textAlign: 'center',
+                display: 'block',
                 width: '100%'
               }}
             >
@@ -287,8 +287,8 @@ export default function Header() {
                     backgroundColor: '#fff',
                     textDecoration: 'none',
                     color: '#000',
-                    textAlign: 'center !important',
-                    display: 'block !important',
+                    textAlign: 'center',
+                    display: 'block',
                     width: '100%'
                   }}
                 >
@@ -304,8 +304,8 @@ export default function Header() {
                     backgroundColor: '#fff',
                     textDecoration: 'none',
                     color: '#000',
-                    textAlign: 'center !important',
-                    display: 'block !important',
+                    textAlign: 'center',
+                    display: 'block',
                     width: '100%'
                   }}
                 >
@@ -345,8 +345,8 @@ export default function Header() {
                     backgroundColor: '#fff',
                     textDecoration: 'none',
                     color: '#000',
-                    textAlign: 'center !important',
-                    display: 'block !important',
+                    textAlign: 'center',
+                    display: 'block',
                     width: '100%'
                   }}
                 >
@@ -362,8 +362,8 @@ export default function Header() {
                     backgroundColor: '#fff',
                     textDecoration: 'none',
                     color: '#000',
-                    textAlign: 'center !important',
-                    display: 'block !important',
+                    textAlign: 'center',
+                    display: 'block',
                     width: '100%'
                   }}
                 >
