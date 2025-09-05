@@ -98,7 +98,7 @@ export default function UserStatsPage() {
     }
   }
 
-  const fetchStatsCallback = useCallback(fetchStats, [username])
+  const fetchStatsCallback = useCallback(fetchStats, [username, timeRange, limit])
   
   useEffect(() => {
     fetchStatsCallback()
@@ -267,7 +267,7 @@ export default function UserStatsPage() {
         }}>
           <h2>Is Listened To By</h2>
           <p style={{ fontSize: '12px', color: '#666', marginBottom: '15px' }}>
-            How many people listen to {stats.user.name || stats.user.username}'s music
+            How many people listen to {stats.user.name || stats.user.username}&apos;s music
           </p>
           <div style={{
             display: 'grid',
@@ -386,7 +386,7 @@ export default function UserStatsPage() {
         }}>
           <h2>Top Listeners</h2>
           <p style={{ fontSize: '12px', color: '#666', marginBottom: '15px' }}>
-            Who listens to {stats.user.name || stats.user.username}'s music most
+            Who listens to {stats.user.name || stats.user.username}&apos;s music most
           </p>
           
           {stats.stats.listenerStats.topListeners.length === 0 ? (
