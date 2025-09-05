@@ -184,7 +184,7 @@ export async function GET(request: NextRequest) {
       acc[artistId].listens.push(listen)
       acc[artistId].uniqueListeners.add(listen.userId)
       return acc
-    }, {} as Record<string, any>)
+    }, {} as Record<string, { artist: unknown; listens: unknown[]; uniqueListeners: Set<string> }>)
 
     const artists = Object.values(artistGroups)
       .map((group: { artist: unknown; listens: unknown[]; uniqueListeners: Set<string> }) => {
@@ -203,7 +203,7 @@ export async function GET(request: NextRequest) {
         let topListener = null
         if (topListenerEntry) {
           // Find the user details for the top listener
-          const topListenerUser = listeners.find(l => 
+          const topListenerUser = listeners.find(() => 
             // We need to find the user ID from our listener stats
             listenerStats.find(ls => ls.userId === topListenerEntry.userId)
           )?.listener
@@ -216,8 +216,8 @@ export async function GET(request: NextRequest) {
             })
             if (user) {
               topListener = {
-                username: (user as any).username,
-                name: (user as any).name,
+                username: (user as { username: string; name: string | null }).username,
+                name: (user as { username: string; name: string | null }).name,
                 listenCount: topListenerEntry.count
               }
             }
