@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth/next"
 import { db } from "@/lib/db"
 import { authOptions } from "@/lib/auth"
 
-export async function GET(request: NextRequest, { params }: { params: { username: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ username: string }> }) {
   try {
     // Check authentication
     const session = await getServerSession(authOptions)
@@ -14,7 +14,7 @@ export async function GET(request: NextRequest, { params }: { params: { username
       )
     }
 
-    const { username } = params
+    const { username } = await params
     const { searchParams } = new URL(request.url)
     const days = parseInt(searchParams.get('days') || '7')
     const limit = parseInt(searchParams.get('limit') || '10')
