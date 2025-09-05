@@ -242,7 +242,8 @@ export default function NowPlayingBar() {
                 textOverflow: 'ellipsis',
                 fontSize: '14px',
                 flex: '0 1 auto',
-                maxWidth: '30%'
+                maxWidth: '30%',
+                marginRight: '16px'
               }}
               title={activeTrack.artist}
             >
