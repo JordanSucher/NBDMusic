@@ -181,27 +181,30 @@ export default function EditReleasePage() {
     const files = Array.from(e.target.files || [])
     if (files.length === 0) return
     
-    // Find the next available track numbers, filling gaps first
-    const existingTrackNumbers = tracks.filter(t => !t.toDelete).map(t => t.trackNumber).sort((a, b) => a - b)
-    const getNextTrackNumber = (startIndex: number) => {
-      let trackNumber = startIndex + 1
-      while (existingTrackNumbers.includes(trackNumber)) {
-        trackNumber++
-      }
-      existingTrackNumbers.push(trackNumber) // Reserve this number for subsequent files
-      return trackNumber
-    }
-    
-    const newTracks: TrackUpdate[] = files.map((file, index) => ({
+    const newTracks: TrackUpdate[] = files.map((file) => ({
       file,
       title: cleanFileName(file.name),
-      trackNumber: getNextTrackNumber(index),
+      trackNumber: 1, // Temporary number, will be renumbered below
       lyrics: "",
       isNew: true,
       toDelete: false
     }))
     
-    setTracks(prev => [...prev, ...newTracks])
+    setTracks(prev => {
+      // Combine existing tracks with new tracks
+      const allTracks = [...prev, ...newTracks]
+      
+      // Renumber all non-deleted tracks sequentially
+      let trackNumber = 1
+      return allTracks.map(track => {
+        if (track.toDelete) {
+          return track // Keep deleted tracks with their original numbers
+        } else {
+          return { ...track, trackNumber: trackNumber++ }
+        }
+      })
+    })
+    
     setError("")
   }
 
@@ -218,15 +221,37 @@ export default function EditReleasePage() {
   }
 
   const markTrackForDeletion = (index: number) => {
-    setTracks(prev => prev.map((track, i) => 
-      i === index ? { ...track, toDelete: !track.toDelete } : track
-    ))
+    setTracks(prev => {
+      // Toggle the deletion mark
+      const updatedTracks = prev.map((track, i) => 
+        i === index ? { ...track, toDelete: !track.toDelete } : track
+      )
+      
+      // Renumber all non-deleted tracks sequentially
+      let trackNumber = 1
+      return updatedTracks.map(track => {
+        if (track.toDelete) {
+          return track // Keep deleted tracks with their original numbers for API consistency
+        } else {
+          return { ...track, trackNumber: trackNumber++ }
+        }
+      })
+    })
   }
 
   const removeNewTrack = (index: number) => {
     setTracks(prev => {
       const newTracks = prev.filter((_, i) => i !== index)
-      return newTracks.map((track, i) => ({ ...track, trackNumber: i + 1 }))
+      
+      // Renumber all non-deleted tracks sequentially
+      let trackNumber = 1
+      return newTracks.map(track => {
+        if (track.toDelete) {
+          return track // Keep deleted tracks with their original numbers
+        } else {
+          return { ...track, trackNumber: trackNumber++ }
+        }
+      })
     })
   }
 
@@ -239,7 +264,15 @@ export default function EditReleasePage() {
       newTracks[index] = newTracks[index - 1]
       newTracks[index - 1] = temp
       
-      return newTracks.map((track, i) => ({ ...track, trackNumber: i + 1 }))
+      // Renumber all non-deleted tracks sequentially
+      let trackNumber = 1
+      return newTracks.map(track => {
+        if (track.toDelete) {
+          return track // Keep deleted tracks with their original numbers
+        } else {
+          return { ...track, trackNumber: trackNumber++ }
+        }
+      })
     })
   }
 
@@ -252,7 +285,15 @@ export default function EditReleasePage() {
       newTracks[index] = newTracks[index + 1]
       newTracks[index + 1] = temp
       
-      return newTracks.map((track, i) => ({ ...track, trackNumber: i + 1 }))
+      // Renumber all non-deleted tracks sequentially
+      let trackNumber = 1
+      return newTracks.map(track => {
+        if (track.toDelete) {
+          return track // Keep deleted tracks with their original numbers
+        } else {
+          return { ...track, trackNumber: trackNumber++ }
+        }
+      })
     })
   }
 

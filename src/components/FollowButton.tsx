@@ -120,11 +120,15 @@ export default function FollowButton({ username, onFollowChange, size = 'normal'
       <button
         disabled
         style={{
-          padding: size === 'small' ? '2px 6px' : '4px 12px',
-          fontSize: size === 'small' ? '10px' : '12px',
+          padding: size === 'small' ? '2px 6px' : '4px 8px',
+          fontSize: size === 'small' ? '10px' : '11px',
+          backgroundColor: '#eee',
           color: '#999',
           cursor: 'not-allowed',
-          fontFamily: 'Courier New, monospace'
+          fontFamily: 'Courier New, monospace',
+          border: '2px outset #eee',
+          minWidth: size === 'small' ? '60px' : '72px',
+          textAlign: 'center'
         }}
       >
         ...
@@ -155,13 +159,26 @@ export default function FollowButton({ username, onFollowChange, size = 'normal'
     <button
       onClick={handleFollowToggle}
       disabled={actionLoading}
+      onMouseEnter={(e) => {
+        if (!actionLoading) {
+          e.currentTarget.style.backgroundColor = '#bbb'
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!actionLoading) {
+          e.currentTarget.style.backgroundColor = '#ddd'
+        }
+      }}
       style={{
-        padding: size === 'small' ? '2px 6px' : '4px 12px',
-        fontSize: size === 'small' ? '10px' : '12px',
-        color: actionLoading ? '#999' : isFollowing ? '#cc0000' : '#0066cc',
+        padding: size === 'small' ? '2px 6px' : '4px 8px',
+        fontSize: size === 'small' ? '10px' : '11px',
+        backgroundColor: actionLoading ? '#eee' : '#ddd',
+        color: actionLoading ? '#999' : isFollowing ? '#cc0000' : '#000',
         cursor: actionLoading ? 'not-allowed' : 'pointer',
         fontFamily: 'Courier New, monospace',
-        fontWeight: 'bold'
+        border: actionLoading ? '2px outset #eee' : '2px outset #ddd',
+        minWidth: size === 'small' ? '60px' : '72px',
+        textAlign: 'center'
       }}
     >
       {actionLoading ? '...' : isFollowing ? 'Unfollow' : 'Follow'}

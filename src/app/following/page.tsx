@@ -146,6 +146,14 @@ export default function FollowingPage() {
                       textDecoration: 'none',
                       fontFamily: 'Courier New, monospace'
                     }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.setProperty('background-color', '#bbb', 'important')
+                      e.currentTarget.style.setProperty('color', '#000', 'important')
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '#ddd'
+                      e.currentTarget.style.color = '#000'
+                    }}
                   >
                     View Profile
                   </Link>

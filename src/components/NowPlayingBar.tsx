@@ -193,51 +193,65 @@ export default function NowPlayingBar() {
           gap: '4px',
           fontSize: '14px',
           lineHeight: '1.2',
-          marginBottom: '8px'
+          marginBottom: '8px',
+          minWidth: 0
         }}>
-          {/* Track title - clickable to release */}
-          <Link 
-            href={createReleaseUrl(activeTrack.releaseId, queueAudio.currentTrack?.title || '', queueAudio.currentTrack?.artist || '')}
-            style={{
-              fontWeight: 'bold', 
-              color: '#0000EE',
-              textDecoration: 'underline',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              maxWidth: '350px',
-              fontSize: '14px'
-            }}
-            title={activeTrack.title.replace(/^\d+\.\s*/, '')}
-          >
-            {activeTrack.title.replace(/^\d+\.\s*/, '')}
-          </Link>
-          
-          {/* Separator */}
-          <span style={{ 
-            color: '#666',
-            margin: '0 2px',
-            fontSize: '14px'
-          }}>by</span>
-          
-          {/* Artist link */}
-          <Link 
-            href={`/user/${activeTrack.artist}`}
-            style={{
-              color: '#0000EE',
-              textDecoration: 'underline',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              fontSize: '14px'
-            }}
-            title={activeTrack.artist}
-          >
-            {activeTrack.artist}
-          </Link>
+          {/* Track and artist info container */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            flex: '1 1 0',
+            minWidth: 0,
+            overflow: 'hidden'
+          }}>
+            {/* Track title - clickable to release */}
+            <Link 
+              href={createReleaseUrl(activeTrack.releaseId, queueAudio.currentTrack?.title || '', queueAudio.currentTrack?.artist || '')}
+              style={{
+                fontWeight: 'bold', 
+                color: '#0000EE',
+                textDecoration: 'underline',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                fontSize: '14px',
+                flex: '1 1 0',
+                minWidth: 0
+              }}
+              title={activeTrack.title.replace(/^\d+\.\s*/, '')}
+            >
+              {activeTrack.title.replace(/^\d+\.\s*/, '')}
+            </Link>
+            
+            {/* Separator */}
+            <span style={{ 
+              color: '#666',
+              fontSize: '14px',
+              whiteSpace: 'nowrap'
+            }}>by</span>
+            
+            {/* Artist link */}
+            <Link 
+              href={`/user/${activeTrack.artist}`}
+              style={{
+                color: '#0000EE',
+                textDecoration: 'underline',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                fontSize: '14px',
+                flex: '0 1 auto',
+                maxWidth: '30%'
+              }}
+              title={activeTrack.artist}
+            >
+              {activeTrack.artist}
+            </Link>
+          </div>
           
           {/* Queue indicators */}
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             {/* Shuffle indicator */}
             {queueAudio.currentQueue?.originalSource?.type === 'shuffle_all' && (
               <span
@@ -266,7 +280,8 @@ export default function NowPlayingBar() {
                   textDecoration: 'underline',
                   fontSize: '12px',
                   fontFamily: 'Courier New, monospace',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap'
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.color = 'black'
@@ -294,6 +309,7 @@ export default function NowPlayingBar() {
           <button
             onClick={prevTrack}
             disabled={!hasPrevTrack}
+            onTouchEnd={(e) => e.currentTarget.blur()}
             style={{
               background: 'none !important',
               border: 'none !important',
@@ -314,6 +330,7 @@ export default function NowPlayingBar() {
           {/* Play/pause button */}
           <button
             onClick={togglePlayPause}
+            onTouchEnd={(e) => e.currentTarget.blur()}
             style={{
               background: 'none !important',
               border: 'none !important',
@@ -335,6 +352,7 @@ export default function NowPlayingBar() {
           <button
             onClick={nextTrack}
             disabled={!hasNextTrack}
+            onTouchEnd={(e) => e.currentTarget.blur()}
             style={{
               background: 'none !important',
               border: 'none !important',
@@ -458,16 +476,29 @@ export default function NowPlayingBar() {
               <button
                 onClick={() => setShowQueue(false)}
                 style={{
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '18px',
+                  width: '24px',
+                  height: '24px',
+                  background: '#f5f5f5',
+                  border: '1px solid #ccc',
+                  fontSize: '14px',
                   cursor: 'pointer',
                   padding: '0',
                   color: '#666',
                   lineHeight: '1',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  borderRadius: '2px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#e0e0e0'
+                  e.currentTarget.style.borderColor = '#999'
+                  e.currentTarget.style.color = '#000'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f5f5f5'
+                  e.currentTarget.style.borderColor = '#ccc'
+                  e.currentTarget.style.color = '#666'
                 }}
                 title="Close queue"
               >
@@ -607,7 +638,9 @@ export default function NowPlayingBar() {
                         fontSize: '11px',
                         cursor: isDragging ? 'grabbing' : 'grab',
                         opacity: isDragging ? 0.5 : (isAlreadyPlayed ? 0.6 : 1),
-                        transition: 'background-color 0.2s ease, opacity 0.2s ease'
+                        transition: 'background-color 0.2s ease, opacity 0.2s ease',
+                        minWidth: 0,
+                        overflow: 'hidden'
                       }}
                     >
                     {/* Drag handle */}
@@ -632,7 +665,9 @@ export default function NowPlayingBar() {
                         gap: '8px',
                         cursor: 'pointer',
                         padding: '4px 0',
-                        borderRadius: '2px'
+                        borderRadius: '2px',
+                        minWidth: 0,
+                        overflow: 'hidden'
                       }}
                       onMouseEnter={(e) => {
                         if (!isCurrentTrack && !isDragging) {
@@ -665,7 +700,6 @@ export default function NowPlayingBar() {
                         whiteSpace: 'nowrap',
                         flex: '1 1 0',
                         minWidth: 0,
-                        maxWidth: '250px',
                         marginRight: '12px'
                       }}>
                         {track.title}
@@ -678,8 +712,9 @@ export default function NowPlayingBar() {
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
-                        flex: '0 0 auto',
-                        maxWidth: '120px'
+                        flex: '0 1 auto',
+                        minWidth: 0,
+                        maxWidth: '40%'
                       }}>
                         {track.artist}
                       </span>
@@ -768,46 +803,63 @@ export default function NowPlayingBar() {
                 <button
                   onClick={queueAudio.prevTrack}
                   disabled={!hasPrevTrack}
+                  onTouchEnd={(e) => e.currentTarget.blur()}
                   style={{
-                    padding: '4px 8px',
-                    fontSize: '10px',
-                    fontFamily: 'Courier New, monospace',
+                    background: 'none !important',
+                    border: 'none !important',
+                    fontSize: '8px !important',
+                    color: hasPrevTrack ? '#000 !important' : '#ccc !important',
                     cursor: hasPrevTrack ? 'pointer' : 'not-allowed',
-                    color: hasPrevTrack ? '#000' : '#999'
+                    fontFamily: 'Courier New, monospace !important',
+                    padding: '0 !important',
+                    margin: '0 !important',
+                    lineHeight: '1',
+                    outline: 'none'
                   }}
                   title="Previous track"
                 >
-                  ⏮ Prev
+                  {'<<'}
                 </button>
                 
                 <button
                   onClick={queueAudio.togglePlayPause}
+                  onTouchEnd={(e) => e.currentTarget.blur()}
                   style={{
-                    padding: '4px 8px',
-                    fontSize: '10px',
-                    fontFamily: 'Courier New, monospace',
+                    background: 'none !important',
+                    border: 'none !important',
+                    fontSize: '8px !important',
+                    color: '#000 !important',
                     cursor: 'pointer',
-                    color: '#0066cc',
-                    fontWeight: 'bold'
+                    fontFamily: 'Courier New, monospace !important',
+                    padding: '0 !important',
+                    margin: '0 2px !important',
+                    lineHeight: '1',
+                    outline: 'none'
                   }}
                   title={queueAudio.isGloballyPlaying ? 'Pause' : 'Play'}
                 >
-                  {queueAudio.isGloballyPlaying ? '⏸ Pause' : '▶ Play'}
+                  {queueAudio.isGloballyPlaying ? '||' : '>'}
                 </button>
                 
                 <button
                   onClick={queueAudio.nextTrack}
                   disabled={!hasNextTrack}
+                  onTouchEnd={(e) => e.currentTarget.blur()}
                   style={{
-                    padding: '4px 8px',
-                    fontSize: '10px',
-                    fontFamily: 'Courier New, monospace',
+                    background: 'none !important',
+                    border: 'none !important',
+                    fontSize: '8px !important',
+                    color: hasNextTrack ? '#000 !important' : '#ccc !important',
                     cursor: hasNextTrack ? 'pointer' : 'not-allowed',
-                    color: hasNextTrack ? '#000' : '#999'
+                    fontFamily: 'Courier New, monospace !important',
+                    padding: '0 !important',
+                    margin: '0 !important',
+                    lineHeight: '1',
+                    outline: 'none'
                   }}
                   title="Next track"
                 >
-                  Next ⏭
+                  {'>>'}
                 </button>
               </div>
             </div>

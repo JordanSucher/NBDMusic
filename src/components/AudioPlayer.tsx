@@ -100,6 +100,46 @@ export default function AudioPlayer({
     setListenTracked(false)
   }, [src])
 
+  // Auto-update duration in database when it becomes available
+  useEffect(() => {
+    const updateDuration = async () => {
+      // Only update if we have a trackId, duration is available, and it's the currently active track
+      if (trackId && isActive && queueAudio.duration > 0) {
+        // Check if the current track in queue has no duration (null or 0)
+        const currentTrack = queueAudio.currentTrack
+        if (currentTrack && (!currentTrack.duration || currentTrack.duration === 0)) {
+          try {
+            console.log(`🎵 Auto-updating duration for track ${trackId}: ${queueAudio.duration}s`)
+            const response = await fetch('/api/admin/update-track-duration', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                trackId: trackId,
+                duration: Math.floor(queueAudio.duration)
+              })
+            })
+
+            if (response.ok) {
+              console.log(`✅ Duration updated for track ${trackId}`)
+              // Trigger a page refresh or state update to show the new duration
+              // This will be reflected when the user navigates back to the release
+            } else {
+              console.log(`❌ Failed to update duration for track ${trackId}`)
+            }
+          } catch (error) {
+            console.error('Error updating track duration:', error)
+          }
+        }
+      }
+    }
+
+    // Small delay to ensure duration is stable
+    const timeoutId = setTimeout(updateDuration, 1000)
+    return () => clearTimeout(timeoutId)
+  }, [trackId, isActive, queueAudio.duration, queueAudio.currentTrack])
+
   // No longer needed - queue handles all playback management
 
   const togglePlayPause = async () => {

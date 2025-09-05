@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
       where: whereCondition
     })
 
-    // Fetch artists (users with releases) with aggregated data
+    // Fetch ALL artists (users with releases) with aggregated data - no pagination yet
     const artists = await db.user.findMany({
       where: whereCondition,
       select: {
@@ -102,12 +102,8 @@ export async function GET(request: NextRequest) {
             followers: true
           }
         }
-      },
-      orderBy: {
-        username: 'asc'
-      },
-      take: limit,
-      skip: skip
+      }
+      // Removed: orderBy, take, skip - we'll sort and paginate in JavaScript
     })
 
     // Calculate total tracks for each artist and sort by latest release date
@@ -154,8 +150,11 @@ export async function GET(request: NextRequest) {
       })
     }
 
+    // Now apply pagination to the properly sorted results
+    const paginatedArtists = artistsWithStats.slice(skip, skip + limit)
+
     // Remove the sorting key from the response
-    const sortedArtists = artistsWithStats.map(artist => {
+    const sortedArtists = paginatedArtists.map(artist => {
       const { latestReleaseSort, ...artistWithoutSort } = artist
       return artistWithoutSort
     })

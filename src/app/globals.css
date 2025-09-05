@@ -12,12 +12,12 @@ html, body {
   margin: 0;
   padding: 0;
   height: auto;
-  background: #f5f5f5;
+  background: #f8f8f8;
 }
 
 body {
   font-family: 'Courier New', monospace !important;
-  background-color: #f5f5f5 !important;
+  background-color: #f8f8f8 !important;
   color: #333 !important;
   line-height: 1.4;
   font-size: 14px;
@@ -27,7 +27,7 @@ body {
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
-  background: #f5f5f5;
+  background: #f8f8f8;
 }
 
 /* Headers */
@@ -115,12 +115,22 @@ input[type="file"],
 textarea {
   width: 100%;
   padding: 4px !important;
-  border: 2px inset #ccc !important;
+  border: 1px solid #ccc !important;
   font-family: 'Courier New', monospace !important;
   font-size: 14px !important;
   margin-bottom: 10px !important;
   background: white !important;
   color: #000 !important;
+  outline: none !important;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="url"]:focus,
+input[type="file"]:focus,
+textarea:focus {
+  border: 1px solid #999 !important;
 }
 
 small {
@@ -173,6 +183,9 @@ button[style*="background-color: #ff4444"]:active {
   background-color: #fff !important;
   border: 1px solid #000 !important;
   padding: 8px 12px !important;
+  text-align: center !important;
+  display: block !important;
+  width: 100% !important;
 }
 
 .mobile-nav button:hover {
@@ -182,6 +195,18 @@ button[style*="background-color: #ff4444"]:active {
 
 .mobile-nav button:active {
   border: 1px solid #000 !important;
+}
+
+/* Ensure all mobile nav items are centered */
+.mobile-nav a, .mobile-nav button {
+  text-align: center !important;
+  display: block !important;
+  width: 100% !important;
+}
+
+/* Profile header h1 alignment fix */
+.profile-header h1 {
+  margin: 0 !important;
 }
 
 /* Queue modal buttons should be smaller */
@@ -360,18 +385,29 @@ table {
   border-collapse: collapse;
   margin-bottom: 20px;
   font-family: 'Courier New', monospace !important;
+  border-top: 2px solid #fff !important;
+  border-left: 2px solid #fff !important;
+  border-right: 2px solid #808080 !important;
+  border-bottom: 2px solid #808080 !important;
+  box-shadow: 2px 2px 4px rgba(0,0,0,0.3) !important;
 }
 
 th, td {
-  border: 1px solid #000 !important;
-  padding: 4px !important;
+  border: 1px solid #808080 !important;
+  padding: 6px !important;
   text-align: left !important;
   font-family: 'Courier New', monospace !important;
 }
 
 th {
-  background-color: #ccc !important;
+  background-color: #c0c0c0 !important;
+  background-image: url("data:image/svg+xml,%3csvg width='2' height='2' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M0 0h1v1H0V0z' fill='%23b8b8b8'/%3e%3c/svg%3e") !important;
+  background-repeat: repeat !important;
   font-weight: bold !important;
+  border-top: 1px solid #fff !important;
+  border-left: 1px solid #fff !important;
+  border-right: 1px solid #808080 !important;
+  border-bottom: 1px solid #808080 !important;
 }
 
 nav a {
@@ -456,6 +492,13 @@ audio {
 
   .release-page-title {
     width: 100% !important;
+  }
+
+  /* Queue modal mobile fixes */
+  .queue-modal {
+    margin: 10px !important;
+    max-width: calc(100vw - 20px) !important;
+    width: calc(100vw - 20px) !important;
   }
 }
 

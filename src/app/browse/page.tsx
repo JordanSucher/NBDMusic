@@ -582,7 +582,7 @@ function BrowseContent() {
 
         {(searchTerm || (selectedTags.length > 0 && viewMode === 'releases') || (showFollowingOnly && viewMode === 'releases')) && (
           <p>
-            Showing {filteredReleases.length} of {releases.length} releases
+            Showing {filteredReleases.length} of {pagination?.totalCount || filteredReleases.length} releases
             {searchTerm && ` matching "${searchTerm}"`}
             {selectedTags.length > 0 && ` with tags: ${selectedTags.join(', ')}`}
             {showFollowingOnly && ` from users you follow`}

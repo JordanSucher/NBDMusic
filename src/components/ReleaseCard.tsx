@@ -1,5 +1,6 @@
 import { useState, useEffect, useLayoutEffect, useRef } from "react"
 import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import AudioPlayer from "./AudioPlayer"
 import FollowButton from "./FollowButton"
@@ -52,6 +53,7 @@ interface ReleaseCardProps {
 
 export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCardProps) {
   const { data: session } = useSession()
+  const router = useRouter()
   const queueAudio = useQueueAudioContext()
   const [tagCounts, setTagCounts] = useState<TagWithCount[]>([])
   const [currentTrack, setCurrentTrack] = useState(0)
@@ -424,7 +426,7 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
 
       {/* Tags */}
       {release.tags.length > 0 && (
-        <div className="song-tags">
+        <div className="song-tags" style={{ lineHeight: '1.8' }}>
           Tags: {release.tags.map(releaseTag => {
             const count = getTagCount(releaseTag.tag.name)
             return (
@@ -432,7 +434,24 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
                 key={releaseTag.tag.name}
                 href={`/browse?tag=${encodeURIComponent(releaseTag.tag.name)}`}
                 className="tag-link"
-                style={{ textDecoration: 'none' }}
+                style={{ 
+                  textDecoration: 'none',
+                  display: 'inline-block'
+                }}
+                onMouseEnter={(e) => {
+                  const span = e.currentTarget.querySelector('.tag') as HTMLElement
+                  if (span) {
+                    span.style.backgroundColor = '#e8e8e8'
+                    span.style.backgroundImage = `url("data:image/svg+xml,%3csvg width='4' height='4' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M0 0h1v1H0V0zm2 2h1v1H2V2z' fill='%23bbb'/%3e%3c/svg%3e")`
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  const span = e.currentTarget.querySelector('.tag') as HTMLElement
+                  if (span) {
+                    span.style.backgroundColor = '#f0f0f0'
+                    span.style.backgroundImage = `url("data:image/svg+xml,%3csvg width='4' height='4' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M0 0h1v1H0V0zm2 2h1v1H2V2z' fill='%23ccc'/%3e%3c/svg%3e")`
+                  }
+                }}
               >
                 <span 
                   className="tag"
@@ -441,7 +460,8 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
                     backgroundImage: `url("data:image/svg+xml,%3csvg width='4' height='4' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M0 0h1v1H0V0zm2 2h1v1H2V2z' fill='%23ccc'/%3e%3c/svg%3e")`,
                     backgroundRepeat: 'repeat',
                     color: '#333',
-                    border: '1px solid #999'
+                    border: '1px solid #999',
+                    marginBottom: '4px'
                   }}
                 >
                   {releaseTag.tag.name} ({count})
@@ -728,7 +748,7 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
           borderTop: '1px solid #ccc'
         }}>
           <button
-            onClick={() => window.location.href = `/edit/${release.id}`}
+            onClick={() => router.push(`/edit/${release.id}`)}
             style={{
               fontSize: '14px',
               padding: '6px 12px',

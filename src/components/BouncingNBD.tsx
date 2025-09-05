@@ -108,7 +108,7 @@ export default function CursorEyes({ size = 'normal', headerMode = false }: Curs
   }
 
   const eyePositions = headerMode 
-    ? [{ x: 47, y: 3 }, { x: 69, y: 3 }]
+    ? [{ x: 47, y: 4 }, { x: 68, y: 4 }]
     : [{ x: 20, y: 200 }, { x: 80, y: 200 }]
 
   return (

@@ -97,6 +97,7 @@ export default function Header() {
             }}
             onClick={closeMobileMenu}
             onTouchEnd={(e) => e.currentTarget.blur()}
+            onTouchStart={(e) => e.currentTarget.blur()}
           >
           nbd
           </Link>
@@ -265,7 +266,9 @@ export default function Header() {
                 backgroundColor: '#fff',
                 textDecoration: 'none',
                 color: '#000',
-                textAlign: 'center'
+                textAlign: 'center !important',
+                display: 'block !important',
+                width: '100%'
               }}
             >
               Browse
@@ -284,7 +287,9 @@ export default function Header() {
                     backgroundColor: '#fff',
                     textDecoration: 'none',
                     color: '#000',
-                    textAlign: 'center'
+                    textAlign: 'center !important',
+                    display: 'block !important',
+                    width: '100%'
                   }}
                 >
                   Upload
@@ -299,7 +304,9 @@ export default function Header() {
                     backgroundColor: '#fff',
                     textDecoration: 'none',
                     color: '#000',
-                    textAlign: 'center'
+                    textAlign: 'center !important',
+                    display: 'block !important',
+                    width: '100%'
                   }}
                 >
                   Profile
@@ -317,7 +324,10 @@ export default function Header() {
                     fontSize: '14px',
                     fontFamily: 'Courier New, monospace',
                     cursor: 'pointer',
-                    color: '#000'
+                    color: '#000',
+                    textAlign: 'center',
+                    display: 'block',
+                    width: '100%'
                   }}
                 >
                   Logout
@@ -335,7 +345,9 @@ export default function Header() {
                     backgroundColor: '#fff',
                     textDecoration: 'none',
                     color: '#000',
-                    textAlign: 'center'
+                    textAlign: 'center !important',
+                    display: 'block !important',
+                    width: '100%'
                   }}
                 >
                   Login
@@ -350,7 +362,9 @@ export default function Header() {
                     backgroundColor: '#fff',
                     textDecoration: 'none',
                     color: '#000',
-                    textAlign: 'center'
+                    textAlign: 'center !important',
+                    display: 'block !important',
+                    width: '100%'
                   }}
                 >
                   Register

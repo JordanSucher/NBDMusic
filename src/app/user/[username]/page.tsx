@@ -276,23 +276,36 @@ export default function PublicUserProfilePage() {
 
   return (
     <div className="container">
-      <h1>{userProfile.name || userProfile.username}&apos;s Profile</h1>
-
-      {/* Profile Info */}
-      <div className="mb-20" style={{ 
-        border: '2px solid #000', 
-        padding: '10px', 
-        backgroundColor: '#fff',
+      <div className="profile-header" style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         marginBottom: '20px'
       }}>
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'flex-start',
-          marginBottom: '10px'
+        <h1>{userProfile.name || userProfile.username}&apos;s Profile</h1>
+        {!isOwnProfile && (
+          <FollowButton 
+            username={userProfile.username} 
+            onFollowChange={handleFollowChange}
+          />
+        )}
+      </div>
+
+      {/* Profile Info - Only show if there's content to display or user can edit */}
+      {(userProfile.bio || userProfile.url || isOwnProfile) && (
+        <div className="mb-20" style={{ 
+          border: '2px solid #000', 
+          padding: '10px', 
+          backgroundColor: '#fff',
+          marginBottom: '20px'
         }}>
-          <h2>About {userProfile.name || userProfile.username}</h2>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'flex-start',
+            marginBottom: '10px'
+          }}>
+            <h2>About {userProfile.name || userProfile.username}</h2>
             {isOwnProfile && !isEditing && (
               <button
                 onClick={handleEditClick}
@@ -306,14 +319,7 @@ export default function PublicUserProfilePage() {
                 Edit Profile
               </button>
             )}
-            {!isOwnProfile && (
-              <FollowButton 
-                username={userProfile.username} 
-                onFollowChange={handleFollowChange}
-              />
-            )}
           </div>
-        </div>
         
         {/* Bio and URL - Edit Mode */}
         {isEditing ? (
@@ -453,7 +459,8 @@ export default function PublicUserProfilePage() {
             </div>
           )
         )}
-      </div>
+        </div>
+      )}
 
       {/* User Stats */}
       <div className="mb-20" style={{ 
