@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 
@@ -34,7 +34,19 @@ interface UserStats {
       }
       listenCount: number
     }>
-    dailyActivity: Record<string, number>
+    listenerStats: {
+      totalListensToUser: number
+      totalListeners: number
+      authenticatedListensToUser: number
+      anonymousListensToUser: number
+      topListeners: Array<{
+        listener: {
+          username: string
+          name: string | null
+        }
+        listenCount: number
+      }>
+    }
   }
   filters: {
     days: number
@@ -86,9 +98,11 @@ export default function UserStatsPage() {
     }
   }
 
+  const fetchStatsCallback = useCallback(fetchStats, [username])
+  
   useEffect(() => {
-    fetchStats()
-  }, [username])
+    fetchStatsCallback()
+  }, [fetchStatsCallback])
 
   const formatDisplayName = (username: string, name: string | null) => {
     return name ? `${name} (${username})` : username
@@ -219,7 +233,10 @@ export default function UserStatsPage() {
         marginBottom: '20px',
         backgroundColor: '#fff'
       }}>
-        <h2>Overview</h2>
+        <h2>Listens To</h2>
+        <p style={{ fontSize: '12px', color: '#666', marginBottom: '15px' }}>
+          What {stats.user.name || stats.user.username} listens to
+        </p>
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
@@ -239,6 +256,35 @@ export default function UserStatsPage() {
           </div>
         </div>
       </div>
+
+      {/* Artist Stats Overview */}
+      {stats.stats.listenerStats.totalListensToUser > 0 && (
+        <div style={{
+          border: '2px solid #000',
+          padding: '15px',
+          marginBottom: '20px',
+          backgroundColor: '#fff'
+        }}>
+          <h2>Is Listened To By</h2>
+          <p style={{ fontSize: '12px', color: '#666', marginBottom: '15px' }}>
+            How many people listen to {stats.user.name || stats.user.username}'s music
+          </p>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: '15px'
+          }}>
+            <div>
+              <strong>Total Listens:</strong><br />
+              {stats.stats.listenerStats.totalListensToUser.toLocaleString()}
+            </div>
+            <div>
+              <strong>Total Listeners:</strong><br />
+              {stats.stats.listenerStats.totalListeners.toLocaleString()}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Top Artists */}
       <div style={{
@@ -290,7 +336,7 @@ export default function UserStatsPage() {
         backgroundColor: '#fff'
       }}>
         <h2>Top Tracks</h2>
-        <p style={{ fontSize: '12px', color: '666', marginBottom: '15px' }}>
+        <p style={{ fontSize: '12px', color: '#666', marginBottom: '15px' }}>
           Individual tracks this user listens to most
         </p>
         
@@ -330,8 +376,53 @@ export default function UserStatsPage() {
         )}
       </div>
 
+      {/* Top Listeners */}
+      {stats.stats.listenerStats.totalListensToUser > 0 && (
+        <div style={{
+          border: '2px solid #000',
+          padding: '15px',
+          marginBottom: '20px',
+          backgroundColor: '#fff'
+        }}>
+          <h2>Top Listeners</h2>
+          <p style={{ fontSize: '12px', color: '#666', marginBottom: '15px' }}>
+            Who listens to {stats.user.name || stats.user.username}'s music most
+          </p>
+          
+          {stats.stats.listenerStats.topListeners.length === 0 ? (
+            <p>No authenticated listeners found for the selected criteria.</p>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', fontSize: '12px' }}>
+                <thead>
+                  <tr>
+                    <th style={{ textAlign: 'left', padding: '8px' }}>Rank</th>
+                    <th style={{ textAlign: 'left', padding: '8px' }}>Listener</th>
+                    <th style={{ textAlign: 'left', padding: '8px' }}>Listens</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stats.stats.listenerStats.topListeners.map((listener, index) => (
+                    <tr key={listener.listener.username}>
+                      <td style={{ padding: '8px' }}>#{index + 1}</td>
+                      <td style={{ padding: '8px' }}>
+                        <Link href={`/user/${listener.listener.username}`}>
+                          <strong>{formatDisplayName(listener.listener.username, listener.listener.name)}</strong>
+                        </Link>
+                      </td>
+                      <td style={{ padding: '8px' }}>{listener.listenCount.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
       <div style={{ fontSize: '12px', color: '#666' }}>
-        <p><strong>Note:</strong> Statistics are based on recorded listen events from this user's activity.</p>
+        <p><strong>Note:</strong> Statistics include both what this user listens to and who listens to their music.</p>
+        <p><strong>Anonymous vs Authenticated:</strong> Anonymous listens are from visitors who are not logged in. Only authenticated listeners can be identified individually.</p>
       </div>
     </div>
   )

@@ -146,29 +146,94 @@ export async function GET(request: NextRequest, { params }: { params: { username
       artistListens.map(listen => listen.track.release.user.id)
     ).size
 
-    // Get listening activity over time (last 30 days)
-    const activityData = await db.listen.groupBy({
-      by: ['listenedAt'],
-      where: {
-        userId: user.id,
-        listenedAt: { 
-          gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    // Get who is listening to this user's tracks
+    const listenerWhereCondition: Record<string, unknown> = {
+      track: {
+        release: {
+          userId: user.id
         }
       },
+      userId: { not: null } // Only authenticated users
+    }
+    if (dateFilter) {
+      listenerWhereCondition.listenedAt = { gte: dateFilter }
+    }
+
+    // Get top listeners of this user's music
+    const listenerStats = await db.listen.groupBy({
+      by: ['userId'],
+      where: listenerWhereCondition,
       _count: {
         id: true
+      },
+      orderBy: {
+        _count: {
+          id: 'desc'
+        }
+      },
+      take: limit
+    })
+
+    const topListeners = await Promise.all(
+      listenerStats.map(async (stat) => {
+        if (!stat.userId) return null
+        
+        const listener = await db.user.findUnique({
+          where: { id: stat.userId },
+          select: { username: true, name: true }
+        })
+
+        return {
+          listener: {
+            username: listener!.username,
+            name: listener!.name
+          },
+          listenCount: stat._count.id
+        }
+      })
+    ).then(results => results.filter(result => result !== null))
+
+    // Get total listens to this user's music (including anonymous)
+    const totalListensToUser = await db.listen.count({
+      where: {
+        track: {
+          release: {
+            userId: user.id
+          }
+        },
+        ...(dateFilter && { listenedAt: { gte: dateFilter } })
       }
     })
 
-    // Group by day
-    const dailyActivity = activityData.reduce((acc, item) => {
-      const date = new Date(item.listenedAt).toISOString().split('T')[0]
-      if (!acc[date]) {
-        acc[date] = 0
+    // Get anonymous listens to this user's music
+    const anonymousListensToUser = await db.listen.count({
+      where: {
+        track: {
+          release: {
+            userId: user.id
+          }
+        },
+        userId: null,
+        ...(dateFilter && { listenedAt: { gte: dateFilter } })
       }
-      acc[date] += item._count.id
-      return acc
-    }, {} as Record<string, number>)
+    })
+
+    const authenticatedListensToUser = totalListensToUser - anonymousListensToUser
+
+    // Get unique listener count (authenticated users only)
+    const uniqueListeners = await db.listen.findMany({
+      where: {
+        track: {
+          release: {
+            userId: user.id
+          }
+        },
+        userId: { not: null },
+        ...(dateFilter && { listenedAt: { gte: dateFilter } })
+      },
+      select: { userId: true },
+      distinct: ['userId']
+    })
 
     return NextResponse.json({
       user: {
@@ -176,12 +241,20 @@ export async function GET(request: NextRequest, { params }: { params: { username
         name: user.name
       },
       stats: {
+        // User's listening activity
         totalListens,
         uniqueTracks: uniqueTracksCount.length,
         uniqueArtists: uniqueArtistsCount,
         topArtists,
         topTracks,
-        dailyActivity
+        // Who listens to this user's music
+        listenerStats: {
+          totalListensToUser,
+          totalListeners: uniqueListeners.length,
+          authenticatedListensToUser,
+          anonymousListensToUser,
+          topListeners
+        }
       },
       filters: {
         days,
