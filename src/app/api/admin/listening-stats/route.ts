@@ -77,6 +77,8 @@ export async function GET(request: NextRequest) {
     // Get detailed listener info with additional stats
     const listeners = await Promise.all(
       listenerStats.map(async (stat) => {
+        if (!stat.userId) return null
+        
         const user = await db.user.findUnique({
           where: { id: stat.userId },
           select: { username: true, name: true }
@@ -143,7 +145,7 @@ export async function GET(request: NextRequest) {
           topArtist
         }
       })
-    )
+    ).then(results => results.filter(result => result !== null))
 
     // Get top artists
     const artistListens = await db.listen.findMany({
