@@ -184,7 +184,9 @@ export async function GET(request: NextRequest) {
         }
       }
       acc[artistId].listens.push(listen)
-      acc[artistId].uniqueListeners.add(listen.userId)
+      if (listen.userId) {
+        acc[artistId].uniqueListeners.add(listen.userId)
+      }
       return acc
     }, {} as Record<string, { artist: unknown; listens: unknown[]; uniqueListeners: Set<string> }>)
 
