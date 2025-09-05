@@ -306,19 +306,35 @@ export default function PublicUserProfilePage() {
             marginBottom: '10px'
           }}>
             <h2>About {userProfile.name || userProfile.username}</h2>
-            {isOwnProfile && !isEditing && (
-              <button
-                onClick={handleEditClick}
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <Link 
+                href={`/user/${userProfile.username}/stats`}
                 style={{
                   padding: '6px 12px',
                   fontSize: '14px',
-                  cursor: 'pointer',
-                  fontFamily: 'Courier New, monospace'
+                  fontFamily: 'Courier New, monospace',
+                  color: '#0000ff',
+                  textDecoration: 'underline',
+                  border: 'none',
+                  background: 'none'
                 }}
               >
-                Edit Profile
-              </button>
-            )}
+                View Stats
+              </Link>
+              {isOwnProfile && !isEditing && (
+                <button
+                  onClick={handleEditClick}
+                  style={{
+                    padding: '6px 12px',
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    fontFamily: 'Courier New, monospace'
+                  }}
+                >
+                  Edit Profile
+                </button>
+              )}
+            </div>
           </div>
         
         {/* Bio and URL - Edit Mode */}
