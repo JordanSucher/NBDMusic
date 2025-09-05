@@ -287,54 +287,6 @@ export default function AdminStatsPage() {
         </div>
       )}
 
-      {/* Anonymous Listening */}
-      {anonymous.totalListens > 0 && (
-        <div style={{
-          border: '2px solid #000',
-          padding: '15px',
-          marginBottom: '20px',
-          backgroundColor: '#fff'
-        }}>
-          <h2>Anonymous Listening</h2>
-          <p style={{ fontSize: '12px', color: '#666', marginBottom: '15px' }}>
-            Tracks most popular with anonymous (non-logged-in) visitors
-            {artistFilter && ` (filtered by artist: ${artistFilter})`}
-          </p>
-          
-          {anonymous.topTracks.length === 0 ? (
-            <p>No anonymous listens found for the selected criteria.</p>
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', fontSize: '12px' }}>
-                <thead>
-                  <tr>
-                    <th style={{ textAlign: 'left', padding: '8px' }}>Rank</th>
-                    <th style={{ textAlign: 'left', padding: '8px' }}>Track</th>
-                    <th style={{ textAlign: 'left', padding: '8px' }}>Artist</th>
-                    <th style={{ textAlign: 'left', padding: '8px' }}>Release</th>
-                    <th style={{ textAlign: 'left', padding: '8px' }}>Anonymous Listens</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {anonymous.topTracks.map((track, index) => (
-                    <tr key={track.track.id}>
-                      <td style={{ padding: '8px' }}>#{index + 1}</td>
-                      <td style={{ padding: '8px' }}>
-                        <strong>{track.track.title}</strong>
-                      </td>
-                      <td style={{ padding: '8px' }}>
-                        {formatDisplayName(track.track.artist.username, track.track.artist.name)}
-                      </td>
-                      <td style={{ padding: '8px' }}>{track.track.release.title}</td>
-                      <td style={{ padding: '8px' }}>{track.listenCount.toLocaleString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Top Listeners */}
       <div style={{
@@ -450,11 +402,11 @@ export default function AdminStatsPage() {
       }}>
         <h2>Top Tracks</h2>
         <p style={{ fontSize: '12px', color: '#666', marginBottom: '15px' }}>
-          Individual tracks with the most listens
+          Individual tracks with the most listens (authenticated users) and anonymous listening
           {artistFilter && ` (filtered by artist: ${artistFilter})`}
         </p>
         
-        {tracks.length === 0 ? (
+        {tracks.length === 0 && anonymous.topTracks.length === 0 ? (
           <p>No tracks found for the selected criteria.</p>
         ) : (
           <div style={{ overflowX: 'auto' }}>
@@ -465,25 +417,33 @@ export default function AdminStatsPage() {
                   <th style={{ textAlign: 'left', padding: '8px' }}>Track</th>
                   <th style={{ textAlign: 'left', padding: '8px' }}>Artist</th>
                   <th style={{ textAlign: 'left', padding: '8px' }}>Release</th>
-                  <th style={{ textAlign: 'left', padding: '8px' }}>Listens</th>
+                  <th style={{ textAlign: 'left', padding: '8px' }}>Total Listens</th>
+                  <th style={{ textAlign: 'left', padding: '8px' }}>% Anonymous</th>
                   <th style={{ textAlign: 'left', padding: '8px' }}>Unique Listeners</th>
                 </tr>
               </thead>
               <tbody>
-                {tracks.map((track, index) => (
-                  <tr key={track.track.id}>
-                    <td style={{ padding: '8px' }}>#{index + 1}</td>
-                    <td style={{ padding: '8px' }}>
-                      <strong>{track.track.title}</strong>
-                    </td>
-                    <td style={{ padding: '8px' }}>
-                      {formatDisplayName(track.track.artist.username, track.track.artist.name)}
-                    </td>
-                    <td style={{ padding: '8px' }}>{track.track.release.title}</td>
-                    <td style={{ padding: '8px' }}>{track.listenCount.toLocaleString()}</td>
-                    <td style={{ padding: '8px' }}>{track.uniqueListeners}</td>
-                  </tr>
-                ))}
+                {tracks.map((track, index) => {
+                  const anonTrack = anonymous.topTracks.find(at => at.track.id === track.track.id)
+                  const anonListens = anonTrack ? anonTrack.listenCount : 0
+                  const totalListens = track.listenCount + anonListens
+                  const anonPercentage = totalListens > 0 ? Math.round((anonListens / totalListens) * 100) : 0
+                  return (
+                    <tr key={track.track.id}>
+                      <td style={{ padding: '8px' }}>#{index + 1}</td>
+                      <td style={{ padding: '8px' }}>
+                        <strong>{track.track.title}</strong>
+                      </td>
+                      <td style={{ padding: '8px' }}>
+                        {formatDisplayName(track.track.artist.username, track.track.artist.name)}
+                      </td>
+                      <td style={{ padding: '8px' }}>{track.track.release.title}</td>
+                      <td style={{ padding: '8px' }}>{totalListens.toLocaleString()}</td>
+                      <td style={{ padding: '8px' }}>{anonPercentage}%</td>
+                      <td style={{ padding: '8px' }}>{track.uniqueListeners}</td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
