@@ -193,7 +193,7 @@ export async function GET(request: NextRequest) {
     const artists = Object.values(artistGroups)
       .map((group: { artist: unknown; listens: unknown[]; uniqueListeners: Set<string> }) => {
         // Get top listener for this artist
-        const listenerCounts = group.listens.reduce((acc: Record<string, { count: number; userId: string }>, listen: { userId: string }) => {
+        const listenerCounts = (group.listens as { userId: string }[]).reduce((acc: Record<string, { count: number; userId: string }>, listen: { userId: string }) => {
           if (!acc[listen.userId]) {
             acc[listen.userId] = { count: 0, userId: listen.userId }
           }
