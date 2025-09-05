@@ -24,13 +24,13 @@ export async function GET(request: NextRequest) {
     const dateFilter = days > 0 ? new Date(Date.now() - days * 24 * 60 * 60 * 1000) : null
 
     // Build where conditions
-    const listenWhereCondition: Record<string, any> = {}
+    const listenWhereCondition: Record<string, unknown> = {}
     if (dateFilter) {
       listenWhereCondition.listenedAt = { gte: dateFilter }
     }
 
     // Artist filter conditions
-    const artistWhereCondition: Record<string, any> = {}
+    const artistWhereCondition: Record<string, unknown> = {}
     if (artistFilter) {
       artistWhereCondition.OR = [
         { username: { contains: artistFilter, mode: 'insensitive' } },
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Track filter for artist filtering
-    const trackWhereCondition: Record<string, any> = {}
+    const trackWhereCondition: Record<string, unknown> = {}
     if (artistFilter) {
       trackWhereCondition.user = artistWhereCondition
     }
@@ -187,7 +187,7 @@ export async function GET(request: NextRequest) {
     }, {} as Record<string, any>)
 
     const artists = Object.values(artistGroups)
-      .map((group: { artist: any; listens: any[]; uniqueListeners: Set<string> }) => {
+      .map((group: { artist: unknown; listens: unknown[]; uniqueListeners: Set<string> }) => {
         // Get top listener for this artist
         const listenerCounts = group.listens.reduce((acc: Record<string, { count: number; userId: string }>, listen: { userId: string }) => {
           if (!acc[listen.userId]) {
