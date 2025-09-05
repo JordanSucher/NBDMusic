@@ -190,8 +190,8 @@ export async function GET(request: NextRequest) {
       return acc
     }, {} as Record<string, { artist: unknown; listens: unknown[]; uniqueListeners: Set<string> }>)
 
-    const artists = Object.values(artistGroups)
-      .map((group: { artist: unknown; listens: unknown[]; uniqueListeners: Set<string> }) => {
+    const artistsWithListeners = await Promise.all(Object.values(artistGroups)
+      .map(async (group: { artist: unknown; listens: unknown[]; uniqueListeners: Set<string> }) => {
         // Get top listener for this artist
         const listenerCounts = (group.listens as { userId: string }[]).reduce((acc: Record<string, { count: number; userId: string }>, listen: { userId: string }) => {
           if (!acc[listen.userId]) {
@@ -214,14 +214,14 @@ export async function GET(request: NextRequest) {
 
           if (!topListenerUser) {
             // Fallback: fetch user from database
-            const user = db.user.findUnique({
+            const user = await db.user.findUnique({
               where: { id: topListenerEntry.userId },
               select: { username: true, name: true }
             })
             if (user) {
               topListener = {
-                username: (user as { username: string; name: string | null }).username,
-                name: (user as { username: string; name: string | null }).name,
+                username: user.username,
+                name: user.name,
                 listenCount: topListenerEntry.count
               }
             }
@@ -240,7 +240,9 @@ export async function GET(request: NextRequest) {
           uniqueListeners: group.uniqueListeners.size,
           topListener
         }
-      })
+      }))
+
+    const artists = artistsWithListeners
       .filter(artist => artist.totalListens >= minListens)
       .sort((a, b) => b.totalListens - a.totalListens)
       .slice(0, limit)
@@ -413,8 +415,10 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error("Error fetching listening stats:", error)
+    console.error("Error stack:", error instanceof Error ? error.stack : 'No stack trace')
+    console.error("Error details:", JSON.stringify(error, null, 2))
     return NextResponse.json(
-      { error: "Failed to fetch listening stats" },
+      { error: "Failed to fetch listening stats", details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     )
   }
