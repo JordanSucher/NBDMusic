@@ -1,8 +1,38 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
-import { put, del } from "@vercel/blob"
+import { del } from "@vercel/blob"
 import { db } from "@/lib/db"
 import { authOptions } from "@/lib/auth"
+
+interface ExistingTrack {
+  id: string
+  title: string
+  trackNumber: number
+  lyrics: string
+  toDelete: boolean
+}
+
+interface NewTrack {
+  title: string
+  trackNumber: number
+  fileName: string
+  fileUrl: string
+  fileSize: number
+  mimeType: string
+  lyrics: string
+}
+
+interface UpdateReleaseRequestBody {
+  releaseTitle: string
+  releaseDescription?: string
+  releaseType: string
+  tags?: string
+  releaseDate?: string | null
+  artworkUrl?: string | null
+  removeCurrentArtwork: boolean
+  existingTracks: ExistingTrack[]
+  newTracks: NewTrack[]
+}
 
 // GET endpoint to fetch release data for viewing (no auth required)
 export async function GET(
@@ -84,7 +114,7 @@ export async function PUT(
     }
 
     const { id } = await context.params
-    const requestBody = await request.json()
+    const requestBody: UpdateReleaseRequestBody = await request.json()
 
     // Find existing release
     const existingRelease = await db.release.findUnique({
@@ -159,7 +189,7 @@ export async function PUT(
     const tracksToDelete: string[] = []
     const tracksToUpdate: Array<{ id: string, title: string, trackNumber: number, lyrics: string }> = []
 
-    existingTracks.forEach((track: any) => {
+    existingTracks.forEach((track) => {
       if (track.toDelete) {
         tracksToDelete.push(track.id)
       } else {
@@ -189,7 +219,7 @@ export async function PUT(
     }
 
     // Handle new tracks (they're already uploaded, just process the data)
-    const newTracksData = newTracks.map((track: any) => ({
+    const newTracksData = newTracks.map((track) => ({
       title: track.title.trim(),
       trackNumber: track.trackNumber,
       fileName: track.fileName,
