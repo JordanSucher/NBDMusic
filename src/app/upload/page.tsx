@@ -118,14 +118,31 @@ export default function UploadPage() {
     return null
   }
 
+  // Function to sanitize filenames for safe uploading
+  const sanitizeFilename = (filename: string): string => {
+    // Get file extension
+    const extension = filename.substring(filename.lastIndexOf('.'))
+    const nameWithoutExt = filename.substring(0, filename.lastIndexOf('.'))
+    
+    // Replace problematic characters with safe alternatives
+    const sanitized = nameWithoutExt
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '_') // Replace any non-alphanumeric with underscore
+      .replace(/_+/g, '_') // Replace multiple underscores with single
+      .replace(/^_|_$/g, '') // Remove leading/trailing underscores
+    
+    return `${sanitized}${extension.toLowerCase()}`
+  }
+
   const uploadFileDirectly = async (file: File, fileType: 'track' | 'artwork'): Promise<string> => {
     try {
       const { upload } = await import('@vercel/blob/client')
       
-      // Generate unique filename
+      // Generate unique filename with sanitized name
       const timestamp = Date.now()
       const folder = fileType === 'artwork' ? 'artwork' : 'tracks'
-      const filename = `${folder}/${timestamp}-${file.name}`
+      const sanitizedName = sanitizeFilename(file.name)
+      const filename = `${folder}/${timestamp}-${sanitizedName}`
 
       const blob = await upload(filename, file, {
         access: 'public',

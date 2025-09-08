@@ -332,6 +332,45 @@ export default function EditReleasePage() {
     setShowDeleteConfirm(false)
   }
 
+  // Function to sanitize filenames for safe uploading
+  const sanitizeFilename = (filename: string): string => {
+    // Get file extension
+    const extension = filename.substring(filename.lastIndexOf('.'))
+    const nameWithoutExt = filename.substring(0, filename.lastIndexOf('.'))
+    
+    // Replace problematic characters with safe alternatives
+    const sanitized = nameWithoutExt
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '_') // Replace any non-alphanumeric with underscore
+      .replace(/_+/g, '_') // Replace multiple underscores with single
+      .replace(/^_|_$/g, '') // Remove leading/trailing underscores
+    
+    return `${sanitized}${extension.toLowerCase()}`
+  }
+
+  // Function to upload file directly to blob storage
+  const uploadFileDirectly = async (file: File, fileType: 'track' | 'artwork'): Promise<string> => {
+    try {
+      const { upload } = await import('@vercel/blob/client')
+      
+      // Generate unique filename with sanitized name
+      const timestamp = Date.now()
+      const folder = fileType === 'artwork' ? 'artwork' : 'tracks'
+      const sanitizedName = sanitizeFilename(file.name)
+      const filename = `${folder}/${timestamp}-${sanitizedName}`
+
+      const blob = await upload(filename, file, {
+        access: 'public',
+        handleUploadUrl: '/api/blob/upload'
+      })
+
+      return blob.url
+    } catch (error) {
+      console.error(`Upload error for ${file.name}:`, error)
+      throw error
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!session?.user) return
@@ -341,45 +380,63 @@ export default function EditReleasePage() {
     setSuccess("")
 
     try {
-      const formData = new FormData()
-      
-      // Add release data
-      formData.append('releaseTitle', releaseTitle.trim())
-      formData.append('releaseDescription', releaseDescription.trim())
-      formData.append('releaseType', releaseType)
-      formData.append('tags', tags.trim())
-      formData.append('releaseDate', releaseDate)
-      formData.append('removeCurrentArtwork', removeCurrentArtwork.toString())
-      
-      // Add new artwork if provided
-      if (artworkFile) {
-        formData.append('artwork', artworkFile)
+      // Upload new artwork if provided
+      let artworkUrl = currentArtworkUrl
+      if (removeCurrentArtwork) {
+        artworkUrl = null
       }
-      
-      // Add existing tracks
+      if (artworkFile) {
+        artworkUrl = await uploadFileDirectly(artworkFile, 'artwork')
+      }
+
+      // Process existing tracks
       const existingTracks = tracks.filter(track => !track.isNew)
-      existingTracks.forEach((track, index) => {
-        formData.append(`existing_${index}_id`, track.id!)
-        formData.append(`existing_${index}_title`, track.title.trim())
-        formData.append(`existing_${index}_lyrics`, track.lyrics.trim())
-        formData.append(`existing_${index}_number`, track.trackNumber.toString())
-        formData.append(`existing_${index}_delete`, track.toDelete ? 'true' : 'false')
-      })
-      formData.append('existingTrackCount', existingTracks.length.toString())
-      
-      // Add new tracks
+      const existingTracksData = existingTracks.map(track => ({
+        id: track.id!,
+        title: track.title.trim(),
+        trackNumber: track.trackNumber,
+        lyrics: track.lyrics.trim(),
+        toDelete: track.toDelete || false
+      }))
+
+      // Upload new track files and prepare data
       const newTracks = tracks.filter(track => track.isNew && !track.toDelete)
-      newTracks.forEach((track, index) => {
-        formData.append(`new_${index}_file`, track.file!)
-        formData.append(`new_${index}_title`, track.title.trim())
-        formData.append(`new_${index}_lyrics`, track.lyrics.trim())
-        formData.append(`new_${index}_number`, track.trackNumber.toString())
-      })
-      formData.append('newTrackCount', newTracks.length.toString())
+      const newTracksData = []
+
+      for (let i = 0; i < newTracks.length; i++) {
+        const track = newTracks[i]
+        const fileUrl = await uploadFileDirectly(track.file!, 'track')
+        
+        newTracksData.push({
+          title: track.title.trim(),
+          trackNumber: track.trackNumber,
+          fileName: track.file!.name,
+          fileUrl,
+          fileSize: track.file!.size,
+          mimeType: track.file!.type,
+          lyrics: track.lyrics.trim()
+        })
+      }
+
+      // Send JSON data
+      const requestData = {
+        releaseTitle: releaseTitle.trim(),
+        releaseDescription: releaseDescription.trim(),
+        releaseType,
+        tags: tags.trim(),
+        releaseDate: releaseDate || null,
+        artworkUrl,
+        removeCurrentArtwork,
+        existingTracks: existingTracksData,
+        newTracks: newTracksData
+      }
 
       const response = await fetch(`/api/releases/${releaseId}`, {
         method: 'PUT',
-        body: formData
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData)
       })
 
       if (!response.ok) {

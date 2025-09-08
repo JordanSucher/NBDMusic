@@ -84,7 +84,7 @@ export async function PUT(
     }
 
     const { id } = await context.params
-    const formData = await request.formData()
+    const requestBody = await request.json()
 
     // Find existing release
     const existingRelease = await db.release.findUnique({
@@ -110,14 +110,19 @@ export async function PUT(
       )
     }
 
-    // Extract form data
-    const releaseTitle = formData.get('releaseTitle') as string
-    const releaseDescription = formData.get('releaseDescription') as string
-    const releaseType = formData.get('releaseType') as string
-    const tags = formData.get('tags') as string
-    const removeCurrentArtwork = formData.get('removeCurrentArtwork') === 'true'
-    const newArtworkFile = formData.get('artwork') as File | null
-    const releaseDate = formData.get('releaseDate') as string
+    // Extract JSON data
+    const {
+      releaseTitle,
+      releaseDescription,
+      releaseType,
+      tags,
+      releaseDate,
+      artworkUrl,
+      removeCurrentArtwork,
+      existingTracks,
+      newTracks
+    } = requestBody
+
     const parsedReleaseDate = releaseDate ? new Date(releaseDate) : null
 
 
@@ -129,57 +134,43 @@ export async function PUT(
     }
 
     // Handle artwork updates
-    let artworkUrl = existingRelease.artworkUrl
+    let finalArtworkUrl = artworkUrl
     
     // Remove current artwork if requested
     if (removeCurrentArtwork && existingRelease.artworkUrl) {
       try {
         await del(existingRelease.artworkUrl)
-        artworkUrl = null
+        finalArtworkUrl = null
       } catch (error) {
         console.error("Failed to delete current artwork:", error)
       }
     }
 
-    // Upload new artwork if provided
-    if (newArtworkFile && newArtworkFile.size > 0) {
+    // If new artwork URL is provided and different from current, delete old one
+    if (artworkUrl && artworkUrl !== existingRelease.artworkUrl && existingRelease.artworkUrl && !removeCurrentArtwork) {
       try {
-        // Delete old artwork first if exists
-        if (existingRelease.artworkUrl && !removeCurrentArtwork) {
-          await del(existingRelease.artworkUrl).catch(console.error)
-        }
-        
-        const artworkBlob = await put(`artwork/${Date.now()}-${newArtworkFile.name}`, newArtworkFile, {
-          access: 'public',
-        })
-        artworkUrl = artworkBlob.url
+        await del(existingRelease.artworkUrl)
       } catch (error) {
-        console.error("Failed to upload new artwork:", error)
-        return NextResponse.json(
-          { error: "Failed to upload new artwork" },
-          { status: 500 }
-        )
+        console.error("Failed to delete old artwork:", error)
       }
     }
 
     // Handle existing tracks
-    const existingTrackCount = parseInt(formData.get('existingTrackCount') as string || '0')
     const tracksToDelete: string[] = []
     const tracksToUpdate: Array<{ id: string, title: string, trackNumber: number, lyrics: string }> = []
 
-    for (let i = 0; i < existingTrackCount; i++) {
-      const trackId = formData.get(`existing_${i}_id`) as string
-      const shouldDelete = formData.get(`existing_${i}_delete`) === 'true'
-      
-      if (shouldDelete) {
-        tracksToDelete.push(trackId)
+    existingTracks.forEach((track: any) => {
+      if (track.toDelete) {
+        tracksToDelete.push(track.id)
       } else {
-        const title = formData.get(`existing_${i}_title`) as string
-        const lyrics = formData.get(`existing_${i}_lyrics`) as string
-        const trackNumber = parseInt(formData.get(`existing_${i}_number`) as string)
-        tracksToUpdate.push({ id: trackId, title: title.trim(), lyrics: lyrics.trim(), trackNumber })
+        tracksToUpdate.push({
+          id: track.id,
+          title: track.title.trim(),
+          trackNumber: track.trackNumber,
+          lyrics: track.lyrics?.trim() || ''
+        })
       }
-    }
+    })
 
     // Delete marked tracks and their files
     for (const trackId of tracksToDelete) {
@@ -197,51 +188,27 @@ export async function PUT(
       }
     }
 
-    // Handle new tracks
-    const newTrackCount = parseInt(formData.get('newTrackCount') as string || '0')
-    const newTracks = []
-
-    for (let i = 0; i < newTrackCount; i++) {
-      const trackFile = formData.get(`new_${i}_file`) as File
-      const trackTitle = formData.get(`new_${i}_title`) as string
-      const trackLyrics = formData.get(`new_${i}_lyrics`) as string
-      const trackNumber = parseInt(formData.get(`new_${i}_number`) as string)
-
-      if (!trackFile || !trackTitle) continue
-
-      try {
-        const blob = await put(`tracks/${Date.now()}-${trackFile.name}`, trackFile, {
-          access: 'public',
-        })
-
-        newTracks.push({
-          title: trackTitle.trim(),
-          trackNumber,
-          fileName: trackFile.name,
-          fileUrl: blob.url,
-          fileSize: trackFile.size,
-          mimeType: trackFile.type,
-          lyrics: trackLyrics?.trim() || null,
-          releaseId: id
-        })
-      } catch (error) {
-        console.error(`Failed to upload new track ${trackTitle}:`, error)
-        return NextResponse.json(
-          { error: `Failed to upload track: ${trackTitle}` },
-          { status: 500 }
-        )
-      }
-    }
+    // Handle new tracks (they're already uploaded, just process the data)
+    const newTracksData = newTracks.map((track: any) => ({
+      title: track.title.trim(),
+      trackNumber: track.trackNumber,
+      fileName: track.fileName,
+      fileUrl: track.fileUrl,
+      fileSize: track.fileSize,
+      mimeType: track.mimeType,
+      lyrics: track.lyrics?.trim() || null,
+      releaseId: id
+    }))
 
     // Update release in database
     await db.release.update({
       where: { id },
       data: {
         title: releaseTitle.trim(),
-        description: releaseDescription.trim() || null,
+        description: releaseDescription?.trim() || null,
         releaseType,
         releaseDate: parsedReleaseDate,
-        artworkUrl
+        artworkUrl: finalArtworkUrl
       }
     })
 
@@ -258,9 +225,9 @@ export async function PUT(
     }
 
     // Create new tracks
-    if (newTracks.length > 0) {
+    if (newTracksData.length > 0) {
       await db.track.createMany({
-        data: newTracks
+        data: newTracksData
       })
     }
 
@@ -307,8 +274,8 @@ export async function PUT(
       releaseId: id,
       trackCount: finalTrackCount,
       deletedTracks: tracksToDelete.length,
-      addedTracks: newTracks.length,
-      hasArtwork: !!artworkUrl
+      addedTracks: newTracksData.length,
+      hasArtwork: !!finalArtworkUrl
     })
 
   } catch (error) {
