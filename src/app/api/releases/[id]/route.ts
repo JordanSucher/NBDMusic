@@ -268,7 +268,7 @@ export async function PUT(
     })
 
     // Add new tags
-    if (tags.trim()) {
+    if (tags && tags.trim()) {
       const tagNames = tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
       
       for (const tagName of tagNames) {
