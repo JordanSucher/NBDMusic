@@ -7,7 +7,7 @@ const prisma = new PrismaClient()
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { playlistId: string } }
+  context: { params: Promise<{ playlistId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -15,7 +15,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { playlistId } = params
+    const { playlistId } = await context.params
     const { isPublic } = await request.json()
 
     // Find the user

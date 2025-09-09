@@ -7,10 +7,10 @@ const prisma = new PrismaClient()
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { playlistId: string } }
+  context: { params: Promise<{ playlistId: string }> }
 ) {
   try {
-    const { playlistId } = params
+    const { playlistId } = await context.params
     const session = await getServerSession(authOptions)
     
     // Get current user if logged in
