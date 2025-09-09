@@ -121,8 +121,12 @@ export default function Header() {
               minHeight: '24px'
             }}
             onClick={closeMobileMenu}
-            onTouchEnd={(e) => e.currentTarget.blur()}
-            onTouchStart={(e) => e.currentTarget.blur()}
+            onTouchStart={(e) => {
+              e.currentTarget.blur()
+            }}
+            onTouchEnd={(e) => {
+              setTimeout(() => e.currentTarget.blur(), 10)
+            }}
           >
             <span>nbd</span>
             <CursorEyes size="small" headerMode={true} />

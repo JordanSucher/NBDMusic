@@ -314,7 +314,12 @@ export default function AudioPlayer({
         {(hasNextTrack || hasPrevTrack) && (
           <button
             onClick={handlePrev}
-            onTouchEnd={(e) => e.currentTarget.blur()}
+            onTouchStart={(e) => {
+              e.currentTarget.blur()
+            }}
+            onTouchEnd={(e) => {
+              setTimeout(() => e.currentTarget.blur(), 10)
+            }}
             disabled={!hasPrevTrack}
             style={{
               padding: '6px 8px',
@@ -332,7 +337,14 @@ export default function AudioPlayer({
         <button
           className="play-pause-btn elegant-dither"
           onClick={togglePlayPause}
-          onTouchEnd={(e) => e.currentTarget.blur()}
+          onTouchStart={(e) => {
+            // Immediately blur to prevent focus state
+            e.currentTarget.blur()
+          }}
+          onTouchEnd={(e) => {
+            // Ensure no focus remains after touch
+            setTimeout(() => e.currentTarget.blur(), 10)
+          }}
           style={{
             padding: '6px 12px',
             fontSize: '14px',
@@ -348,7 +360,12 @@ export default function AudioPlayer({
         {(hasNextTrack || hasPrevTrack) && (
           <button
             onClick={handleNext}
-            onTouchEnd={(e) => e.currentTarget.blur()}
+            onTouchStart={(e) => {
+              e.currentTarget.blur()
+            }}
+            onTouchEnd={(e) => {
+              setTimeout(() => e.currentTarget.blur(), 10)
+            }}
             disabled={!hasNextTrack}
             style={{
               padding: '6px 8px',

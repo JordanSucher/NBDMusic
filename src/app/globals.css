@@ -532,16 +532,7 @@ audio {
 
 /* Fix mobile sticky active/focus states */
 @media (max-width: 768px) {
-  /* Prevent buttons and links from staying highlighted after tap */
-  button:focus,
-  button:active,
-  a:focus,
-  a:active {
-    outline: none !important;
-    -webkit-tap-highlight-color: transparent !important;
-  }
-  
-  /* Remove focus outline completely on touch devices */
+  /* Remove the webkit tap highlight but keep our custom active states */
   button,
   a,
   input,
@@ -549,31 +540,45 @@ audio {
   select {
     -webkit-tap-highlight-color: transparent !important;
     -webkit-touch-callout: none !important;
-    -webkit-user-select: none !important;
     outline: none !important;
   }
   
-  /* Specifically target audio player buttons */
-  .play-pause-btn:focus,
-  .play-pause-btn:active {
-    background-color: #ddd !important;
-    border: 2px outset #ccc !important;
-  }
-  
-  /* Remove persistent hover effects on mobile */
-  button:hover,
-  a:hover {
+  /* Keep active state during press, but prevent focus from persisting */
+  button:focus:not(:active),
+  a:focus:not(:active) {
     background-color: initial !important;
     color: initial !important;
+    border: initial !important;
   }
   
-  /* Only show hover effects on actual hover (not after tap) */
+  /* Allow active state to show during press */
+  button:active {
+    border: 2px inset #ccc !important;
+    background-color: #bbb !important;
+  }
+  
+  a:active {
+    color: black !important;
+    background-color: #ffff00 !important;
+  }
+  
+  /* Remove persistent hover effects on mobile (only show on actual hover devices) */
+  button:hover:not(:active) {
+    background-color: #ddd !important;
+  }
+  
+  a:hover:not(:active) {
+    color: #0000ff !important;
+    background-color: transparent !important;
+  }
+  
+  /* Only show hover effects on devices that support hover */
   @media (hover: hover) {
-    button:hover {
+    button:hover:not(:active) {
       background-color: #bbb !important;
     }
     
-    a:hover {
+    a:hover:not(:active) {
       color: black !important;
       background-color: #ffff00 !important;
     }
