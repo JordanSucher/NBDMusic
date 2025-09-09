@@ -119,6 +119,8 @@ export default function PlaylistView({
         duration: track.duration,
         trackNumber: track.position,
         releaseId: track.release.id,
+        releaseTitle: track.release.title,
+        listenCount: track.listenCount,
         lyrics: track.lyrics
       }))
 
@@ -150,6 +152,8 @@ export default function PlaylistView({
         duration: track.duration,
         trackNumber: track.position,
         releaseId: track.release.id,
+        releaseTitle: track.release.title,
+        listenCount: track.listenCount,
         lyrics: track.lyrics
       }))
 
@@ -182,6 +186,8 @@ export default function PlaylistView({
         duration: t.duration,
         trackNumber: t.position,
         releaseId: t.release.id,
+        releaseTitle: t.release.title,
+        listenCount: t.listenCount,
         lyrics: t.lyrics
       }))
 
@@ -507,6 +513,8 @@ export default function PlaylistView({
                                   fileUrl: track.fileUrl,
                                   trackNumber: track.position,
                                   releaseId: track.release.id,
+                                  releaseTitle: track.release.title,
+                                  listenCount: track.listenCount,
                                   duration: track.duration,
                                   lyrics: track.lyrics
                                 }
