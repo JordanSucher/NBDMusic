@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate PWA Icons from Your Icon</title>
+    <style>
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+            margin: 20px; 
+            background: #f5f5f5; 
+        }
+        .icon-container { 
+            display: inline-block; 
+            margin: 20px; 
+            text-align: center; 
+            background: white; 
+            padding: 20px; 
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        canvas { 
+            border: 1px solid #ddd; 
+            border-radius: 8px; 
+            margin-bottom: 10px;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+        button {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 4px;
+        }
+        button:hover { background: #0056CC; }
+        h1 { color: #333; text-align: center; }
+        h3 { color: #666; margin-bottom: 10px; }
+        .source-preview { 
+            text-align: center; 
+            margin: 20px 0; 
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .source-preview img {
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .instructions {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #2196F3;
+        }
+    </style>
+</head>
+<body>
+    <h1>🖼️ Generate PWA Icons from Your icon.png</h1>
+    
+    <div class="instructions">
+        <strong>Instructions:</strong>
+        <ol>
+            <li>Click "Choose File" below and select your <code>icon.png</code></li>
+            <li>The generator will create all PWA icon sizes automatically</li>
+            <li>Download all the generated icons</li>
+            <li>Replace the old icon files in your <code>/public/</code> folder</li>
+        </ol>
+    </div>
+    
+    <div class="source-preview">
+        <h3>Upload Your Icon</h3>
+        <input type="file" id="iconUpload" accept="image/*" style="margin: 10px 0;">
+        <br>
+        <img id="sourcePreview" style="max-width: 128px; max-height: 128px; display: none; margin-top: 10px; border: 1px solid #ddd; border-radius: 4px;" alt="Source icon"/>
+        <p id="uploadStatus">Select an image file to get started</p>
+    </div>
+    
+    <div class="icon-container">
+        <h3>192×192 Icon</h3>
+        <canvas id="icon192" width="192" height="192"></canvas><br>
+        <button onclick="downloadIcon('icon192', 'icon-192x192.png')">Download PNG</button>
+    </div>
+    
+    <div class="icon-container">
+        <h3>512×512 Icon</h3>
+        <canvas id="icon512" width="512" height="512"></canvas><br>
+        <button onclick="downloadIcon('icon512', 'icon-512x512.png')">Download PNG</button>
+    </div>
+    
+    <div class="icon-container">
+        <h3>192×192 Maskable</h3>
+        <canvas id="maskable192" width="192" height="192"></canvas><br>
+        <button onclick="downloadIcon('maskable192', 'icon-maskable-192x192.png')">Download PNG</button>
+    </div>
+    
+    <div class="icon-container">
+        <h3>512×512 Maskable</h3>
+        <canvas id="maskable512" width="512" height="512"></canvas><br>
+        <button onclick="downloadIcon('maskable512', 'icon-maskable-512x512.png')">Download PNG</button>
+    </div>
+
+    <script>
+        let sourceImage = null;
+        
+        function setupFileUpload() {
+            const uploadInput = document.getElementById('iconUpload');
+            const preview = document.getElementById('sourcePreview');
+            const status = document.getElementById('uploadStatus');
+            
+            uploadInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                if (!file.type.startsWith('image/')) {
+                    status.textContent = 'Please select an image file';
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        sourceImage = img;
+                        preview.src = e.target.result;
+                        preview.style.display = 'block';
+                        status.textContent = `Loaded: ${file.name} (${img.width}×${img.height}px)`;
+                        generateAllIcons();
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        function generateIcon(canvas, isMaskable = false) {
+            if (!sourceImage) return;
+            
+            const ctx = canvas.getContext('2d');
+            const size = canvas.width;
+            
+            // Disable image smoothing for pixelated icons
+            ctx.imageSmoothingEnabled = false;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, size, size);
+            
+            if (isMaskable) {
+                // For maskable icons, add 10% padding (safe area)
+                const padding = size * 0.1;
+                const iconSize = size - (padding * 2);
+                
+                // Center the icon with padding
+                ctx.drawImage(
+                    sourceImage, 
+                    padding, 
+                    padding, 
+                    iconSize, 
+                    iconSize
+                );
+            } else {
+                // For regular icons, use the full canvas
+                ctx.drawImage(sourceImage, 0, 0, size, size);
+            }
+        }
+        
+        function generateAllIcons() {
+            generateIcon(document.getElementById('icon192'), false);
+            generateIcon(document.getElementById('icon512'), false);
+            generateIcon(document.getElementById('maskable192'), true);
+            generateIcon(document.getElementById('maskable512'), true);
+        }
+        
+        function downloadIcon(canvasId, filename) {
+            const canvas = document.getElementById(canvasId);
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+        
+        // Set up file upload when page loads
+        window.onload = function() {
+            setupFileUpload();
+        };
+    </script>
+</body>
+</html>
