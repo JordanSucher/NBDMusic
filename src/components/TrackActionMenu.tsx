@@ -99,14 +99,22 @@ export default function TrackActionMenu({
   }, [isOpen, onClose])
 
   const handleAddToQueue = () => {
+    const releaseId = track.releaseId || track.release?.id || releaseInfo?.id
+    const releaseTitle = track.releaseTitle || track.release?.title || releaseInfo?.title
+    
+    if (!releaseId || !releaseTitle) {
+      console.error('Cannot add track to queue: missing release information')
+      return
+    }
+    
     const queueTrack = {
       id: track.id,
       title: track.title,
       artist: track.artist || releaseInfo?.artist || 'Unknown Artist',
       fileUrl: track.fileUrl,
       trackNumber: track.trackNumber || track.position || 1,
-      releaseId: track.releaseId || track.release?.id || releaseInfo?.id,
-      releaseTitle: track.releaseTitle || track.release?.title || releaseInfo?.title,
+      releaseId,
+      releaseTitle,
       listenCount: track.listenCount || track._count?.listens || 0,
       duration: track.duration,
       lyrics: track.lyrics,
@@ -175,9 +183,9 @@ export default function TrackActionMenu({
     // Add these for mobile to completely override global styles
     ...(isMobile && {
       boxShadow: 'none',
-      WebkitAppearance: 'none',
-      MozAppearance: 'none',
-      appearance: 'none',
+      WebkitAppearance: 'none' as const,
+      MozAppearance: 'none' as const,
+      appearance: 'none' as const,
       WebkitTapHighlightColor: 'transparent'
     })
   }
@@ -210,7 +218,7 @@ export default function TrackActionMenu({
     fontSize: '10px',
     fontFamily: 'Courier New, monospace',
     borderBottomWidth: '1px',
-    borderBottomStyle: 'solid',
+    borderBottomStyle: 'solid' as const,
     borderBottomColor: '#000'
   }
 
