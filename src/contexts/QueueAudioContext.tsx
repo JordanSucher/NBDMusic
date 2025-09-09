@@ -67,73 +67,69 @@ export function QueueAudioProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Update MediaSession position state
+  // Update MediaSession position state with proper validation
   const updatePositionState = useCallback(() => {
-    if ('mediaSession' in navigator && currentTrack && duration > 0 && !isNaN(duration) && isFinite(duration)) {
-      try {
-        const safePosition = Math.max(0, Math.min(currentTime || 0, duration));
-        const safeDuration = Math.max(0.1, duration); // Ensure duration is at least 0.1 seconds
-        
-        // Only update if values are valid
-        if (!isNaN(safePosition) && !isNaN(safeDuration) && isFinite(safePosition) && isFinite(safeDuration)) {
-          // Debug logging for Android
-          console.log('📱 MediaSession update:', {
-            position: safePosition.toFixed(1),
-            duration: safeDuration.toFixed(1),
-            playbackRate: 1.0,
-            playbackState: isGloballyPlaying ? 'playing' : 'paused',
-            percentage: ((safePosition / safeDuration) * 100).toFixed(1) + '%'
-          });
-          
-          // For Android: Set playback state AND position state together
-          // This forces Android to recalculate the progress bar correctly
-          navigator.mediaSession.playbackState = isGloballyPlaying ? 'playing' : 'paused';
-          
-          // Clear position state first (Android workaround)
-          try {
-            navigator.mediaSession.setPositionState();
-          } catch (e) {
-            // Ignore clear errors
-          }
-          
-          // Set new position state immediately after clearing
-          setTimeout(() => {
-            try {
-              navigator.mediaSession.setPositionState({
-                duration: safeDuration,
-                playbackRate: 1.0,
-                position: safePosition
-              });
-            } catch (e) {
-              console.log('MediaSession delayed setPositionState failed:', e);
-            }
-          }, 10);
-        }
-      } catch (error) {
-        console.log('MediaSession setPositionState failed:', error);
-      }
+    if (!('mediaSession' in navigator) || !currentTrack) {
+      return;
+    }
+
+    // Critical: Validate all values before calling setPositionState
+    if (isNaN(duration) || isNaN(currentTime) || !isFinite(duration) || !isFinite(currentTime) || 
+        duration <= 0 || currentTime < 0) {
+      console.warn('📱 Invalid media state, skipping MediaSession update:', { 
+        duration, 
+        currentTime, 
+        durationType: typeof duration,
+        currentTimeType: typeof currentTime,
+        durationValid: !isNaN(duration) && isFinite(duration) && duration > 0,
+        currentTimeValid: !isNaN(currentTime) && isFinite(currentTime) && currentTime >= 0
+      });
+      return;
+    }
+
+    try {
+      const safePosition = Math.min(currentTime, duration); // Don't allow position > duration
+      
+      // Debug logging for Android
+      console.log('📱 MediaSession update (validated):', {
+        position: safePosition.toFixed(1),
+        duration: duration.toFixed(1),
+        playbackRate: 1.0,
+        playbackState: isGloballyPlaying ? 'playing' : 'paused',
+        percentage: ((safePosition / duration) * 100).toFixed(1) + '%'
+      });
+      
+      // Set playback state
+      navigator.mediaSession.playbackState = isGloballyPlaying ? 'playing' : 'paused';
+      
+      // Set position state with validated values
+      navigator.mediaSession.setPositionState({
+        duration: duration,
+        playbackRate: 1.0,
+        position: safePosition
+      });
+    } catch (error) {
+      console.log('📱 MediaSession setPositionState failed:', error);
     }
   }, [currentTime, duration, currentTrack, isGloballyPlaying]);
 
   // Update media session when track changes
   useEffect(() => {
     updateMediaSession(currentTrack);
-    // Reset position state when track changes - force immediate update
+    
     if ('mediaSession' in navigator && currentTrack) {
-      // Clear any existing position state first
+      // Clear position state when track changes (reset progress bar)
       try {
         navigator.mediaSession.setPositionState();
       } catch (e) {
-        // Ignore errors when clearing
+        console.log('Failed to clear MediaSession position state:', e);
       }
       
-      // Set new position state after a small delay
-      setTimeout(() => {
-        updatePositionState();
-        setLastUpdateTime(Date.now()); // Reset throttling
-      }, 200); // Slightly longer delay for Android
+      // Only set position state if we have valid metadata
+      // The throttled update effect will handle setting it once values are valid
+      console.log('📱 Track changed, cleared position state. Waiting for valid metadata...');
     }
-  }, [currentTrack, updateMediaSession, updatePositionState]);
+  }, [currentTrack, updateMediaSession]);
 
   // Throttle position updates for Android compatibility
   const [lastUpdateTime, setLastUpdateTime] = useState(0);
