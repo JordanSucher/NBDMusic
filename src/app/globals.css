@@ -544,14 +544,18 @@ audio {
   }
   
   /* Keep active state during press, but prevent focus from persisting */
-  button:focus:not(:active),
-  a:focus:not(:active) {
-    background-color: initial !important;
-    color: initial !important;
-    border: initial !important;
+  button:focus:not(:active) {
+    /* Reset to default 3D button appearance when focused but not active */
+    background-color: #ddd !important;
+    border: 2px outset #ccc !important;
   }
   
-  /* Allow active state to show during press */
+  a:focus:not(:active) {
+    background-color: transparent !important;
+    /* Keep original color - don't force blue on all links */
+  }
+  
+  /* Allow active state to show during press - keep 3D inset style */
   button:active {
     border: 2px inset #ccc !important;
     background-color: #bbb !important;
@@ -564,18 +568,18 @@ audio {
   
   /* Remove persistent hover effects on mobile (only show on actual hover devices) */
   button:hover:not(:active) {
+    /* Keep default 3D button appearance on mobile hover */
     background-color: #ddd !important;
+    border: 2px outset #ccc !important;
   }
   
-  a:hover:not(:active) {
-    color: #0000ff !important;
-    background-color: transparent !important;
-  }
+  /* Don't force blue on all links on mobile hover - let them keep their original styling */
   
   /* Only show hover effects on devices that support hover */
   @media (hover: hover) {
     button:hover:not(:active) {
       background-color: #bbb !important;
+      border: 2px outset #ccc !important;
     }
     
     a:hover:not(:active) {
