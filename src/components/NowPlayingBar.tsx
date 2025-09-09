@@ -186,92 +186,76 @@ export default function NowPlayingBar() {
         fontFamily: 'Courier New, monospace',
         fontSize: '11px'
       }}>
-        {/* First line: Track info */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-          fontSize: '14px',
-          lineHeight: '1.2',
-          marginBottom: '8px',
-          minWidth: 0
+        {/* Mobile: Two column layout */}
+        <div className="mobile-now-playing" style={{ 
+          display: 'none',
+          flexDirection: 'row',
+          alignItems: 'flex-start',
+          gap: '12px',
+          marginBottom: '8px'
         }}>
-          {/* Track and artist info container */}
+          {/* Left column: Track and artist info */}
           <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
             flex: '1 1 0',
             minWidth: 0,
-            overflow: 'hidden'
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '2px'
           }}>
-            {/* Track title - clickable to release */}
-            <Link 
-              href={createReleaseUrl(activeTrack.releaseId, queueAudio.currentTrack?.title || '', queueAudio.currentTrack?.artist || '')}
-              style={{
-                fontWeight: 'bold', 
-                color: '#0000EE',
-                textDecoration: 'underline',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                fontSize: '14px',
-                flex: '1 1 0',
-                minWidth: 0
-              }}
-              title={activeTrack.title.replace(/^\d+\.\s*/, '')}
-            >
-              {activeTrack.title.replace(/^\d+\.\s*/, '')}
-            </Link>
-            
-            {/* Separator */}
-            <span style={{ 
-              color: '#666',
+            {/* Song name */}
+            <div style={{
               fontSize: '14px',
-              whiteSpace: 'nowrap'
-            }}>by</span>
-            
-            {/* Artist link */}
-            <Link 
-              href={`/user/${activeTrack.artist}`}
-              style={{
-                color: '#0000EE',
-                textDecoration: 'underline',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                fontSize: '14px',
-                flex: '0 1 auto',
-                maxWidth: '30%',
-                marginRight: '16px'
-              }}
-              title={activeTrack.artist}
-            >
-              {activeTrack.artist}
-            </Link>
-          </div>
-          
-          {/* Queue indicators */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-            {/* Shuffle indicator */}
-            {queueAudio.currentQueue?.originalSource?.type === 'shuffle_all' && (
-              <span
+              lineHeight: '1.2'
+            }}>
+              <Link 
+                href={createReleaseUrl(activeTrack.releaseId, queueAudio.currentTrack?.title || '', queueAudio.currentTrack?.artist || '')}
                 style={{
-                  fontSize: '10px',
-                  padding: '2px 6px',
-                  backgroundColor: '#e6f3ff',
-                  border: '1px solid #b3d9ff',
-                  borderRadius: '3px',
-                  color: '#0066cc',
-                  fontWeight: 'bold',
-                  textTransform: 'uppercase'
+                  fontWeight: 'bold', 
+                  color: '#0000EE',
+                  textDecoration: 'underline',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  fontSize: '14px',
+                  display: 'inline-block',
+                  maxWidth: '100%',
+                  width: 'fit-content'
                 }}
-                title="Shuffle All mode"
+                title={activeTrack.title.replace(/^\d+\.\s*/, '')}
               >
-                shuffle
-              </span>
-            )}
-            
+                {activeTrack.title.replace(/^\d+\.\s*/, '')}
+              </Link>
+            </div>
+
+            {/* Artist name */}
+            <div style={{
+              fontSize: '12px',
+              lineHeight: '1.2',
+              color: '#666'
+            }}>
+              <span style={{ marginRight: '4px' }}>by</span>
+              <Link 
+                href={`/user/${activeTrack.artist}`}
+                style={{
+                  color: '#0000EE',
+                  textDecoration: 'underline',
+                  fontSize: '12px'
+                }}
+                title={activeTrack.artist}
+              >
+                {activeTrack.artist}
+              </Link>
+            </div>
+          </div>
+
+          {/* Right column: Queue + Shuffle indicators */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            gap: '4px',
+            flexShrink: 0
+          }}>
             {/* Queue link */}
             {queueAudio.currentQueue && (
               <span
@@ -297,11 +281,147 @@ export default function NowPlayingBar() {
                 Queue ({queueAudio.currentQueue.tracks.length - queueAudio.currentQueue.currentIndex - 1})
               </span>
             )}
+            
+            {/* Shuffle indicator */}
+            {queueAudio.currentQueue?.originalSource?.type === 'shuffle_all' && (
+              <span
+                style={{
+                  fontSize: '10px',
+                  padding: '2px 6px',
+                  backgroundColor: '#e6f3ff',
+                  border: '1px solid #b3d9ff',
+                  borderRadius: '3px',
+                  color: '#0066cc',
+                  fontWeight: 'bold',
+                  textTransform: 'uppercase'
+                }}
+                title="Shuffle All mode"
+              >
+                shuffle
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Second line: Controls and progress bar */}
-        <div style={{
+        {/* Desktop: Two column layout */}
+        <div className="desktop-now-playing" style={{ 
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'flex-start',
+          gap: '12px',
+          marginBottom: '8px'
+        }}>
+          {/* Left column: Track and artist info */}
+          <div style={{
+            flex: '1 1 0',
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '2px'
+          }}>
+            {/* Song name */}
+            <div style={{
+              fontSize: '14px',
+              lineHeight: '1.2'
+            }}>
+              <Link 
+                href={createReleaseUrl(activeTrack.releaseId, queueAudio.currentTrack?.title || '', queueAudio.currentTrack?.artist || '')}
+                style={{
+                  fontWeight: 'bold', 
+                  color: '#0000EE',
+                  textDecoration: 'underline',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  fontSize: '14px',
+                  display: 'inline-block',
+                  maxWidth: '100%',
+                  width: 'fit-content'
+                }}
+                title={activeTrack.title.replace(/^\d+\.\s*/, '')}
+              >
+                {activeTrack.title.replace(/^\d+\.\s*/, '')}
+              </Link>
+            </div>
+
+            {/* Artist name */}
+            <div style={{
+              fontSize: '12px',
+              lineHeight: '1.2',
+              color: '#666'
+            }}>
+              <span style={{ marginRight: '4px' }}>by</span>
+              <Link 
+                href={`/user/${activeTrack.artist}`}
+                style={{
+                  color: '#0000EE',
+                  textDecoration: 'underline',
+                  fontSize: '12px'
+                }}
+                title={activeTrack.artist}
+              >
+                {activeTrack.artist}
+              </Link>
+            </div>
+          </div>
+
+          {/* Right column: Queue + Shuffle indicators */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            gap: '4px',
+            flexShrink: 0
+          }}>
+            {/* Queue link */}
+            {queueAudio.currentQueue && (
+              <span
+                onClick={() => setShowQueue(true)}
+                style={{
+                  color: '#0000ff',
+                  textDecoration: 'underline',
+                  fontSize: '12px',
+                  fontFamily: 'Courier New, monospace',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = 'black'
+                  e.currentTarget.style.backgroundColor = '#ffff00'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = '#0000ff'
+                  e.currentTarget.style.backgroundColor = 'transparent'
+                }}
+                title={`View queue (${queueAudio.currentQueue.tracks.length - queueAudio.currentQueue.currentIndex - 1} remaining)`}
+              >
+                Queue ({queueAudio.currentQueue.tracks.length - queueAudio.currentQueue.currentIndex - 1})
+              </span>
+            )}
+            
+            {/* Shuffle indicator */}
+            {queueAudio.currentQueue?.originalSource?.type === 'shuffle_all' && (
+              <span
+                style={{
+                  fontSize: '10px',
+                  padding: '2px 6px',
+                  backgroundColor: '#e6f3ff',
+                  border: '1px solid #b3d9ff',
+                  borderRadius: '3px',
+                  color: '#0066cc',
+                  fontWeight: 'bold',
+                  textTransform: 'uppercase'
+                }}
+                title="Shuffle All mode"
+              >
+                shuffle
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Fourth line: Controls and progress bar */}
+        <div className="controls-bar" style={{
           display: 'flex',
           alignItems: 'center',
           gap: '6px'
@@ -867,6 +987,28 @@ export default function NowPlayingBar() {
           </div>
         </div>
       )}
+
+      <style jsx>{`
+        @media (max-width: 768px) {
+          .mobile-now-playing {
+            display: flex !important;
+          }
+          
+          .desktop-now-playing {
+            display: none !important;
+          }
+        }
+        
+        @media (min-width: 769px) {
+          .mobile-now-playing {
+            display: none !important;
+          }
+          
+          .desktop-now-playing {
+            display: flex !important;
+          }
+        }
+      `}</style>
     </div>
   )
 }
