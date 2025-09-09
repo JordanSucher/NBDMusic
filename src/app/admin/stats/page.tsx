@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 
 interface ListenerStat {
   listener: {
@@ -83,7 +83,7 @@ export default function AdminStatsPage() {
     { value: "0", label: "All time" }
   ]
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     setLoading(true)
     setError("")
 
@@ -115,11 +115,11 @@ export default function AdminStatsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     fetchStats()
-  }, [])
+  }, [fetchStats])
 
   const formatDisplayName = (username: string, name: string | null) => {
     return name ? `${name} (${username})` : username

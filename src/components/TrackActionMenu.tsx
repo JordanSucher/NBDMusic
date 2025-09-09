@@ -1,7 +1,6 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { createPortal } from "react-dom"
 import { useQueueAudioContext } from "@/contexts/QueueAudioContext"
 import { createReleaseUrl } from "@/utils/slugify"
 
@@ -168,7 +167,6 @@ export default function TrackActionMenu({
   }
 
   // Use unified styling for all contexts
-  const isPlaylistContext = context === 'playlist'
   const buttonStyle = {
     // Unified grey style
     padding: '2px 6px',

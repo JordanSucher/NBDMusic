@@ -159,39 +159,6 @@ export default function PlaylistView({
     return `${minutes}:${seconds.toString().padStart(2, '0')}`
   }
 
-  const playAll = async () => {
-    if (!localTracks || localTracks.length === 0) return
-
-    try {
-      const queueTracks = localTracks.map(track => ({
-        id: track.id,
-        title: track.title,
-        artist: track.artist,
-        fileUrl: track.fileUrl,
-        duration: track.duration,
-        trackNumber: track.position,
-        releaseId: track.release.id,
-        releaseTitle: track.release.title,
-        listenCount: track.listenCount,
-        lyrics: track.lyrics,
-        artworkUrl: track.release.artworkUrl
-      }))
-
-      const queue = queueGenerator.generateFromTracks(queueTracks, data.playlist.name)
-      queue.originalSource = {
-        type: 'playlist',
-        id: data.playlist.id || 'unknown',
-        name: data.playlist.name
-      }
-      queue.currentIndex = 0
-      queueAudio.setCurrentQueue(queue)
-      persistentAudioPlayer.play().catch(error => {
-        console.error("Auto-play failed:", error)
-      })
-    } catch (error) {
-      console.error("Error playing playlist:", error)
-    }
-  }
 
   const shuffleAll = async () => {
     if (!localTracks || localTracks.length === 0) return
@@ -291,17 +258,17 @@ export default function PlaylistView({
           }
           
           .mobile-playlist table {
-            border: none !important;
+            border: 1px solid #000 !important;
           }
           
           .mobile-playlist table th:first-child,
           .mobile-playlist table td:first-child {
-            border-left: none !important;
+            border-left: 1px solid #000 !important;
           }
           
           .mobile-playlist table th:last-child,
           .mobile-playlist table td:last-child {
-            border-right: none !important;
+            border-right: 1px solid #000 !important;
           }
           
           .mobile-playlist table thead tr {
@@ -433,13 +400,13 @@ export default function PlaylistView({
             z-index: 10001 !important;
           }
           
-          /* Remove borders from desktop playlist table */
+          /* Add borders to desktop playlist table */
           .desktop-playlist-table {
-            border: none !important;
-            border-top: none !important;
-            border-left: none !important;
-            border-right: none !important;
-            border-bottom: none !important;
+            border: 1px solid #000 !important;
+            border-top: 1px solid #000 !important;
+            border-left: 1px solid #000 !important;
+            border-right: 1px solid #000 !important;
+            border-bottom: 1px solid #000 !important;
             box-shadow: none !important;
           }
           
@@ -721,7 +688,7 @@ export default function PlaylistView({
       </div>
 
       {!localTracks || localTracks.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+        <div style={{ textAlign: 'center', padding: '40px 5px' }}>
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>♡</div>
           <h2>No songs in this playlist</h2>
           <p style={{ color: '#666', marginBottom: '20px' }}>
@@ -748,7 +715,7 @@ export default function PlaylistView({
             borderCollapse: 'collapse',
             fontSize: '12px',
             fontFamily: 'Courier New, monospace',
-            border: 'none',
+            border: '1px solid #000',
             boxShadow: 'none',
             overflow: 'visible'
           }}
@@ -992,9 +959,9 @@ export default function PlaylistView({
       </div>
       
       {/* Mobile simple view */}
-      <div className="mobile-playlist" style={{ padding: '40px 0 0 0' }}>
+      <div className="mobile-playlist" style={{ padding: '40px 15px 0 15px' }}>
         {showBackLink && (
-          <div style={{ marginBottom: '20px', padding: '0 20px' }}>
+          <div style={{ marginBottom: '20px', padding: '0 5px' }}>
             <Link href={showBackLink.href} style={{ color: '#0066cc', textDecoration: 'underline' }}>
               ← {showBackLink.text}
             </Link>
@@ -1005,14 +972,15 @@ export default function PlaylistView({
           backgroundColor: 'transparent',
           border: 'none',
           margin: '0 0 20px 0',
-          padding: '20px'
+          padding: '0'
         }}>
           {/* Mobile Header with Album Art */}
           <div style={{ 
             display: 'flex', 
             gap: '15px', 
             marginBottom: '20px',
-            alignItems: 'flex-start'
+            alignItems: 'flex-start',
+            padding: '20px'
           }}>
             {/* Artwork */}
             <div style={{ flexShrink: 0 }}>
@@ -1076,7 +1044,7 @@ export default function PlaylistView({
 
           {/* Action buttons below, aligned with artwork */}
           {localTracks && localTracks.length > 0 && (
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', padding: '0 20px 20px 20px' }}>
               <button
                 className="playlist-action-button"
                 onClick={shuffleAll}
@@ -1131,7 +1099,7 @@ export default function PlaylistView({
 
         {/* Mobile track list - same table as desktop */}
         {!localTracks || localTracks.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <div style={{ textAlign: 'center', padding: '40px 5px' }}>
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>♡</div>
             <h2>No songs in this playlist</h2>
             <p style={{ color: '#666', marginBottom: '20px' }}>

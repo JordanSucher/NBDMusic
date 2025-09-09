@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -54,7 +54,7 @@ export default function LikedSongsPage() {
     }
   }, [status, router])
 
-  const fetchLikedSongs = async () => {
+  const fetchLikedSongs = useCallback(async () => {
     if (!session?.user) return
 
     try {
@@ -77,12 +77,12 @@ export default function LikedSongsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [session])
 
   // Fetch liked songs
   useEffect(() => {
     fetchLikedSongs()
-  }, [session])
+  }, [fetchLikedSongs])
 
   if (status === "loading" || loading) {
     return (

@@ -67,10 +67,36 @@ export function QueueAudioProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Update MediaSession position state
+  const updatePositionState = useCallback(() => {
+    if ('mediaSession' in navigator && currentTrack && duration > 0) {
+      try {
+        navigator.mediaSession.setPositionState({
+          duration: duration,
+          playbackRate: 1.0,
+          position: Math.min(currentTime, duration) // Ensure position doesn't exceed duration
+        });
+      } catch (error) {
+        console.log('MediaSession setPositionState failed:', error);
+      }
+    }
+  }, [currentTime, duration, currentTrack]);
+
   // Update media session when track changes
   useEffect(() => {
     updateMediaSession(currentTrack);
-  }, [currentTrack, updateMediaSession]);
+    // Reset position state when track changes
+    if ('mediaSession' in navigator && currentTrack) {
+      setTimeout(() => {
+        updatePositionState();
+      }, 100); // Small delay to ensure duration is loaded
+    }
+  }, [currentTrack, updateMediaSession, updatePositionState]);
+
+  // Update position state when time/duration changes
+  useEffect(() => {
+    updatePositionState();
+  }, [updatePositionState]);
 
 
   // Initialize persistent audio player
@@ -406,6 +432,12 @@ export function QueueAudioProvider({ children }: { children: ReactNode }) {
       
       navigator.mediaSession.setActionHandler('nexttrack', () => {
         nextTrack();
+      });
+      
+      navigator.mediaSession.setActionHandler('seekto', (details) => {
+        if (details.seekTime !== null && details.seekTime !== undefined) {
+          persistentAudioPlayer.setCurrentTime(details.seekTime);
+        }
       });
     }
   }, [nextTrack, prevTrack]);

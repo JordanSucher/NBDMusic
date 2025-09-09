@@ -1,13 +1,11 @@
-import { useState, useEffect, useLayoutEffect, useRef } from "react"
+import { useState, useEffect, useLayoutEffect } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import AudioPlayer from "./AudioPlayer"
 import FollowButton from "./FollowButton"
-import LikeButton from "./LikeButton"
 import TrackActionMenu from "./TrackActionMenu"
 import { useQueueAudioContext } from "@/contexts/QueueAudioContext"
-import { persistentAudioPlayer } from "@/lib/PersistentAudioPlayer"
 import { createReleaseUrl } from "@/utils/slugify"
 
 interface Track {
