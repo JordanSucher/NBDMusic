@@ -34,6 +34,25 @@ export default function Header() {
     }
   }, [])
 
+  // Close mobile menu when clicking outside
+  useEffect(() => {
+    if (!isMobileMenuOpen) return
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (headerRef.current && !headerRef.current.contains(event.target as Node)) {
+        setIsMobileMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('touchstart', handleClickOutside)
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside)
+    }
+  }, [isMobileMenuOpen])
+
   useEffect(() => {
     if (!isHydrated) return
 
@@ -83,9 +102,7 @@ export default function Header() {
         padding: '0 20px'
       }}>
         {/* Logo/Site Name with Eyes */}
-        <div
-        className="flex flex-col"
-        style={{ position: 'relative' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
           <Link 
             href="/" 
             style={{ 
@@ -93,19 +110,24 @@ export default function Header() {
               fontWeight: 'bold', 
               textDecoration: 'none',
               color: '#000',
-              fontFamily: 'Courier New, monospace'
+              fontFamily: 'Courier New, monospace',
+              position: 'relative',
+              display: 'inline-flex',
+              alignItems: 'center',
+              width: 'fit-content',
+              minHeight: '24px'
             }}
             onClick={closeMobileMenu}
             onTouchEnd={(e) => e.currentTarget.blur()}
             onTouchStart={(e) => e.currentTarget.blur()}
           >
-          nbd
+            <span>nbd</span>
+            <CursorEyes size="small" headerMode={true} />
           </Link>
           <span
-          className="text-xs">
+          style={{ fontSize: '12px' }}>
             release the music!
           </span>
-          <CursorEyes size="small" headerMode={true} />
         </div>
 
         {/* Mobile Shuffle and Menu Buttons */}

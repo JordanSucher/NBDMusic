@@ -314,6 +314,7 @@ export default function AudioPlayer({
         {(hasNextTrack || hasPrevTrack) && (
           <button
             onClick={handlePrev}
+            onTouchEnd={(e) => e.currentTarget.blur()}
             disabled={!hasPrevTrack}
             style={{
               padding: '6px 8px',
@@ -331,6 +332,7 @@ export default function AudioPlayer({
         <button
           className="play-pause-btn elegant-dither"
           onClick={togglePlayPause}
+          onTouchEnd={(e) => e.currentTarget.blur()}
           style={{
             padding: '6px 12px',
             fontSize: '14px',
@@ -346,6 +348,7 @@ export default function AudioPlayer({
         {(hasNextTrack || hasPrevTrack) && (
           <button
             onClick={handleNext}
+            onTouchEnd={(e) => e.currentTarget.blur()}
             disabled={!hasNextTrack}
             style={{
               padding: '6px 8px',
