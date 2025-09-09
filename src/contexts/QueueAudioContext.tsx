@@ -76,14 +76,38 @@ export function QueueAudioProvider({ children }: { children: ReactNode }) {
         
         // Only update if values are valid
         if (!isNaN(safePosition) && !isNaN(safeDuration) && isFinite(safePosition) && isFinite(safeDuration)) {
-          // Set playback state first (crucial for Android while playing)
+          // Debug logging for Android
+          console.log('📱 MediaSession update:', {
+            position: safePosition.toFixed(1),
+            duration: safeDuration.toFixed(1),
+            playbackRate: 1.0,
+            playbackState: isGloballyPlaying ? 'playing' : 'paused',
+            percentage: ((safePosition / safeDuration) * 100).toFixed(1) + '%'
+          });
+          
+          // For Android: Set playback state AND position state together
+          // This forces Android to recalculate the progress bar correctly
           navigator.mediaSession.playbackState = isGloballyPlaying ? 'playing' : 'paused';
           
-          navigator.mediaSession.setPositionState({
-            duration: safeDuration,
-            playbackRate: isGloballyPlaying ? 1.0 : 0.0, // Set rate to 0 when paused
-            position: safePosition
-          });
+          // Clear position state first (Android workaround)
+          try {
+            navigator.mediaSession.setPositionState();
+          } catch (e) {
+            // Ignore clear errors
+          }
+          
+          // Set new position state immediately after clearing
+          setTimeout(() => {
+            try {
+              navigator.mediaSession.setPositionState({
+                duration: safeDuration,
+                playbackRate: 1.0,
+                position: safePosition
+              });
+            } catch (e) {
+              console.log('MediaSession delayed setPositionState failed:', e);
+            }
+          }, 10);
         }
       } catch (error) {
         console.log('MediaSession setPositionState failed:', error);
