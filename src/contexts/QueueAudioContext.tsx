@@ -69,35 +69,78 @@ export function QueueAudioProvider({ children }: { children: ReactNode }) {
 
   // Update MediaSession position state
   const updatePositionState = useCallback(() => {
-    if ('mediaSession' in navigator && currentTrack && duration > 0) {
+    if ('mediaSession' in navigator && currentTrack && duration > 0 && !isNaN(duration) && isFinite(duration)) {
       try {
-        navigator.mediaSession.setPositionState({
-          duration: duration,
-          playbackRate: 1.0,
-          position: Math.min(currentTime, duration) // Ensure position doesn't exceed duration
-        });
+        const safePosition = Math.max(0, Math.min(currentTime || 0, duration));
+        const safeDuration = Math.max(0.1, duration); // Ensure duration is at least 0.1 seconds
+        
+        // Only update if values are valid
+        if (!isNaN(safePosition) && !isNaN(safeDuration) && isFinite(safePosition) && isFinite(safeDuration)) {
+          // Set playback state first (crucial for Android while playing)
+          navigator.mediaSession.playbackState = isGloballyPlaying ? 'playing' : 'paused';
+          
+          navigator.mediaSession.setPositionState({
+            duration: safeDuration,
+            playbackRate: isGloballyPlaying ? 1.0 : 0.0, // Set rate to 0 when paused
+            position: safePosition
+          });
+        }
       } catch (error) {
         console.log('MediaSession setPositionState failed:', error);
       }
     }
-  }, [currentTime, duration, currentTrack]);
+  }, [currentTime, duration, currentTrack, isGloballyPlaying]);
 
   // Update media session when track changes
   useEffect(() => {
     updateMediaSession(currentTrack);
-    // Reset position state when track changes
+    // Reset position state when track changes - force immediate update
     if ('mediaSession' in navigator && currentTrack) {
+      // Clear any existing position state first
+      try {
+        navigator.mediaSession.setPositionState();
+      } catch (e) {
+        // Ignore errors when clearing
+      }
+      
+      // Set new position state after a small delay
       setTimeout(() => {
         updatePositionState();
-      }, 100); // Small delay to ensure duration is loaded
+        setLastUpdateTime(Date.now()); // Reset throttling
+      }, 200); // Slightly longer delay for Android
     }
   }, [currentTrack, updateMediaSession, updatePositionState]);
 
-  // Update position state when time/duration changes
+  // Throttle position updates for Android compatibility
+  const [lastUpdateTime, setLastUpdateTime] = useState(0);
+  
+  // Update position state when time/duration changes (throttled for Android)
   useEffect(() => {
-    updatePositionState();
-  }, [updatePositionState]);
+    const now = Date.now();
+    // While playing: update every 1000ms, while paused: update every 2000ms
+    const updateInterval = isGloballyPlaying ? 1000 : 2000;
+    
+    if (now - lastUpdateTime >= updateInterval) {
+      updatePositionState();
+      setLastUpdateTime(now);
+    } else {
+      // For immediate updates on track changes, clear existing timeout and set new one
+      const timeoutId = setTimeout(() => {
+        updatePositionState();
+        setLastUpdateTime(Date.now());
+      }, updateInterval - (now - lastUpdateTime));
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [updatePositionState, lastUpdateTime, isGloballyPlaying]);
 
+  // Update MediaSession immediately when playback state changes
+  useEffect(() => {
+    if (currentTrack && duration > 0) {
+      updatePositionState();
+      setLastUpdateTime(Date.now()); // Reset throttling
+    }
+  }, [isGloballyPlaying, currentTrack, duration, updatePositionState]);
 
   // Initialize persistent audio player
   useEffect(() => {

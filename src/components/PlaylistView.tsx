@@ -979,8 +979,7 @@ export default function PlaylistView({
             display: 'flex', 
             gap: '15px', 
             marginBottom: '20px',
-            alignItems: 'flex-start',
-            padding: '20px'
+            alignItems: 'flex-start'
           }}>
             {/* Artwork */}
             <div style={{ flexShrink: 0 }}>
@@ -1044,7 +1043,7 @@ export default function PlaylistView({
 
           {/* Action buttons below, aligned with artwork */}
           {localTracks && localTracks.length > 0 && (
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', padding: '0 20px 20px 20px' }}>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <button
                 className="playlist-action-button"
                 onClick={shuffleAll}
