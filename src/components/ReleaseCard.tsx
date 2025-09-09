@@ -5,6 +5,7 @@ import Link from "next/link"
 import AudioPlayer from "./AudioPlayer"
 import FollowButton from "./FollowButton"
 import LikeButton from "./LikeButton"
+import TrackActionMenu from "./TrackActionMenu"
 import { useQueueAudioContext } from "@/contexts/QueueAudioContext"
 import { persistentAudioPlayer } from "@/lib/PersistentAudioPlayer"
 import { createReleaseUrl } from "@/utils/slugify"
@@ -108,14 +109,6 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
     })
   }
 
-  // Close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = () => setOpenMenuId(null)
-    if (openMenuId) {
-      document.addEventListener('click', handleClickOutside)
-      return () => document.removeEventListener('click', handleClickOutside)
-    }
-  }, [openMenuId])
 
   // Sync local currentTrack state with global queue when it changes
   useEffect(() => {
@@ -563,7 +556,9 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
                     style={{
                       padding: '4px 8px',
                       margin: '2px 0',
-                      backgroundColor: isActiveGlobalTrack ? '#ffff00' : '#f5f5f5',
+                      backgroundColor: isActiveGlobalTrack ? '#000' : '#f5f5f5',
+                      color: isActiveGlobalTrack ? '#fff' : '#000',
+                      fontWeight: isActiveGlobalTrack ? 'bold' : 'normal',
                       border: isActiveGlobalTrack ? '1px solid #000' : '1px solid #ccc',
                       cursor: 'pointer',
                       fontSize: '12px',
@@ -594,17 +589,26 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
                     {track.trackNumber}. {track.title}
                     {track.lyrics && (
                       <span
+                        className="lyrics-link"
                         onClick={(e) => {
                           e.stopPropagation()
                           toggleLyrics(track.id)
                         }}
                         style={{
                           marginLeft: '8px',
-                          color: '#0066cc',
+                          color: isActiveGlobalTrack ? '#66ccff' : '#0066cc',
                           textDecoration: 'underline',
-                          cursor: 'pointer',
                           fontSize: '12px',
-                          fontFamily: 'Courier New, monospace'
+                          fontFamily: 'Courier New, monospace',
+                          fontWeight: isActiveGlobalTrack ? 'bold' : 'normal',
+                          position: 'relative',
+                          zIndex: 1
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.color = isActiveGlobalTrack ? '#99ddff' : '#004499'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.color = isActiveGlobalTrack ? '#66ccff' : '#0066cc'
                         }}
                         title="Toggle lyrics"
                       >
@@ -619,10 +623,11 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
                     flexShrink: 0
                   }}>
                     <div style={{ 
-                      color: '#666', 
+                      color: isActiveGlobalTrack ? '#fff' : '#666', 
                       fontSize: '11px',
                       whiteSpace: 'nowrap',
-                      fontFamily: 'Courier New, monospace'
+                      fontFamily: 'Courier New, monospace',
+                      fontWeight: isActiveGlobalTrack ? 'bold' : 'normal'
                     }}>
                       <span style={{ display: 'inline-block', width: '35px', textAlign: 'right' }}>
                         {track.duration ? formatDuration(track.duration) : '--'}
@@ -634,187 +639,33 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
                     </div>
                     
                     {/* Track Action Menu */}
-                    <div className="track-action-menu" style={{ position: 'relative' }}>
-                      <button
-                        className="track-menu-trigger"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setOpenMenuId(openMenuId === track.id ? null : track.id)
-                        }}
-                        style={{
-                          padding: '2px 6px',
-                          fontSize: '10px',
-                          backgroundColor: openMenuId === track.id ? '#b3d9ff' : '#e6f3ff',
-                          border: '1px solid #b3d9ff',
-                          borderRadius: '2px',
-                          cursor: 'pointer',
-                          fontFamily: 'Courier New, monospace',
-                          color: '#0066cc'
-                        }}
-                        onMouseEnter={(e) => {
-                          if (openMenuId !== track.id) {
-                            e.currentTarget.style.backgroundColor = '#b3d9ff'
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (openMenuId !== track.id) {
-                            e.currentTarget.style.backgroundColor = '#e6f3ff'
-                          }
-                        }}
-                        title="Track actions"
-                      >
-                        ⋯
-                      </button>
-
-                      {/* Dropdown Menu */}
-                      {openMenuId === track.id && (
-                        <div 
-                          className="track-menu-dropdown"
-                          onClick={(e) => e.stopPropagation()}
-                          style={{
-                            position: 'absolute',
-                            top: '100%',
-                            right: 0,
-                            backgroundColor: 'white',
-                            border: '1px solid #ccc',
-                            borderRadius: '3px',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                            zIndex: 1000,
-                            minWidth: '120px',
-                            padding: '4px 0',
-                            fontFamily: 'Courier New, monospace',
-                            fontSize: '11px'
-                          }}
-                        >
-                          {/* Add to Queue */}
-                          <button
-                            className="track-menu-item"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              const queueTrack = {
-                                id: track.id,
-                                title: track.title,
-                                artist: release.user.username,
-                                fileUrl: track.fileUrl,
-                                trackNumber: track.trackNumber,
-                                releaseId: release.id,
-                                duration: track.duration,
-                                releaseTitle: release.title,
-                                listenCount: track._count?.listens || 0
-                              }
-                              queueAudio.addTrackToEnd(queueTrack)
-                              setOpenMenuId(null)
-                            }}
-                            style={{
-                              display: 'block',
-                              width: '100%',
-                              padding: '4px 8px',
-                              border: 'none',
-                              backgroundColor: 'transparent',
-                              textAlign: 'left',
-                              cursor: 'pointer',
-                              fontSize: '10px',
-                              fontFamily: 'Courier New, monospace'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = '#f5f5f5'
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = 'transparent'
-                            }}
-                          >
-                            + Add to Queue
-                          </button>
-
-                          {/* Like/Unlike Track */}
-                          <button
-                            className="track-menu-item"
-                            onClick={async (e) => {
-                              e.stopPropagation()
-                              
-                              // Toggle like status
-                              const isCurrentlyLiked = likedTracks.has(track.id)
-                              const method = isCurrentlyLiked ? 'DELETE' : 'POST'
-                              
-                              try {
-                                const response = await fetch(`/api/tracks/${track.id}/like`, {
-                                  method,
-                                  headers: {
-                                    'Content-Type': 'application/json',
-                                  }
-                                })
-
-                                if (response.ok) {
-                                  handleLikeChange(track.id, !isCurrentlyLiked)
-                                  
-                                  // Dispatch custom event to notify other LikeButton components
-                                  window.dispatchEvent(new CustomEvent('likeStatusChanged', {
-                                    detail: { trackId: track.id, isLiked: !isCurrentlyLiked }
-                                  }))
-                                }
-                              } catch (error) {
-                                console.error('Error toggling like:', error)
-                              }
-                              
-                              setOpenMenuId(null)
-                            }}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              width: '100%',
-                              padding: '4px 8px',
-                              border: 'none',
-                              backgroundColor: 'transparent',
-                              textAlign: 'left',
-                              cursor: 'pointer',
-                              fontSize: '10px',
-                              fontFamily: 'Courier New, monospace'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = '#f5f5f5'
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = 'transparent'
-                            }}
-                          >
-                            <span style={{ marginRight: '6px', fontSize: '12px' }}>
-                              {likedTracks.has(track.id) ? '♥' : '♡'}
-                            </span>
-                            {likedTracks.has(track.id) ? 'Unlike Track' : 'Like Track'}
-                          </button>
-
-                          {/* Copy Link */}
-                          <button
-                            className="track-menu-item"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              const trackUrl = `${window.location.protocol}//${window.location.host}${createReleaseUrl(release.id, release.title, release.user.username)}?track=${track.trackNumber}`
-                              navigator.clipboard.writeText(trackUrl)
-                              setOpenMenuId(null)
-                            }}
-                            style={{
-                              display: 'block',
-                              width: '100%',
-                              padding: '4px 8px',
-                              border: 'none',
-                              backgroundColor: 'transparent',
-                              textAlign: 'left',
-                              cursor: 'pointer',
-                              fontSize: '10px',
-                              fontFamily: 'Courier New, monospace'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = '#f5f5f5'
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = 'transparent'
-                            }}
-                          >
-                            📋 Copy Link
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    <TrackActionMenu
+                      track={{
+                        id: track.id,
+                        title: track.title,
+                        artist: release.user.username,
+                        fileUrl: track.fileUrl,
+                        duration: track.duration,
+                        trackNumber: track.trackNumber,
+                        releaseId: release.id,
+                        releaseTitle: release.title,
+                        listenCount: track._count?.listens || 0,
+                        lyrics: track.lyrics
+                      }}
+                      isOpen={openMenuId === track.id}
+                      onToggle={() => setOpenMenuId(openMenuId === track.id ? null : track.id)}
+                      onClose={() => setOpenMenuId(null)}
+                      context="release"
+                      releaseInfo={{
+                        id: release.id,
+                        title: release.title,
+                        artist: release.user.username,
+                        artworkUrl: release.artworkUrl
+                      }}
+                      showLikeAction={true}
+                      isLiked={likedTracks.has(track.id)}
+                      onLikeChange={handleLikeChange}
+                    />
                   </div>
                   </div>
                   {track.lyrics && expandedLyrics[track.id] && (

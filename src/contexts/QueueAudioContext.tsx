@@ -49,6 +49,30 @@ export function QueueAudioProvider({ children }: { children: ReactNode }) {
   // Derived state
   const currentTrack = currentQueue && currentQueue.tracks[currentQueue.currentIndex] || null;
 
+  // Update media session metadata
+  const updateMediaSession = useCallback((track: QueueTrack | null) => {
+    if ('mediaSession' in navigator && track) {
+      const artwork = track.artworkUrl ? [
+        { src: track.artworkUrl, sizes: '512x512', type: 'image/jpeg' },
+        { src: track.artworkUrl, sizes: '256x256', type: 'image/jpeg' },
+        { src: track.artworkUrl, sizes: '128x128', type: 'image/jpeg' }
+      ] : [];
+
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: track.title,
+        artist: track.artist,
+        album: track.releaseTitle || 'Unknown Album',
+        artwork: artwork
+      });
+    }
+  }, []);
+
+  // Update media session when track changes
+  useEffect(() => {
+    updateMediaSession(currentTrack);
+  }, [currentTrack, updateMediaSession]);
+
+
   // Initialize persistent audio player
   useEffect(() => {
     persistentAudioPlayer.initialize()
@@ -364,6 +388,27 @@ export function QueueAudioProvider({ children }: { children: ReactNode }) {
   // Derived values for compatibility
   const hasNextTrack = currentQueue ? (currentQueue.currentIndex < currentQueue.tracks.length - 1 || currentQueue.repeatMode === 'queue') : false;
   const hasPrevTrack = currentQueue ? (currentQueue.currentIndex > 0 || currentQueue.repeatMode === 'queue') : false;
+
+  // Set up media session action handlers
+  useEffect(() => {
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.setActionHandler('play', () => {
+        persistentAudioPlayer.play();
+      });
+      
+      navigator.mediaSession.setActionHandler('pause', () => {
+        persistentAudioPlayer.pause();
+      });
+      
+      navigator.mediaSession.setActionHandler('previoustrack', () => {
+        prevTrack();
+      });
+      
+      navigator.mediaSession.setActionHandler('nexttrack', () => {
+        nextTrack();
+      });
+    }
+  }, [nextTrack, prevTrack]);
 
   return (
     <QueueAudioContext.Provider

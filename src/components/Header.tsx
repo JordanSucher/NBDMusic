@@ -39,12 +39,31 @@ export default function Header() {
     }
   }, [])
 
-  // Close menus when clicking outside
+  // Close menus when clicking outside or pressing ESC
   useEffect(() => {
     if (!isMobileMenuOpen && !isMoreMenuOpen) return
 
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
-      if (headerRef.current && !headerRef.current.contains(event.target as Node)) {
+      const target = event.target as Element
+      
+      // Close mobile menu if clicking anywhere except menu items or menu button
+      if (isMobileMenuOpen) {
+        const clickedOnMenuButton = target.closest('.mobile-menu-btn')
+        const clickedOnMobileNav = target.closest('.mobile-nav')
+        
+        if (!clickedOnMenuButton && !clickedOnMobileNav) {
+          setIsMobileMenuOpen(false)
+        }
+      }
+      
+      // Close more menu if clicking outside header
+      if (isMoreMenuOpen && headerRef.current && !headerRef.current.contains(target)) {
+        setIsMoreMenuOpen(false)
+      }
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
         setIsMobileMenuOpen(false)
         setIsMoreMenuOpen(false)
       }
@@ -55,10 +74,12 @@ export default function Header() {
 
     document.addEventListener('mousedown', handleMouseDown)
     document.addEventListener('touchstart', handleTouchStart)
+    document.addEventListener('keydown', handleKeyDown)
     
     return () => {
       document.removeEventListener('mousedown', handleMouseDown)
       document.removeEventListener('touchstart', handleTouchStart)
+      document.removeEventListener('keydown', handleKeyDown)
     }
   }, [isMobileMenuOpen, isMoreMenuOpen])
 
@@ -172,7 +193,61 @@ export default function Header() {
           
           <button
           onClick={toggleMobileMenu}
-          onTouchEnd={(e) => e.currentTarget.blur()}
+          onTouchStart={(e) => {
+            const isMobile = window.innerWidth <= 768
+            if (isMobile) {
+              e.currentTarget.style.cssText = `
+                display: block !important;
+                background: none !important;
+                border: 1px solid #ccc !important;
+                padding: 5px 8px !important;
+                font-size: 16px !important;
+                font-family: 'Courier New', monospace !important;
+                cursor: pointer !important;
+                background-color: #d0d0d0 !important;
+                width: 32px !important;
+                text-align: center !important;
+                box-shadow: none !important;
+                border-style: solid !important;
+                border-width: 1px !important;
+                border-color: #ccc !important;
+                outline: none !important;
+                -webkit-appearance: none !important;
+                -moz-appearance: none !important;
+                appearance: none !important;
+                -webkit-tap-highlight-color: transparent !important;
+              `
+            }
+          }}
+          onTouchEnd={(e) => {
+            e.currentTarget.blur()
+            const isMobile = window.innerWidth <= 768
+            if (isMobile) {
+              setTimeout(() => {
+                e.currentTarget.style.cssText = `
+                  display: block !important;
+                  background: none !important;
+                  border: 1px solid #ccc !important;
+                  padding: 5px 8px !important;
+                  font-size: 16px !important;
+                  font-family: 'Courier New', monospace !important;
+                  cursor: pointer !important;
+                  background-color: ${isMobileMenuOpen ? '#e0e0e0' : '#f5f5f5'} !important;
+                  width: 32px !important;
+                  text-align: center !important;
+                  box-shadow: none !important;
+                  border-style: solid !important;
+                  border-width: 1px !important;
+                  border-color: #ccc !important;
+                  outline: none !important;
+                  -webkit-appearance: none !important;
+                  -moz-appearance: none !important;
+                  appearance: none !important;
+                  -webkit-tap-highlight-color: transparent !important;
+                `
+              }, 100)
+            }
+          }}
           style={{
             display: 'none',
             background: 'none',
@@ -187,10 +262,58 @@ export default function Header() {
             textAlign: 'center'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#e0e0e0'
+            const isMobile = window.innerWidth <= 768
+            if (isMobile) {
+              e.currentTarget.style.cssText = `
+                display: block !important;
+                background: none !important;
+                border: 1px solid #ccc !important;
+                padding: 5px 8px !important;
+                font-size: 16px !important;
+                font-family: 'Courier New', monospace !important;
+                cursor: pointer !important;
+                background-color: #e0e0e0 !important;
+                width: 32px !important;
+                text-align: center !important;
+                box-shadow: none !important;
+                border-style: solid !important;
+                border-width: 1px !important;
+                border-color: #ccc !important;
+                outline: none !important;
+                -webkit-appearance: none !important;
+                -moz-appearance: none !important;
+                appearance: none !important;
+              `
+            } else {
+              e.currentTarget.style.backgroundColor = '#e0e0e0'
+            }
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = isMobileMenuOpen ? '#e0e0e0' : '#f5f5f5'
+            const isMobile = window.innerWidth <= 768
+            if (isMobile) {
+              e.currentTarget.style.cssText = `
+                display: block !important;
+                background: none !important;
+                border: 1px solid #ccc !important;
+                padding: 5px 8px !important;
+                font-size: 16px !important;
+                font-family: 'Courier New', monospace !important;
+                cursor: pointer !important;
+                background-color: ${isMobileMenuOpen ? '#e0e0e0' : '#f5f5f5'} !important;
+                width: 32px !important;
+                text-align: center !important;
+                box-shadow: none !important;
+                border-style: solid !important;
+                border-width: 1px !important;
+                border-color: #ccc !important;
+                outline: none !important;
+                -webkit-appearance: none !important;
+                -moz-appearance: none !important;
+                appearance: none !important;
+              `
+            } else {
+              e.currentTarget.style.backgroundColor = isMobileMenuOpen ? '#e0e0e0' : '#f5f5f5'
+            }
           }}
           className="mobile-menu-btn"
         >

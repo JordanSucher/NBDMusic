@@ -183,7 +183,7 @@ export default function NowPlayingBar() {
       <div style={{
         maxWidth: '800px',
         margin: '0 auto',
-        padding: '12px 20px',
+        padding: '12px 20px 16px 20px',
         fontFamily: 'Courier New, monospace',
         fontSize: '11px'
       }}>

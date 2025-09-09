@@ -10,6 +10,7 @@ export interface QueueTrack {
   releaseId: string
   releaseTitle: string
   listenCount: number
+  artworkUrl?: string | null
   // Additional metadata for queue display
   addedAt?: Date
   addedFrom?: 'release' | 'playlist' | 'search' | 'shuffle'

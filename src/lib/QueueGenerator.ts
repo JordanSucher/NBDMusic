@@ -16,6 +16,7 @@ interface ApiTrack {
 interface ApiRelease {
   id: string
   title: string
+  artworkUrl: string | null
   user: {
     username: string
   }
@@ -34,6 +35,7 @@ interface ApiTrackWithRelease {
   release: {
     id: string
     title: string
+    artworkUrl: string | null
     user: {
       username: string
     }
@@ -62,6 +64,7 @@ class QueueGeneratorImpl implements QueueGenerator {
           releaseId: release.id,
           releaseTitle: release.title,
           listenCount: track._count.listens,
+          artworkUrl: release.artworkUrl,
           addedFrom: 'release' as const
         }))
 
@@ -103,6 +106,7 @@ class QueueGeneratorImpl implements QueueGenerator {
         releaseId: track.release.id,
         releaseTitle: track.release.title,
         listenCount: track._count.listens,
+        artworkUrl: track.release.artworkUrl,
         addedFrom: 'shuffle' as const
       }))
 

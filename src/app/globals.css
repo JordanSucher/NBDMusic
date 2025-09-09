@@ -7,6 +7,19 @@
   box-sizing: border-box;
 }
 
+/* Ensure proper cursor behavior */
+button, 
+a, 
+.lyrics-link,
+[role="button"] {
+  cursor: pointer !important;
+}
+
+input, 
+textarea {
+  cursor: text !important;
+}
+
 /* Override Next.js defaults */
 html, body {
   margin: 0;
@@ -243,6 +256,27 @@ button[style*="background-color: #ff4444"]:active {
   border-radius: 2px !important;
 }
 
+/* Lyrics button pointer cursor override */
+.lyrics-link {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+}
+
+.lyrics-link:hover {
+  cursor: pointer !important;
+}
+
+/* More specific selector to override any parent cursor settings */
+div .lyrics-link,
+span .lyrics-link,
+* .lyrics-link {
+  cursor: pointer !important;
+}
+
+.track-menu-dropdown {
+  z-index: 1000 !important;
+}
+
 .track-menu-dropdown .track-menu-item {
   padding: 4px 8px !important;
   font-size: 10px !important;
@@ -386,11 +420,11 @@ table {
   border-collapse: collapse;
   margin-bottom: 20px;
   font-family: 'Courier New', monospace !important;
-  border-top: 2px solid #fff !important;
-  border-left: 2px solid #fff !important;
-  border-right: 2px solid #808080 !important;
-  border-bottom: 2px solid #808080 !important;
-  box-shadow: 2px 2px 4px rgba(0,0,0,0.3) !important;
+  border-top: 2px solid #fff;
+  border-left: 2px solid #fff;
+  border-right: 2px solid #808080;
+  border-bottom: 2px solid #808080;
+  box-shadow: 2px 2px 4px rgba(0,0,0,0.3);
 }
 
 th, td {
@@ -405,10 +439,10 @@ th {
   background-image: url("data:image/svg+xml,%3csvg width='2' height='2' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M0 0h1v1H0V0z' fill='%23b8b8b8'/%3e%3c/svg%3e") !important;
   background-repeat: repeat !important;
   font-weight: bold !important;
-  border-top: 1px solid #fff !important;
-  border-left: 1px solid #fff !important;
-  border-right: 1px solid #808080 !important;
-  border-bottom: 1px solid #808080 !important;
+  border-top: 1px solid #fff;
+  border-left: 1px solid #fff;
+  border-right: 1px solid #808080;
+  border-bottom: 1px solid #808080;
 }
 
 nav a {
