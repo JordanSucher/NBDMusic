@@ -38,18 +38,21 @@ export default function Header() {
   useEffect(() => {
     if (!isMobileMenuOpen) return
 
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (headerRef.current && !headerRef.current.contains(event.target as Node)) {
         setIsMobileMenuOpen(false)
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    document.addEventListener('touchstart', handleClickOutside)
+    const handleMouseDown = (event: MouseEvent) => handleClickOutside(event)
+    const handleTouchStart = (event: TouchEvent) => handleClickOutside(event)
+
+    document.addEventListener('mousedown', handleMouseDown)
+    document.addEventListener('touchstart', handleTouchStart)
     
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-      document.removeEventListener('touchstart', handleClickOutside)
+      document.removeEventListener('mousedown', handleMouseDown)
+      document.removeEventListener('touchstart', handleTouchStart)
     }
   }, [isMobileMenuOpen])
 
