@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import AudioPlayer from "./AudioPlayer"
 import FollowButton from "./FollowButton"
+import LikeButton from "./LikeButton"
 import { useQueueAudioContext } from "@/contexts/QueueAudioContext"
 import { persistentAudioPlayer } from "@/lib/PersistentAudioPlayer"
 import { createReleaseUrl } from "@/utils/slugify"
@@ -61,11 +62,51 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
   const [expandedLyrics, setExpandedLyrics] = useState<{[trackId: string]: boolean}>({})
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [likedTracks, setLikedTracks] = useState<Set<string>>(new Set())
 
 
   useEffect(() => {
     fetchTagCounts()
-  }, [])
+    fetchLikedStatus()
+  }, [session])
+
+  const fetchLikedStatus = async () => {
+    if (!session?.user) return
+
+    try {
+      const trackIds = release.tracks.map(track => track.id)
+      const response = await fetch('/api/tracks/liked-status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ trackIds })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        const liked = new Set<string>()
+        Object.entries(data.likedStatus).forEach(([trackId, isLiked]) => {
+          if (isLiked) liked.add(trackId)
+        })
+        setLikedTracks(liked)
+      }
+    } catch (error) {
+      console.error('Error fetching liked status:', error)
+    }
+  }
+
+  const handleLikeChange = (trackId: string, isLiked: boolean) => {
+    setLikedTracks(prev => {
+      const newSet = new Set(prev)
+      if (isLiked) {
+        newSet.add(trackId)
+      } else {
+        newSet.delete(trackId)
+      }
+      return newSet
+    })
+  }
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -683,6 +724,63 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
                             }}
                           >
                             + Add to Queue
+                          </button>
+
+                          {/* Like/Unlike Track */}
+                          <button
+                            className="track-menu-item"
+                            onClick={async (e) => {
+                              e.stopPropagation()
+                              
+                              // Toggle like status
+                              const isCurrentlyLiked = likedTracks.has(track.id)
+                              const method = isCurrentlyLiked ? 'DELETE' : 'POST'
+                              
+                              try {
+                                const response = await fetch(`/api/tracks/${track.id}/like`, {
+                                  method,
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                  }
+                                })
+
+                                if (response.ok) {
+                                  handleLikeChange(track.id, !isCurrentlyLiked)
+                                  
+                                  // Dispatch custom event to notify other LikeButton components
+                                  window.dispatchEvent(new CustomEvent('likeStatusChanged', {
+                                    detail: { trackId: track.id, isLiked: !isCurrentlyLiked }
+                                  }))
+                                }
+                              } catch (error) {
+                                console.error('Error toggling like:', error)
+                              }
+                              
+                              setOpenMenuId(null)
+                            }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              width: '100%',
+                              padding: '4px 8px',
+                              border: 'none',
+                              backgroundColor: 'transparent',
+                              textAlign: 'left',
+                              cursor: 'pointer',
+                              fontSize: '10px',
+                              fontFamily: 'Courier New, monospace'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = '#f5f5f5'
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'transparent'
+                            }}
+                          >
+                            <span style={{ marginRight: '6px', fontSize: '12px' }}>
+                              {likedTracks.has(track.id) ? '♥' : '♡'}
+                            </span>
+                            {likedTracks.has(track.id) ? 'Unlike Track' : 'Like Track'}
                           </button>
 
                           {/* Copy Link */}

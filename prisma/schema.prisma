@@ -50,6 +50,7 @@ model User {
   sessions Session[]
   releases Release[]
   listens  Listen[]
+  playlists Playlist[]
   
   // Follow relationships
   following Follow[] @relation("Follower")
@@ -104,6 +105,7 @@ model Track {
   release     Release  @relation(fields: [releaseId], references: [id], onDelete: Cascade)
   
   listens     Listen[]
+  playlistTracks PlaylistTrack[]
   
   @@index([releaseId])
 }
@@ -158,4 +160,39 @@ model Listen {
   @@index([userId])
   @@index([listenedAt])
   @@index([ipAddress])
+}
+
+model Playlist {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  isSystem    Boolean  @default(false) // true for system playlists like "Liked Songs"
+  isPublic    Boolean  @default(false) // for future public playlist feature
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  tracks      PlaylistTrack[]
+  
+  @@index([userId])
+  @@index([isSystem])
+  @@unique([userId, name]) // prevent duplicate playlist names per user
+}
+
+model PlaylistTrack {
+  id         String   @id @default(cuid())
+  position   Int      // order within playlist
+  addedAt    DateTime @default(now())
+  
+  playlistId String
+  trackId    String
+  
+  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  track      Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  
+  @@index([playlistId])
+  @@index([trackId])
+  @@unique([playlistId, trackId]) // prevent duplicate tracks in same playlist
 }

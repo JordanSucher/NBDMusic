@@ -10,6 +10,7 @@ export default function Header() {
   const { data: session } = useSession()
   const queueAudio = useQueueAudioContext()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false)
   const [isHeaderVisible, setIsHeaderVisible] = useState(true)
   const [isHydrated, setIsHydrated] = useState(false)
   const [headerHeight, setHeaderHeight] = useState(0)
@@ -24,6 +25,10 @@ export default function Header() {
     setIsMobileMenuOpen(false)
   }
 
+  const closeMoreMenu = () => {
+    setIsMoreMenuOpen(false)
+  }
+
   useEffect(() => {
     setIsHydrated(true)
     
@@ -34,13 +39,14 @@ export default function Header() {
     }
   }, [])
 
-  // Close mobile menu when clicking outside
+  // Close menus when clicking outside
   useEffect(() => {
-    if (!isMobileMenuOpen) return
+    if (!isMobileMenuOpen && !isMoreMenuOpen) return
 
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (headerRef.current && !headerRef.current.contains(event.target as Node)) {
         setIsMobileMenuOpen(false)
+        setIsMoreMenuOpen(false)
       }
     }
 
@@ -54,7 +60,7 @@ export default function Header() {
       document.removeEventListener('mousedown', handleMouseDown)
       document.removeEventListener('touchstart', handleTouchStart)
     }
-  }, [isMobileMenuOpen])
+  }, [isMobileMenuOpen, isMoreMenuOpen])
 
   useEffect(() => {
     if (!isHydrated) return
@@ -229,32 +235,142 @@ export default function Header() {
           
           {session?.user ? (
             <>
-              <Link href="/upload">Upload</Link>
-              <Link href="/profile">Profile</Link>
-              <button 
-                onClick={() => signOut()}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#0000ff',
-                  textDecoration: 'underline',
-                  fontSize: '14px',
-                  fontFamily: 'Courier New, monospace',
-                  cursor: 'pointer',
-                  padding: '0',
-                  margin: '0'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = 'black';
-                  e.currentTarget.style.backgroundColor = '#ffff00';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#0000ff';
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                }}
-              >
-                Logout
-              </button>
+              <div style={{ position: 'relative' }}>
+                <span
+                  onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
+                  style={{
+                    color: '#0000ff',
+                    textDecoration: 'underline',
+                    cursor: 'pointer',
+                    fontFamily: 'Courier New, monospace'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = 'black';
+                    e.currentTarget.style.backgroundColor = '#ffff00';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = '#0000ff';
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
+                >
+                  More ▼
+                </span>
+                
+                {/* More Dropdown Menu */}
+                {isMoreMenuOpen && (
+                  <div 
+                    style={{
+                      position: 'absolute',
+                      top: '100%',
+                      right: 0,
+                      marginTop: '5px',
+                      backgroundColor: 'white',
+                      border: '1px solid #ccc',
+                      borderRadius: '3px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                      zIndex: 1000,
+                      minWidth: '120px',
+                      padding: '8px 0',
+                      fontFamily: 'Courier New, monospace',
+                      fontSize: '14px'
+                    }}
+                  >
+                    <Link
+                      href="/collection/liked-songs"
+                      onClick={closeMoreMenu}
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        padding: '8px 16px',
+                        color: '#0000ff',
+                        textDecoration: 'none',
+                        fontSize: '14px',
+                        boxSizing: 'border-box'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#f5f5f5'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent'
+                      }}
+                    >
+                      Liked Songs
+                    </Link>
+                    
+                    <Link
+                      href="/upload"
+                      onClick={closeMoreMenu}
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        padding: '8px 16px',
+                        color: '#0000ff',
+                        textDecoration: 'none',
+                        fontSize: '14px',
+                        boxSizing: 'border-box'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#f5f5f5'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent'
+                      }}
+                    >
+                      Upload
+                    </Link>
+                    
+                    <Link
+                      href="/profile"
+                      onClick={closeMoreMenu}
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        padding: '8px 16px',
+                        color: '#0000ff',
+                        textDecoration: 'none',
+                        fontSize: '14px',
+                        boxSizing: 'border-box'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#f5f5f5'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent'
+                      }}
+                    >
+                      Profile
+                    </Link>
+                    
+                    <button
+                      onClick={() => {
+                        signOut()
+                        closeMoreMenu()
+                      }}
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        padding: '8px 16px',
+                        background: 'none',
+                        border: 'none',
+                        color: '#0000ff',
+                        textDecoration: 'none',
+                        fontSize: '14px',
+                        fontFamily: 'Courier New, monospace',
+                        cursor: 'pointer',
+                        textAlign: 'left'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#f5f5f5'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent'
+                      }}
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
             </>
           ) : (
             <>
@@ -306,6 +422,23 @@ export default function Header() {
             
             {session?.user ? (
               <>
+                <Link 
+                  href="/collection/liked-songs"
+                  onClick={closeMobileMenu}
+                  onTouchEnd={(e) => e.currentTarget.blur()}
+                  style={{
+                    padding: '8px 12px',
+                    border: '1px solid #000',
+                    backgroundColor: '#fff',
+                    textDecoration: 'none',
+                    color: '#000',
+                    textAlign: 'center',
+                    display: 'block',
+                    width: '100%'
+                  }}
+                >
+                  Liked Songs
+                </Link>
                 <Link 
                   href="/upload"
                   onClick={closeMobileMenu}

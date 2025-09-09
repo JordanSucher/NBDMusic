@@ -2,6 +2,7 @@ import { useRef, useEffect, useState } from "react"
 import { useQueueAudioContext } from "@/contexts/QueueAudioContext"
 import { persistentAudioPlayer } from "@/lib/PersistentAudioPlayer"
 import DitheredBackground from "./DitheredBackground"
+import LikeButton from "./LikeButton"
 
 interface AudioPlayerProps {
   src: string
@@ -296,11 +297,19 @@ export default function AudioPlayer({
             by {artist}{listenCount !== undefined && ` • ${listenCount} plays`}
           </span>
         </div>
-        {currentTrackIndex !== undefined && totalTracks !== undefined && totalTracks > 1 && (
-          <div style={{ fontSize: '11px', color: '#666' }}>
-            Track {currentTrackIndex + 1} of {totalTracks}
-          </div>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {trackId && (
+            <LikeButton 
+              trackId={trackId} 
+              size="medium"
+            />
+          )}
+          {currentTrackIndex !== undefined && totalTracks !== undefined && totalTracks > 1 && (
+            <div style={{ fontSize: '11px', color: '#666' }}>
+              Track {currentTrackIndex + 1} of {totalTracks}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Main Controls */}
