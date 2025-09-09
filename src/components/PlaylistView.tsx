@@ -208,7 +208,15 @@ export default function PlaylistView({
   }
 
   return (
-    <div className="container">
+    <div style={{ background: '#f8f8f8 !important', paddingTop: '80px' }}>
+      <div className="container" style={{ 
+        backgroundColor: 'white', 
+        border: '2px solid #000', 
+        marginLeft: 'auto',
+        marginRight: 'auto',
+        maxWidth: 'min(800px, calc(100vw - 20px))', // Account for 10px margin on each side
+        boxSizing: 'border-box'
+      }}>
       {showBackLink && (
         <div style={{ marginBottom: '20px' }}>
           <Link href={showBackLink.href} style={{ color: '#0066cc', textDecoration: 'underline' }}>
@@ -627,6 +635,7 @@ export default function PlaylistView({
           })}
         </div>
       )}
+      </div>
     </div>
   )
 }

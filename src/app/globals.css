@@ -11,7 +11,8 @@
 html, body {
   margin: 0;
   padding: 0;
-  height: auto;
+  min-height: 100vh;
+  height: 100%;
   background: #f8f8f8;
 }
 
