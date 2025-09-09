@@ -530,3 +530,53 @@ audio {
   font-family: 'Courier New', monospace !important;
 }
 
+/* Fix mobile sticky active/focus states */
+@media (max-width: 768px) {
+  /* Prevent buttons and links from staying highlighted after tap */
+  button:focus,
+  button:active,
+  a:focus,
+  a:active {
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+  
+  /* Remove focus outline completely on touch devices */
+  button,
+  a,
+  input,
+  textarea,
+  select {
+    -webkit-tap-highlight-color: transparent !important;
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    outline: none !important;
+  }
+  
+  /* Specifically target audio player buttons */
+  .play-pause-btn:focus,
+  .play-pause-btn:active {
+    background-color: #ddd !important;
+    border: 2px outset #ccc !important;
+  }
+  
+  /* Remove persistent hover effects on mobile */
+  button:hover,
+  a:hover {
+    background-color: initial !important;
+    color: initial !important;
+  }
+  
+  /* Only show hover effects on actual hover (not after tap) */
+  @media (hover: hover) {
+    button:hover {
+      background-color: #bbb !important;
+    }
+    
+    a:hover {
+      color: black !important;
+      background-color: #ffff00 !important;
+    }
+  }
+}
+
