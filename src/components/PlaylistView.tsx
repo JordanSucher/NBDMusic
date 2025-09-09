@@ -550,7 +550,6 @@ export default function PlaylistView({
           marginRight: 'auto',
           maxWidth: 'min(800px, calc(100vw - 20px))',
           boxSizing: 'border-box',
-          maxWidth: '800px',
           margin: '0 auto',
           padding: '0',
           overflow: 'visible'
