@@ -235,6 +235,8 @@ export default function Header() {
           
           {session?.user ? (
             <>
+              <Link href="/collection/liked-songs">Liked Songs</Link>
+              
               <div style={{ position: 'relative' }}>
                 <span
                   onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
@@ -275,28 +277,6 @@ export default function Header() {
                       fontSize: '14px'
                     }}
                   >
-                    <Link
-                      href="/collection/liked-songs"
-                      onClick={closeMoreMenu}
-                      style={{
-                        display: 'block',
-                        width: '100%',
-                        padding: '8px 16px',
-                        color: '#0000ff',
-                        textDecoration: 'none',
-                        fontSize: '14px',
-                        boxSizing: 'border-box'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = '#f5f5f5'
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent'
-                      }}
-                    >
-                      Liked Songs
-                    </Link>
-                    
                     <Link
                       href="/upload"
                       onClick={closeMoreMenu}
