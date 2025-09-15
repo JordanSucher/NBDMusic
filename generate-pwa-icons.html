@@ -151,23 +151,8 @@
             // Clear canvas
             ctx.clearRect(0, 0, size, size);
             
-            if (isMaskable) {
-                // For maskable icons, add 10% padding (safe area)
-                const padding = size * 0.1;
-                const iconSize = size - (padding * 2);
-                
-                // Center the icon with padding
-                ctx.drawImage(
-                    sourceImage, 
-                    padding, 
-                    padding, 
-                    iconSize, 
-                    iconSize
-                );
-            } else {
-                // For regular icons, use the full canvas
-                ctx.drawImage(sourceImage, 0, 0, size, size);
-            }
+            // Always use full canvas - no padding even for maskable icons
+            ctx.drawImage(sourceImage, 0, 0, size, size);
         }
         
         function generateAllIcons() {
