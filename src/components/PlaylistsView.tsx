@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { flushSync } from "react-dom"
+import { flushSync, createPortal } from "react-dom"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
 import { useQueueAudioContext } from "@/contexts/QueueAudioContext"
@@ -521,7 +521,13 @@ export default function PlaylistsView({ onRefresh }: PlaylistsViewProps) {
               
               <div style={{ marginBottom: '20px', padding: '0 15px' }}>
                 <button
-                  onClick={() => setShowCreateForm(true)}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    if (!showCreateForm) {
+                      setShowCreateForm(true)
+                    }
+                  }}
                   style={{
                     padding: '8px 16px',
                     backgroundColor: '#ddd',
@@ -956,6 +962,197 @@ export default function PlaylistsView({ onRefresh }: PlaylistsViewProps) {
             </div>
           )}
         </div>
+
+        {/* Create playlist modal for mobile */}
+        {showCreateForm && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 999999,
+            overflow: 'auto'
+          }}
+          onClick={() => {
+            setShowCreateForm(false)
+            setNewPlaylistName("")
+            setNewPlaylistDescription("")
+          }}>
+            <div style={{
+              background: 'linear-gradient(145deg, #f0f0f0 0%, #d0d0d0 50%, #b8b8b8 100%)',
+              border: '2px outset #ccc',
+              padding: '0',
+              minWidth: '300px',
+              maxWidth: '90vw',
+              fontFamily: 'Courier New, monospace'
+            }}
+            onClick={(e) => e.stopPropagation()}>
+              {/* Modal title bar */}
+              <div style={{
+                background: 'linear-gradient(180deg, #e8e8e8 0%, #d0d0d0 100%)',
+                borderBottom: '1px solid #000',
+                padding: '6px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                fontSize: '11px',
+                fontWeight: 'bold'
+              }}>
+                <span>Create New Playlist</span>
+                <button
+                  onClick={() => {
+                    setShowCreateForm(false)
+                    setNewPlaylistName("")
+                    setNewPlaylistDescription("")
+                  }}
+                  style={{
+                    width: '16px',
+                    height: '14px',
+                    background: 'linear-gradient(145deg, #e0e0e0, #b0b0b0)',
+                    border: '2px outset #d0d0d0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '8px',
+                    cursor: 'pointer',
+                    color: '#000'
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+
+              {/* Modal content */}
+              <div style={{ backgroundColor: '#f0f0f0', padding: '20px' }}>
+                <div style={{ marginBottom: '15px' }}>
+                  <label style={{ 
+                    display: 'block', 
+                    marginBottom: '5px', 
+                    fontSize: '12px',
+                    fontWeight: 'bold'
+                  }}>
+                    Playlist Name:
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter playlist name"
+                    value={newPlaylistName}
+                    onChange={(e) => setNewPlaylistName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && newPlaylistName.trim()) {
+                        createPlaylist()
+                      }
+                      if (e.key === 'Escape') {
+                        setShowCreateForm(false)
+                        setNewPlaylistName("")
+                        setNewPlaylistDescription("")
+                      }
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '6px',
+                      fontFamily: 'Courier New, monospace',
+                      fontSize: '12px',
+                      border: '2px inset #ccc',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{ 
+                    display: 'block', 
+                    marginBottom: '5px', 
+                    fontSize: '12px',
+                    fontWeight: 'bold'
+                  }}>
+                    Description (Optional):
+                  </label>
+                  <textarea
+                    placeholder="Enter playlist description"
+                    value={newPlaylistDescription}
+                    onChange={(e) => setNewPlaylistDescription(e.target.value)}
+                    rows={3}
+                    style={{
+                      width: '100%',
+                      padding: '6px',
+                      fontFamily: 'Courier New, monospace',
+                      fontSize: '12px',
+                      border: '2px inset #ccc',
+                      resize: 'vertical',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                  <button
+                    onClick={() => {
+                      setShowCreateForm(false)
+                      setNewPlaylistName("")
+                      setNewPlaylistDescription("")
+                    }}
+                    style={{
+                      padding: '6px 16px',
+                      backgroundColor: '#ddd',
+                      color: '#000',
+                      border: '2px outset #ccc',
+                      cursor: 'pointer',
+                      fontFamily: 'Courier New, monospace',
+                      fontSize: '12px'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#bbb'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ddd'}
+                    onMouseDown={(e) => e.currentTarget.style.border = '2px inset #ccc'}
+                    onMouseUp={(e) => e.currentTarget.style.border = '2px outset #ccc'}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={createPlaylist}
+                    disabled={!newPlaylistName.trim()}
+                    style={{
+                      padding: '6px 16px',
+                      backgroundColor: newPlaylistName.trim() ? '#ddd' : '#f0f0f0',
+                      color: newPlaylistName.trim() ? '#000' : '#999',
+                      border: '2px outset #ccc',
+                      cursor: newPlaylistName.trim() ? 'pointer' : 'not-allowed',
+                      fontFamily: 'Courier New, monospace',
+                      fontSize: '12px'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (newPlaylistName.trim()) {
+                        e.currentTarget.style.backgroundColor = '#bbb'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (newPlaylistName.trim()) {
+                        e.currentTarget.style.backgroundColor = '#ddd'
+                      }
+                    }}
+                    onMouseDown={(e) => {
+                      if (newPlaylistName.trim()) {
+                        e.currentTarget.style.border = '2px inset #ccc'
+                      }
+                    }}
+                    onMouseUp={(e) => {
+                      if (newPlaylistName.trim()) {
+                        e.currentTarget.style.border = '2px outset #ccc'
+                      }
+                    }}
+                  >
+                    Create Playlist
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </>
     )
   }
@@ -1077,13 +1274,14 @@ export default function PlaylistsView({ onRefresh }: PlaylistsViewProps) {
           position: 'fixed',
           top: 0,
           left: 0,
-          right: 0,
-          bottom: 0,
+          width: '100vw',
+          height: '100vh',
           backgroundColor: 'rgba(0, 0, 0, 0.5)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 10000
+          zIndex: 999999,
+          overflow: 'auto'
         }}
         onClick={() => {
           setShowCreateForm(false)
