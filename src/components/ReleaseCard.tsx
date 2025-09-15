@@ -554,9 +554,9 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
                     style={{
                       padding: '4px 8px',
                       margin: '2px 0',
-                      backgroundColor: isActiveGlobalTrack ? '#000' : '#f5f5f5',
-                      color: isActiveGlobalTrack ? '#fff' : '#000',
-                      fontWeight: isActiveGlobalTrack ? 'bold' : 'normal',
+                      backgroundColor: isActiveGlobalTrack ? '#FFFF00' : '#f5f5f5',
+                      color: isActiveGlobalTrack ? '#000' : '#000',
+                      fontWeight: 'normal',
                       border: isActiveGlobalTrack ? '1px solid #000' : '1px solid #ccc',
                       cursor: 'pointer',
                       fontSize: '12px',
@@ -621,11 +621,11 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
                     flexShrink: 0
                   }}>
                     <div style={{ 
-                      color: isActiveGlobalTrack ? '#fff' : '#666', 
+                      color: isActiveGlobalTrack ? '#000' : '#666', 
                       fontSize: '11px',
                       whiteSpace: 'nowrap',
                       fontFamily: 'Courier New, monospace',
-                      fontWeight: isActiveGlobalTrack ? 'bold' : 'normal'
+                      fontWeight: 'normal'
                     }}>
                       <span style={{ display: 'inline-block', width: '35px', textAlign: 'right' }}>
                         {track.duration ? formatDuration(track.duration) : '--'}

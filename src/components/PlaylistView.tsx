@@ -828,8 +828,8 @@ export default function PlaylistView({
                     } : undefined}
                     onClick={() => playTrack(index)}
                     style={{
-                      backgroundColor: isPlaying ? '#000' : '#fff',
-                      color: isPlaying ? '#fff' : '#000',
+                      backgroundColor: isPlaying ? '#FFFF00' : '#fff',
+                      color: isPlaying ? '#000' : '#000',
                       cursor: isDragging ? 'grabbing' : 'pointer',
                       opacity: isDragging ? 0.5 : 1,
                       userSelect: 'none',
@@ -856,7 +856,7 @@ export default function PlaylistView({
                     {isOwned && (
                       <td style={{ textAlign: 'center', padding: '6px 4px', borderRight: '1px solid #000' }}>
                         <div style={{
-                          color: isPlaying ? '#fff' : '#666',
+                          color: isPlaying ? '#000' : '#666',
                           fontSize: '10px',
                           cursor: 'grab',
                           userSelect: 'none'
@@ -868,7 +868,7 @@ export default function PlaylistView({
                     
                     {/* Title */}
                     <td 
-                      style={{ padding: '6px 4px', borderRight: '1px solid #000', fontWeight: isPlaying ? 'bold' : 'normal', color: isPlaying ? '#fff' : '#000' }}
+                      style={{ padding: '6px 4px', borderRight: '1px solid #000', fontWeight: 'normal', color: isPlaying ? '#000' : '#000' }}
                       onDrop={isOwned ? (e) => {
                         e.preventDefault()
                         e.stopPropagation()
@@ -884,17 +884,17 @@ export default function PlaylistView({
                     </td>
                     
                     {/* Artist */}
-                    <td style={{ padding: '6px 4px', borderRight: '1px solid #000', color: isPlaying ? '#fff' : '#000', fontWeight: isPlaying ? 'bold' : 'normal' }}>
+                    <td style={{ padding: '6px 4px', borderRight: '1px solid #000', color: isPlaying ? '#000' : '#000', fontWeight: 'normal' }}>
                       {track.artist}
                     </td>
                     
                     {/* Album */}
-                    <td style={{ padding: '6px 4px', borderRight: '1px solid #000', color: isPlaying ? '#fff' : '#000', fontWeight: isPlaying ? 'bold' : 'normal' }}>
+                    <td style={{ padding: '6px 4px', borderRight: '1px solid #000', color: isPlaying ? '#000' : '#000', fontWeight: 'normal' }}>
                       {track.release.title}
                     </td>
                     
                     {/* Duration */}
-                    <td style={{ textAlign: 'center', padding: '6px 4px', borderRight: '1px solid #000', color: isPlaying ? '#fff' : '#000', fontWeight: isPlaying ? 'bold' : 'normal' }}>
+                    <td style={{ textAlign: 'center', padding: '6px 4px', borderRight: '1px solid #000', color: isPlaying ? '#000' : '#000', fontWeight: 'normal' }}>
                       {track.duration ? formatTime(track.duration) : '—'}
                     </td>
                     
@@ -1214,7 +1214,7 @@ export default function PlaylistView({
                         onClick={() => playTrack(index)}
                         style={{
                           backgroundColor: isPlaying ? '#000' : '#fff',
-                          color: isPlaying ? '#fff' : '#000',
+                          color: isPlaying ? '#000' : '#000',
                           cursor: isDragging ? 'grabbing' : 'pointer',
                           opacity: isDragging ? 0.5 : 1,
                           userSelect: 'none',
@@ -1241,7 +1241,7 @@ export default function PlaylistView({
                         {isOwned && (
                           <td style={{ textAlign: 'center', padding: '6px 4px', borderRight: '1px solid #000' }}>
                             <div style={{
-                              color: isPlaying ? '#fff' : '#666',
+                              color: isPlaying ? '#000' : '#666',
                               fontSize: '10px',
                               cursor: 'grab',
                               userSelect: 'none'
@@ -1253,7 +1253,7 @@ export default function PlaylistView({
                         
                         {/* Title */}
                         <td 
-                          style={{ padding: '6px 4px', borderRight: '1px solid #000', fontWeight: isPlaying ? 'bold' : 'normal', color: isPlaying ? '#fff' : '#000' }}
+                          style={{ padding: '6px 4px', borderRight: '1px solid #000', fontWeight: 'normal', color: isPlaying ? '#000' : '#000' }}
                           onDrop={isOwned ? (e) => {
                             e.preventDefault()
                             e.stopPropagation()
@@ -1269,17 +1269,17 @@ export default function PlaylistView({
                         </td>
                         
                         {/* Artist */}
-                        <td style={{ padding: '6px 4px', borderRight: '1px solid #000', color: isPlaying ? '#fff' : '#000', fontWeight: isPlaying ? 'bold' : 'normal' }}>
+                        <td style={{ padding: '6px 4px', borderRight: '1px solid #000', color: isPlaying ? '#000' : '#000', fontWeight: 'normal' }}>
                           {track.artist}
                         </td>
                         
                         {/* Album */}
-                        <td style={{ padding: '6px 4px', borderRight: '1px solid #000', color: isPlaying ? '#fff' : '#000', fontWeight: isPlaying ? 'bold' : 'normal' }}>
+                        <td style={{ padding: '6px 4px', borderRight: '1px solid #000', color: isPlaying ? '#000' : '#000', fontWeight: 'normal' }}>
                           {track.release.title}
                         </td>
                         
                         {/* Duration */}
-                        <td style={{ textAlign: 'center', padding: '6px 4px', borderRight: '1px solid #000', color: isPlaying ? '#fff' : '#000', fontWeight: isPlaying ? 'bold' : 'normal' }}>
+                        <td style={{ textAlign: 'center', padding: '6px 4px', borderRight: '1px solid #000', color: isPlaying ? '#000' : '#000', fontWeight: 'normal' }}>
                           {track.duration ? formatTime(track.duration) : '—'}
                         </td>
                         
