@@ -86,7 +86,7 @@ export default function HomePage() {
               <ul>
                 <li><Link href="/upload">Upload a new release</Link></li>
                 <li><Link href="/browse">Discover new music</Link></li>
-                <li><Link href="/collection/liked-songs">View liked songs</Link></li>
+                <li><Link href="/collection">View collection</Link></li>
                 <li><Link href="/profile">Manage your releases</Link></li>
                 <li>
                   <span

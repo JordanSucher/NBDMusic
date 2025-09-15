@@ -428,7 +428,6 @@ table {
 }
 
 th, td {
-  border: 1px solid #808080 !important;
   padding: 6px !important;
   text-align: left !important;
   font-family: 'Courier New', monospace !important;
@@ -624,3 +623,63 @@ audio {
   }
 }
 
+/* Retro minimalist scrollbars */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #c0c0c0;
+  border: 1px solid #808080;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #e0e0e0;
+  border: 1px solid #808080;
+  border-radius: 0;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #f0f0f0;
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: #d0d0d0;
+}
+
+::-webkit-scrollbar-corner {
+  background: #c0c0c0;
+}
+
+/* Allow transitions on success messages */
+.success-message,
+[class*="success-message"] {
+  transition: opacity 0.5s ease-in-out !important;
+}
+
+/* Track action menu buttons should NEVER have 3D styling */
+.track-action-menu button,
+.track-action-menu button:hover,
+.track-action-menu button:active,
+.track-action-menu button:focus {
+  background-color: #e0e0e0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  padding: 2px 6px !important;
+  font-size: 10px !important;
+  font-family: 'Courier New', monospace !important;
+  color: #000 !important;
+  cursor: pointer !important;
+  border-style: none !important;
+  border-width: 0 !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+.track-action-menu button:hover {
+  background-color: #ccc !important;
+}

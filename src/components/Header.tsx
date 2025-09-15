@@ -358,7 +358,7 @@ export default function Header() {
           
           {session?.user ? (
             <>
-              <Link href="/collection/liked-songs">Liked Songs</Link>
+              <Link href="/collection">Collection</Link>
               
               <div style={{ position: 'relative' }}>
                 <span
@@ -526,7 +526,7 @@ export default function Header() {
             {session?.user ? (
               <>
                 <Link 
-                  href="/collection/liked-songs"
+                  href="/collection"
                   onClick={closeMobileMenu}
                   onTouchEnd={(e) => e.currentTarget.blur()}
                   style={{
@@ -540,7 +540,7 @@ export default function Header() {
                     width: '100%'
                   }}
                 >
-                  Liked Songs
+                  Collection
                 </Link>
                 <Link 
                   href="/upload"
