@@ -104,18 +104,18 @@ export default function AdminStatsPage() {
       }
 
       const data = await response.json()
-      setListeners(data.listeners)
-      setArtists(data.artists)
-      setTracks(data.tracks)
-      setAnonymous(data.anonymous)
-      setOverview(data.overview)
+      setListeners(data.listeners || [])
+      setArtists(data.artists || [])
+      setTracks(data.tracks || [])
+      setAnonymous(data.anonymous || { totalListens: 0, topTracks: [] })
+      setOverview(data.overview || { totalListens: 0, authenticatedListens: 0, anonymousListens: 0, anonymousPercentage: 0 })
     } catch (error) {
       console.error('Error fetching stats:', error)
       setError('Failed to fetch listening stats')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [timeRange, limit, minListens, artistFilter])
 
   useEffect(() => {
     fetchStats()

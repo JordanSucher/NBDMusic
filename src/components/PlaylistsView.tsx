@@ -928,7 +928,7 @@ export default function PlaylistsView({ onRefresh }: PlaylistsViewProps) {
                                   onRefresh={onRefresh}
                                   showLikeAction={true}
                                   isLiked={selectedPlaylist?.isSystem}
-                                  currentPlaylistId={selectedPlaylist?.id}
+                                  currentPlaylistId={selectedPlaylist?.id || undefined}
                                   showRemoveFromPlaylist={!selectedPlaylist?.isSystem && selectedPlaylist?.id !== null}
                                 />
                               </td>
@@ -1017,7 +1017,7 @@ export default function PlaylistsView({ onRefresh }: PlaylistsViewProps) {
             <div style={{ padding: '20px', backgroundColor: '#f0f0f0' }}>
               <div style={{ marginBottom: '20px' }}>
                 <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '10px' }}>
-                  Delete "{playlistToDelete.name}"?
+                  Delete &quot;{playlistToDelete.name}&quot;?
                 </div>
                 <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.4' }}>
                   Are you sure you want to delete this playlist? This action cannot be undone.
@@ -1932,7 +1932,7 @@ export default function PlaylistsView({ onRefresh }: PlaylistsViewProps) {
                                   onRefresh={onRefresh}
                                   showLikeAction={true}
                                   isLiked={selectedPlaylist?.isSystem}
-                                  currentPlaylistId={selectedPlaylist?.id}
+                                  currentPlaylistId={selectedPlaylist?.id || undefined}
                                   showRemoveFromPlaylist={!selectedPlaylist?.isSystem && selectedPlaylist?.id !== null}
                                 />
                               </td>

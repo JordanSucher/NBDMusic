@@ -123,17 +123,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           }
         })
 
+        if (!track) return null
+
         return {
           track: {
-            id: track!.id,
-            title: track!.title,
-            artist: track!.release.user,
-            release: { title: track!.release.title }
+            id: track.id,
+            title: track.title,
+            artist: track.release.user,
+            release: { title: track.release.title }
           },
           listenCount: stat._count.id
         }
       })
-    )
+    ).then(results => results.filter(result => result !== null))
 
     // Get unique tracks and artists counts
     const uniqueTracksCount = await db.listen.findMany({
@@ -183,10 +185,12 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           select: { username: true, name: true }
         })
 
+        if (!listener) return null
+
         return {
           listener: {
-            username: listener!.username,
-            name: listener!.name
+            username: listener.username,
+            name: listener.name
           },
           listenCount: stat._count.id
         }
@@ -242,23 +246,23 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       },
       stats: {
         // User's listening activity
-        totalListens,
-        uniqueTracks: uniqueTracksCount.length,
-        uniqueArtists: uniqueArtistsCount,
-        topArtists,
-        topTracks,
+        totalListens: totalListens || 0,
+        uniqueTracks: uniqueTracksCount?.length || 0,
+        uniqueArtists: uniqueArtistsCount || 0,
+        topArtists: topArtists || [],
+        topTracks: topTracks || [],
         // Who listens to this user's music
         listenerStats: {
-          totalListensToUser,
-          totalListeners: uniqueListeners.length,
-          authenticatedListensToUser,
-          anonymousListensToUser,
-          topListeners
+          totalListensToUser: totalListensToUser || 0,
+          totalListeners: uniqueListeners?.length || 0,
+          authenticatedListensToUser: authenticatedListensToUser || 0,
+          anonymousListensToUser: anonymousListensToUser || 0,
+          topListeners: topListeners || []
         }
       },
       filters: {
-        days,
-        limit
+        days: days || 0,
+        limit: limit || 10
       }
     })
 

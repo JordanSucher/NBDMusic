@@ -929,7 +929,7 @@ export default function PlaylistView({
                           onRefresh={onRefresh}
                           showLikeAction={true}
                           isLiked={true}
-                          currentPlaylistId={data.playlist.id}
+                          currentPlaylistId={data.playlist.id || undefined}
                           showRemoveFromPlaylist={isOwned && data.playlist.id !== null}
                         />
                       </td>
@@ -1316,7 +1316,7 @@ export default function PlaylistView({
                               onRefresh={onRefresh}
                               showLikeAction={true}
                               isLiked={true}
-                              currentPlaylistId={data.playlist.id}
+                              currentPlaylistId={data.playlist.id || undefined}
                               showRemoveFromPlaylist={isOwned && data.playlist.id !== null}
                             />
                           </td>

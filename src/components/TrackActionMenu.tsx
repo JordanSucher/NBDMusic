@@ -286,7 +286,7 @@ export default function TrackActionMenu({
       const response = await fetch('/api/playlists')
       if (response.ok) {
         const data = await response.json()
-        setAvailablePlaylists(data.playlists.filter((p: any) => !p.isSystem))
+        setAvailablePlaylists(data.playlists.filter((p: {isSystem?: boolean}) => !p.isSystem))
         setShowPlaylistModal(true)
       }
     } catch (error) {
@@ -953,7 +953,7 @@ export default function TrackActionMenu({
                 borderBottom: '1px solid #000',
                 fontWeight: 'bold'
               }}>
-                Add "{track.title}" to Playlist
+                Add &quot;{track.title}&quot; to Playlist
               </div>
 
               {/* Playlist list */}

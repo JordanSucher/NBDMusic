@@ -89,7 +89,14 @@ export default function UserStatsPage() {
       }
 
       const data = await response.json()
-      setStats(data)
+      
+      // Add defensive checks to ensure data structure is valid
+      if (data && data.stats && data.stats.listenerStats) {
+        setStats(data)
+      } else {
+        console.error('Invalid data structure received:', data)
+        setError('Invalid data received from server')
+      }
     } catch (error) {
       console.error('Error fetching stats:', error)
       setError('Failed to fetch user stats')
@@ -126,7 +133,7 @@ export default function UserStatsPage() {
     )
   }
 
-  if (!stats) {
+  if (!stats || !stats.stats || !stats.stats.listenerStats) {
     return (
       <div className="container">
         <h1>No stats available</h1>
@@ -210,7 +217,7 @@ export default function UserStatsPage() {
         </div>
 
         <button
-          onClick={fetchStats}
+          onClick={fetchStatsCallback}
           disabled={loading}
           style={{
             padding: '8px 16px',
@@ -258,7 +265,7 @@ export default function UserStatsPage() {
       </div>
 
       {/* Artist Stats Overview */}
-      {stats.stats.listenerStats.totalListensToUser > 0 && (
+      {stats.stats.listenerStats && stats.stats.listenerStats.totalListensToUser > 0 && (
         <div style={{
           border: '2px solid #000',
           padding: '15px',
@@ -389,7 +396,7 @@ export default function UserStatsPage() {
             Who listens to {stats.user.name || stats.user.username}&apos;s music most
           </p>
           
-          {stats.stats.listenerStats.topListeners.length === 0 ? (
+          {!stats.stats.listenerStats.topListeners || stats.stats.listenerStats.topListeners.length === 0 ? (
             <p>No authenticated listeners found for the selected criteria.</p>
           ) : (
             <div style={{ overflowX: 'auto' }}>
@@ -402,7 +409,7 @@ export default function UserStatsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {stats.stats.listenerStats.topListeners.map((listener, index) => (
+                  {stats.stats.listenerStats.topListeners.filter(listener => listener && listener.listener).map((listener, index) => (
                     <tr key={listener.listener.username}>
                       <td style={{ padding: '8px' }}>#{index + 1}</td>
                       <td style={{ padding: '8px' }}>
