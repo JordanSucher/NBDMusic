@@ -24,7 +24,8 @@ export async function sendNotification(payload: NotificationPayload): Promise<vo
 
 export function createReleaseNotificationMessage(releaseTitle: string, username: string, releaseId: string): string {
   const slug = createReleaseSlug(releaseTitle, username);
-  const releaseUrl = `https://early-bird.live/release/${releaseId}/${slug}`;
+  const baseUrl = process.env.BASE_URL || 'https://nbdmusic.com';
+  const releaseUrl = `${baseUrl}/release/${releaseId}/${slug}`;
   return `🎵 New release dropped: "${releaseTitle}" by ${username} - ${releaseUrl}`;
 }
 
