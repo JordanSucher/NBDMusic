@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { db } from "@/lib/db"
 import { authOptions } from "@/lib/auth"
+import { sendNotification, createReleaseNotificationMessage } from "@/lib/notifications"
 
 interface UploadedTrack {
   title: string
@@ -36,10 +37,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get current user from database to get their ID
+    // Get current user from database to get their ID and username
     const currentUser = await db.user.findUnique({
       where: { email: session.user.email },
-      select: { id: true }
+      select: { id: true, username: true }
     })
 
     if (!currentUser) {
@@ -123,6 +124,14 @@ export async function POST(request: NextRequest) {
         })
       }
     }
+
+    // Send notification about the new release (don't await - fire and forget)
+    sendNotification({
+      groupName: "release alerts",
+      message: createReleaseNotificationMessage(releaseTitle.trim(), currentUser.username, release.id)
+    }).catch(error => {
+      console.error('Failed to send release notification:', error)
+    })
 
     return NextResponse.json({
       message: "Release uploaded successfully!",

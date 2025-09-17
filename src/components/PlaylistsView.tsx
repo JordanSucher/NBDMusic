@@ -188,6 +188,27 @@ export default function PlaylistsView({ onRefresh }: PlaylistsViewProps) {
     }
   }, [selectedPlaylist])
 
+  // Listen for like status changes to refresh liked songs playlist
+  useEffect(() => {
+    const handleLikeStatusChange = (event: CustomEvent) => {
+      const { trackId, isLiked } = event.detail
+      
+      // If we're viewing liked songs playlist, refresh it when tracks are liked/unliked
+      if (selectedPlaylist?.isSystem && selectedPlaylist?.name === "Liked Songs") {
+        fetchPlaylistData(selectedPlaylist.id || 'liked-songs')
+      }
+      
+      // Also refresh playlist count
+      fetchPlaylists()
+    }
+
+    window.addEventListener('likeStatusChanged', handleLikeStatusChange as EventListener)
+    
+    return () => {
+      window.removeEventListener('likeStatusChanged', handleLikeStatusChange as EventListener)
+    }
+  }, [selectedPlaylist])
+
   // Handle playlist selection
   const handlePlaylistSelect = (playlist: PlaylistInfo) => {
     setSelectedPlaylist(playlist)
