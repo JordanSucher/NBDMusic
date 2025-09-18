@@ -961,9 +961,9 @@ export default function PlaylistView({
       </div>
       
       {/* Mobile simple view */}
-      <div className="mobile-playlist" style={{ padding: '40px 15px 0 15px' }}>
+      <div className="mobile-playlist" style={{ paddingTop: '40px' }}>
         {showBackLink && (
-          <div style={{ marginBottom: '20px', padding: '0 5px' }}>
+          <div style={{ marginBottom: '20px', padding: '0 15px' }}>
             <Link href={showBackLink.href} style={{ color: '#0066cc', textDecoration: 'underline' }}>
               ← {showBackLink.text}
             </Link>
@@ -977,11 +977,12 @@ export default function PlaylistView({
           padding: '0'
         }}>
           {/* Mobile Header with Album Art */}
-          <div style={{ 
-            display: 'flex', 
-            gap: '15px', 
+          <div style={{
+            display: 'flex',
+            gap: '15px',
             marginBottom: '20px',
-            alignItems: 'flex-start'
+            alignItems: 'flex-start',
+            padding: '0 15px'
           }}>
             {/* Artwork */}
             <div style={{ flexShrink: 0 }}>
@@ -1045,7 +1046,7 @@ export default function PlaylistView({
 
           {/* Action buttons below, aligned with artwork */}
           {localTracks && localTracks.length > 0 && (
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', padding: '0 15px' }}>
               <button
                 className="playlist-action-button"
                 onClick={shuffleAll}
@@ -1215,7 +1216,7 @@ export default function PlaylistView({
                         } : undefined}
                         onClick={() => playTrack(index)}
                         style={{
-                          backgroundColor: isPlaying ? '#000' : '#fff',
+                          backgroundColor: isPlaying ? '#FFFF00' : '#fff',
                           color: isPlaying ? '#000' : '#000',
                           cursor: isDragging ? 'grabbing' : 'pointer',
                           opacity: isDragging ? 0.5 : 1,
