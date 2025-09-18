@@ -62,7 +62,42 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [likedTracks, setLikedTracks] = useState<Set<string>>(new Set())
+  const [isMobile, setIsMobile] = useState(false)
+  const [touchStartPos, setTouchStartPos] = useState<{x: number, y: number} | null>(null)
+  const [isScrolling, setIsScrolling] = useState(false)
 
+
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768 || 'ontouchstart' in window)
+    }
+
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Handle scroll detection for mobile
+  useEffect(() => {
+    if (!isMobile) return
+
+    let scrollTimeout: NodeJS.Timeout
+
+    const handleScroll = () => {
+      setIsScrolling(true)
+      clearTimeout(scrollTimeout)
+      scrollTimeout = setTimeout(() => {
+        setIsScrolling(false)
+      }, 100)
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      clearTimeout(scrollTimeout)
+    }
+  }, [isMobile])
 
   useEffect(() => {
     fetchTagCounts()
@@ -229,6 +264,41 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
       ...prev,
       [trackId]: !prev[trackId]
     }))
+  }
+
+  // Touch handling helpers for mobile
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!isMobile) return
+    const touch = e.touches[0]
+    setTouchStartPos({ x: touch.clientX, y: touch.clientY })
+  }
+
+  const handleTouchEnd = (e: React.TouchEvent, callback: () => void) => {
+    if (!isMobile) {
+      callback()
+      return
+    }
+
+    // Don't trigger if currently scrolling
+    if (isScrolling) {
+      setTouchStartPos(null)
+      return
+    }
+
+    // Don't trigger if no touch start position recorded
+    if (!touchStartPos) return
+
+    const touch = e.changedTouches[0]
+    const deltaX = Math.abs(touch.clientX - touchStartPos.x)
+    const deltaY = Math.abs(touch.clientY - touchStartPos.y)
+    const maxTouchMovement = 10 // pixels
+
+    // Only trigger if touch didn't move much (indicates tap, not scroll)
+    if (deltaX <= maxTouchMovement && deltaY <= maxTouchMovement) {
+      callback()
+    }
+
+    setTouchStartPos(null)
   }
 
   const parseTextWithLinks = (text: string) => {
@@ -539,8 +609,8 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
               
               return (
                 <div key={track.id}>
-                  <div 
-                    onClick={async () => {
+                  <div
+                    onClick={isMobile ? undefined : async () => {
                       console.log('🎮 Track clicked:', track.title, 'index:', index)
                       // Create or switch to release queue and go to this track
                       if (!queueAudio.currentQueue || queueAudio.currentQueue.originalSource?.id !== release.id) {
@@ -551,8 +621,20 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
                         queueAudio.goToTrack(index)
                       }
                     }}
+                    onTouchStart={handleTouchStart}
+                    onTouchEnd={(e) => handleTouchEnd(e, async () => {
+                      console.log('🎮 Track touched:', track.title, 'index:', index)
+                      // Create or switch to release queue and go to this track
+                      if (!queueAudio.currentQueue || queueAudio.currentQueue.originalSource?.id !== release.id) {
+                        // Create new release queue
+                        await queueAudio.playRelease(release.id, index)
+                      } else {
+                        // Already have this release queue, just go to track
+                        queueAudio.goToTrack(index)
+                      }
+                    })}
                     style={{
-                      padding: '4px 8px',
+                      padding: isMobile ? '8px' : '4px 8px',
                       margin: '2px 0',
                       backgroundColor: isActiveGlobalTrack ? '#FFFF00' : '#f5f5f5',
                       color: isActiveGlobalTrack ? '#000' : '#000',
@@ -565,14 +647,22 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
                       justifyContent: 'space-between',
                       alignItems: 'flex-start',
                       gap: '8px',
-                      flexWrap: 'nowrap'
+                      flexWrap: 'nowrap',
+                      ...(isMobile && {
+                        minHeight: '44px', // Minimum touch target size
+                        alignItems: 'center',
+                        WebkitUserSelect: 'none',
+                        userSelect: 'none',
+                        WebkitTapHighlightColor: 'rgba(0,0,0,0.1)',
+                        touchAction: 'manipulation'
+                      })
                     }}
-                    onMouseEnter={(e) => {
+                    onMouseEnter={isMobile ? undefined : (e) => {
                       if (!isActiveGlobalTrack) {
                         e.currentTarget.style.backgroundColor = '#e0e0e0'
                       }
                     }}
-                    onMouseLeave={(e) => {
+                    onMouseLeave={isMobile ? undefined : (e) => {
                       if (!isActiveGlobalTrack) {
                         e.currentTarget.style.backgroundColor = '#f5f5f5'
                       }
@@ -588,9 +678,17 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
                     {track.lyrics && (
                       <span
                         className="lyrics-link"
-                        onClick={(e) => {
+                        onClick={isMobile ? undefined : (e) => {
                           e.stopPropagation()
                           toggleLyrics(track.id)
+                        }}
+                        onTouchStart={(e) => {
+                          e.stopPropagation()
+                          handleTouchStart(e)
+                        }}
+                        onTouchEnd={(e) => {
+                          e.stopPropagation()
+                          handleTouchEnd(e, () => toggleLyrics(track.id))
                         }}
                         style={{
                           marginLeft: '8px',
@@ -602,10 +700,10 @@ export default function ReleaseCard({ release, onDelete, isDeleting }: ReleaseCa
                           position: 'relative',
                           zIndex: 1
                         }}
-                        onMouseEnter={(e) => {
+                        onMouseEnter={isMobile ? undefined : (e) => {
                           e.currentTarget.style.color = isActiveGlobalTrack ? '#99ddff' : '#004499'
                         }}
-                        onMouseLeave={(e) => {
+                        onMouseLeave={isMobile ? undefined : (e) => {
                           e.currentTarget.style.color = isActiveGlobalTrack ? '#66ccff' : '#0066cc'
                         }}
                         title="Toggle lyrics"
